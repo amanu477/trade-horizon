@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block title %}TradePro - Professional Binary Options Trading{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-section bg-gradient-dark text-white py-5">
+    <div class="container">
+        <div class="row align-items-center min-vh-75">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-4">
+                    Trade Binary Options Like a <span class="text-success">Pro</span>
+                </h1>
+                <p class="lead mb-4">
+                    Join thousands of traders on our professional platform. Start with demo trading, 
+                    then move to live markets with competitive payouts up to 90%.
+                </p>
+                <div class="d-flex flex-wrap gap-3">
+                    <a href="{{ url_for('register') }}" class="btn btn-success btn-lg px-4">
+                        <i class="fas fa-rocket me-2"></i>Start Trading
+                    </a>
+                    <a href="{{ url_for('demo_trading') if current_user.is_authenticated else url_for('login') }}" 
+                       class="btn btn-outline-light btn-lg px-4">
+                        <i class="fas fa-play me-2"></i>Try Demo
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="trading-preview bg-dark border border-success rounded-3 p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="text-success mb-0">
+                            <i class="fas fa-chart-line me-2"></i>Live Market
+                        </h5>
+                        <span class="badge bg-success">ACTIVE</span>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="market-item p-2 border border-secondary rounded">
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-light">EUR/USD</span>
+                                    <span class="text-success">↗ 1.0847</span>
+                                </div>
+                                <small class="text-muted">85% Payout</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="market-item p-2 border border-secondary rounded">
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-light">BTC/USD</span>
+                                    <span class="text-danger">↘ 45,230</span>
+                                </div>
+                                <small class="text-muted">90% Payout</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="market-item p-2 border border-secondary rounded">
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-light">Gold</span>
+                                    <span class="text-success">↗ 2,055</span>
+                                </div>
+                                <small class="text-muted">82% Payout</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="market-item p-2 border border-secondary rounded">
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-light">Oil</span>
+                                    <span class="text-success">↗ 75.80</span>
+                                </div>
+                                <small class="text-muted">80% Payout</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h2 class="fw-bold">Why Choose TradePro?</h2>
+        <p class="text-muted">Professional trading tools and features for all levels</p>
+    </div>
+    
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="feature-card bg-dark border border-success rounded-3 p-4 h-100">
+                <div class="feature-icon text-success mb-3">
+                    <i class="fas fa-shield-alt fa-2x"></i>
+                </div>
+                <h5 class="text-light">Secure & Regulated</h5>
+                <p class="text-muted">
+                    Advanced security measures and regulatory compliance ensure your funds are protected.
+                </p>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="feature-card bg-dark border border-success rounded-3 p-4 h-100">
+                <div class="feature-icon text-success mb-3">
+                    <i class="fas fa-chart-candlestick fa-2x"></i>
+                </div>
+                <h5 class="text-light">Professional Charts</h5>
+                <p class="text-muted">
+                    Real-time charts with technical indicators and analysis tools for informed trading decisions.
+                </p>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="feature-card bg-dark border border-success rounded-3 p-4 h-100">
+                <div class="feature-icon text-success mb-3">
+                    <i class="fas fa-coins fa-2x"></i>
+                </div>
+                <h5 class="text-light">High Payouts</h5>
+                <p class="text-muted">
+                    Competitive payouts up to 90% on successful trades across multiple asset classes.
+                </p>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="feature-card bg-dark border border-success rounded-3 p-4 h-100">
+                <div class="feature-icon text-success mb-3">
+                    <i class="fas fa-mobile-alt fa-2x"></i>
+                </div>
+                <h5 class="text-light">Mobile Responsive</h5>
+                <p class="text-muted">
+                    Trade anywhere, anytime with our fully responsive web platform optimized for all devices.
+                </p>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="feature-card bg-dark border border-success rounded-3 p-4 h-100">
+                <div class="feature-icon text-success mb-3">
+                    <i class="fas fa-graduation-cap fa-2x"></i>
+                </div>
+                <h5 class="text-light">Demo Account</h5>
+                <p class="text-muted">
+                    Practice with $10,000 virtual money before risking real funds. Perfect for beginners.
+                </p>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="feature-card bg-dark border border-success rounded-3 p-4 h-100">
+                <div class="feature-icon text-success mb-3">
+                    <i class="fas fa-headset fa-2x"></i>
+                </div>
+                <h5 class="text-light">24/7 Support</h5>
+                <p class="text-muted">
+                    Round-the-clock customer support to help you with any questions or issues.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CTA Section -->
+<div class="bg-gradient-success py-5">
+    <div class="container text-center">
+        <h2 class="text-white fw-bold mb-3">Ready to Start Trading?</h2>
+        <p class="text-white-50 mb-4 lead">
+            Join our platform today and get instant access to demo trading with $10,000 virtual money
+        </p>
+        <div class="d-flex flex-wrap justify-content-center gap-3">
+            <a href="{{ url_for('register') }}" class="btn btn-light btn-lg px-5">
+                <i class="fas fa-user-plus me-2"></i>Create Free Account
+            </a>
+            <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-lg px-5">
+                <i class="fas fa-sign-in-alt me-2"></i>Login
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Trading Assets -->
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h2 class="fw-bold">Trading Assets</h2>
+        <p class="text-muted">Trade the most popular financial instruments</p>
+    </div>
+    
+    <div class="row g-3">
+        <div class="col-md-3 col-sm-6">
+            <div class="asset-card bg-dark border border-secondary rounded p-3 text-center">
+                <i class="fas fa-euro-sign text-warning fa-2x mb-2"></i>
+                <h6 class="text-light">Forex</h6>
+                <small class="text-muted">EUR/USD, GBP/USD, USD/JPY</small>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="asset-card bg-dark border border-secondary rounded p-3 text-center">
+                <i class="fab fa-bitcoin text-warning fa-2x mb-2"></i>
+                <h6 class="text-light">Crypto</h6>
+                <small class="text-muted">BTC, ETH, LTC, ADA</small>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="asset-card bg-dark border border-secondary rounded p-3 text-center">
+                <i class="fas fa-gem text-warning fa-2x mb-2"></i>
+                <h6 class="text-light">Commodities</h6>
+                <small class="text-muted">Gold, Silver, Oil, Gas</small>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="asset-card bg-dark border border-secondary rounded p-3 text-center">
+                <i class="fas fa-chart-line text-warning fa-2x mb-2"></i>
+                <h6 class="text-light">Indices</h6>
+                <small class="text-muted">S&P 500, NASDAQ, FTSE</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Animate market prices
+document.addEventListener('DOMContentLoaded', function() {
+    const marketItems = document.querySelectorAll('.market-item');
+    
+    function updatePrices() {
+        marketItems.forEach(item => {
+            const priceElement = item.querySelector('.text-success, .text-danger');
+            if (priceElement) {
+                // Add flash effect
+                priceElement.style.opacity = '0.5';
+                setTimeout(() => {
+                    priceElement.style.opacity = '1';
+                }, 200);
+            }
+        });
+    }
+    
+    // Update prices every 3 seconds
+    setInterval(updatePrices, 3000);
+});
+</script>
+{% endblock %}

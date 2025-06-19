@@ -1,0 +1,355 @@
+{% extends "base.html" %}
+
+{% block title %}Staking - TradePro{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Staking Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="bg-gradient-primary rounded-3 p-4 text-white">
+                <h2 class="mb-2">
+                    <i class="fas fa-coins me-2"></i>Staking Platform
+                </h2>
+                <p class="mb-0">Earn passive income by staking your funds with guaranteed returns</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Staking Plans -->
+    <div class="row mb-4 g-3">
+        <div class="col-lg-3 col-md-6">
+            <div class="staking-plan bg-dark border border-info rounded-3 p-4 text-center">
+                <div class="plan-icon text-info mb-3">
+                    <i class="fas fa-clock fa-2x"></i>
+                </div>
+                <h5 class="text-light">7 Days</h5>
+                <div class="apy-display">
+                    <span class="display-6 text-info fw-bold">8%</span>
+                    <div class="text-muted">APY</div>
+                </div>
+                <div class="plan-features mt-3">
+                    <small class="text-muted">• Short term</small><br>
+                    <small class="text-muted">• Quick returns</small><br>
+                    <small class="text-muted">• Low risk</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6">
+            <div class="staking-plan bg-dark border border-success rounded-3 p-4 text-center">
+                <div class="plan-icon text-success mb-3">
+                    <i class="fas fa-calendar-alt fa-2x"></i>
+                </div>
+                <h5 class="text-light">30 Days</h5>
+                <div class="apy-display">
+                    <span class="display-6 text-success fw-bold">12%</span>
+                    <div class="text-muted">APY</div>
+                </div>
+                <div class="plan-features mt-3">
+                    <small class="text-muted">• Popular choice</small><br>
+                    <small class="text-muted">• Balanced returns</small><br>
+                    <small class="text-muted">• Moderate risk</small>
+                </div>
+                <div class="position-absolute top-0 start-50 translate-middle">
+                    <span class="badge bg-success">POPULAR</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6">
+            <div class="staking-plan bg-dark border border-warning rounded-3 p-4 text-center">
+                <div class="plan-icon text-warning mb-3">
+                    <i class="fas fa-calendar-week fa-2x"></i>
+                </div>
+                <h5 class="text-light">90 Days</h5>
+                <div class="apy-display">
+                    <span class="display-6 text-warning fw-bold">18%</span>
+                    <div class="text-muted">APY</div>
+                </div>
+                <div class="plan-features mt-3">
+                    <small class="text-muted">• High returns</small><br>
+                    <small class="text-muted">• Quarterly payout</small><br>
+                    <small class="text-muted">• Medium risk</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6">
+            <div class="staking-plan bg-dark border border-danger rounded-3 p-4 text-center">
+                <div class="plan-icon text-danger mb-3">
+                    <i class="fas fa-gem fa-2x"></i>
+                </div>
+                <h5 class="text-light">180 Days</h5>
+                <div class="apy-display">
+                    <span class="display-6 text-danger fw-bold">25%</span>
+                    <div class="text-muted">APY</div>
+                </div>
+                <div class="plan-features mt-3">
+                    <small class="text-muted">• Maximum returns</small><br>
+                    <small class="text-muted">• Long term</small><br>
+                    <small class="text-muted">• Premium plan</small>
+                </div>
+                <div class="position-absolute top-0 start-50 translate-middle">
+                    <span class="badge bg-danger">PREMIUM</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Staking Form -->
+        <div class="col-lg-4 mb-4">
+            <div class="bg-dark border border-primary rounded-3 p-4">
+                <h5 class="text-primary mb-3">
+                    <i class="fas fa-plus-circle me-2"></i>Start Staking
+                </h5>
+                
+                <form method="POST" action="{{ url_for('stake') }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.amount.label(class="form-label text-light") }}
+                        <div class="input-group">
+                            <span class="input-group-text bg-secondary border-primary text-light">$</span>
+                            {{ form.amount(class="form-control bg-secondary border-primary text-light", placeholder="Enter amount", min="100", max=current_user.wallet.balance) }}
+                        </div>
+                        {% if form.amount.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.amount.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                        <small class="text-muted">Available: ${{ "%.2f"|format(current_user.wallet.balance) }}</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.duration.label(class="form-label text-light") }}
+                        {{ form.duration(class="form-select bg-secondary border-primary text-light") }}
+                    </div>
+                    
+                    <div class="quick-amounts mb-3">
+                        <button type="button" class="btn btn-sm btn-outline-primary me-1" onclick="setStakeAmount(100)">$100</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary me-1" onclick="setStakeAmount(500)">$500</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary me-1" onclick="setStakeAmount(1000)">$1,000</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="setStakeAmount(5000)">$5,000</button>
+                    </div>
+                    
+                    <!-- Staking Calculator -->
+                    <div class="staking-calculator bg-secondary bg-opacity-25 rounded p-3 mb-3">
+                        <h6 class="text-light mb-2">
+                            <i class="fas fa-calculator me-2"></i>Estimated Returns
+                        </h6>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Staking Amount:</span>
+                            <span class="text-light" id="calc-amount">$100.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Duration:</span>
+                            <span class="text-light" id="calc-duration">30 Days</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">APY:</span>
+                            <span class="text-primary" id="calc-apy">12%</span>
+                        </div>
+                        <hr class="border-secondary">
+                        <div class="d-flex justify-content-between">
+                            <span class="text-light fw-bold">Total Return:</span>
+                            <span class="text-success fw-bold" id="calc-return">$103.95</span>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100" {% if current_user.wallet.balance < 100 %}disabled{% endif %}>
+                        <i class="fas fa-coins me-2"></i>
+                        {% if current_user.wallet.balance < 100 %}Insufficient Balance{% else %}Start Staking{% endif %}
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Active Staking Positions -->
+        <div class="col-lg-8 mb-4">
+            <div class="bg-dark border border-secondary rounded-3 p-4">
+                <h5 class="text-light mb-3">
+                    <i class="fas fa-list me-2"></i>Your Staking Positions
+                </h5>
+                
+                {% if positions %}
+                <div class="row g-3">
+                    {% for position in positions %}
+                    <div class="col-md-6">
+                        <div class="staking-position bg-secondary bg-opacity-25 rounded-3 p-3">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h6 class="text-light mb-1">${{ "%.2f"|format(position.amount) }}</h6>
+                                    <small class="text-muted">{{ position.duration_days }} Days • {{ position.apy }}% APY</small>
+                                </div>
+                                <span class="badge bg-{{ 'success' if position.status == 'active' else 'secondary' }}">
+                                    {{ position.status.upper() }}
+                                </span>
+                            </div>
+                            
+                            <div class="progress mb-2" style="height: 6px;">
+                                {% set days_elapsed = (moment().diff(position.start_date, 'days')) if moment else 0 %}
+                                {% set progress = (days_elapsed / position.duration_days * 100) if position.duration_days > 0 else 0 %}
+                                <div class="progress-bar bg-primary" style="width: {{ [progress, 100]|min }}%"></div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Started:</span>
+                                <span class="text-light">{{ position.start_date.strftime('%m/%d/%Y') }}</span>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Ends:</span>
+                                <span class="text-light">{{ position.end_date.strftime('%m/%d/%Y') }}</span>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">Current Rewards:</span>
+                                <span class="text-success fw-bold">+${{ "%.2f"|format(position.calculate_rewards()) }}</span>
+                            </div>
+                            
+                            {% if position.is_completed() and position.status == 'active' %}
+                            <div class="mt-2">
+                                <div class="alert alert-success py-2">
+                                    <i class="fas fa-check-circle me-2"></i>
+                                    <small>Staking period completed! Rewards ready to claim.</small>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-coins text-muted fa-3x mb-3"></i>
+                    <h6 class="text-muted">No staking positions</h6>
+                    <p class="text-muted">Start staking to earn passive income on your funds</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Staking Information -->
+    <div class="row">
+        <div class="col-12">
+            <div class="bg-dark border border-info rounded-3 p-4">
+                <h5 class="text-info mb-3">
+                    <i class="fas fa-info-circle me-2"></i>How Staking Works
+                </h5>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="step-icon bg-info bg-opacity-25 rounded-circle p-3 mb-2 mx-auto" style="width: 60px; height: 60px;">
+                                <i class="fas fa-hand-holding-usd text-info"></i>
+                            </div>
+                            <h6 class="text-light">1. Stake Funds</h6>
+                            <small class="text-muted">Choose amount and duration</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="step-icon bg-success bg-opacity-25 rounded-circle p-3 mb-2 mx-auto" style="width: 60px; height: 60px;">
+                                <i class="fas fa-chart-line text-success"></i>
+                            </div>
+                            <h6 class="text-light">2. Earn Rewards</h6>
+                            <small class="text-muted">Daily compound interest</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="step-icon bg-warning bg-opacity-25 rounded-circle p-3 mb-2 mx-auto" style="width: 60px; height: 60px;">
+                                <i class="fas fa-clock text-warning"></i>
+                            </div>
+                            <h6 class="text-light">3. Wait Period</h6>
+                            <small class="text-muted">Funds locked for duration</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="step-icon bg-danger bg-opacity-25 rounded-circle p-3 mb-2 mx-auto" style="width: 60px; height: 60px;">
+                                <i class="fas fa-money-bill-wave text-danger"></i>
+                            </div>
+                            <h6 class="text-light">4. Claim Rewards</h6>
+                            <small class="text-muted">Get principal + interest</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function setStakeAmount(amount) {
+    const maxBalance = {{ current_user.wallet.balance }};
+    const finalAmount = Math.min(amount, maxBalance);
+    document.querySelector('input[name="amount"]').value = finalAmount;
+    updateStakingCalculator();
+}
+
+function updateStakingCalculator() {
+    const amount = parseFloat(document.querySelector('input[name="amount"]').value) || 0;
+    const durationSelect = document.querySelector('select[name="duration"]');
+    const selectedOption = durationSelect.options[durationSelect.selectedIndex];
+    const duration = parseInt(selectedOption.value);
+    
+    // APY mapping
+    const apyMap = {
+        7: 8.0,
+        30: 12.0,
+        90: 18.0,
+        180: 25.0
+    };
+    
+    const apy = apyMap[duration] || 12.0;
+    const dailyRate = apy / 365 / 100;
+    const totalReturn = amount * (1 + dailyRate * duration);
+    
+    document.getElementById('calc-amount').textContent = '$' + amount.toFixed(2);
+    document.getElementById('calc-duration').textContent = duration + ' Days';
+    document.getElementById('calc-apy').textContent = apy + '%';
+    document.getElementById('calc-return').textContent = '$' + totalReturn.toFixed(2);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const amountInput = document.querySelector('input[name="amount"]');
+    const durationSelect = document.querySelector('select[name="duration"]');
+    const stakeButton = document.querySelector('button[type="submit"]');
+    const maxBalance = {{ current_user.wallet.balance }};
+    
+    // Update calculator when inputs change
+    amountInput.addEventListener('input', updateStakingCalculator);
+    durationSelect.addEventListener('change', updateStakingCalculator);
+    
+    // Validate amount
+    amountInput.addEventListener('input', function() {
+        const amount = parseFloat(this.value) || 0;
+        
+        if (amount > maxBalance) {
+            stakeButton.disabled = true;
+            stakeButton.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Insufficient Balance';
+            stakeButton.classList.remove('btn-primary');
+            stakeButton.classList.add('btn-danger');
+        } else if (amount < 100) {
+            stakeButton.disabled = true;
+            stakeButton.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Minimum $100';
+            stakeButton.classList.remove('btn-primary');
+            stakeButton.classList.add('btn-warning');
+        } else {
+            stakeButton.disabled = false;
+            stakeButton.innerHTML = '<i class="fas fa-coins me-2"></i>Start Staking';
+            stakeButton.classList.remove('btn-danger', 'btn-warning');
+            stakeButton.classList.add('btn-primary');
+        }
+    });
+    
+    // Initialize calculator
+    updateStakingCalculator();
+});
+</script>
+{% endblock %}

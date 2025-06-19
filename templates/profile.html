@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - TradePro{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Profile Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="bg-gradient-secondary rounded-3 p-4 text-white">
+                <h2 class="mb-2">
+                    <i class="fas fa-user-circle me-2"></i>User Profile
+                </h2>
+                <p class="mb-0">Manage your account information and trading preferences</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Profile Information -->
+        <div class="col-lg-4 mb-4">
+            <div class="bg-dark border border-secondary rounded-3 p-4">
+                <div class="text-center mb-4">
+                    <div class="profile-avatar bg-primary rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 100px; height: 100px;">
+                        <i class="fas fa-user text-white fa-3x"></i>
+                    </div>
+                    <h4 class="text-light">{{ current_user.get_full_name() }}</h4>
+                    <p class="text-muted">@{{ current_user.username }}</p>
+                    {% if current_user.is_admin %}
+                    <span class="badge bg-warning">ADMIN</span>
+                    {% endif %}
+                </div>
+                
+                <div class="profile-stats">
+                    <div class="d-flex justify-content-between py-2 border-bottom border-secondary">
+                        <span class="text-muted">Member Since:</span>
+                        <span class="text-light">{{ current_user.created_at.strftime('%B %Y') }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-2 border-bottom border-secondary">
+                        <span class="text-muted">Last Login:</span>
+                        <span class="text-light">
+                            {% if current_user.last_login %}
+                                {{ current_user.last_login.strftime('%m/%d/%Y %H:%M') }}
+                            {% else %}
+                                Never
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="d-flex justify-content-between py-2 border-bottom border-secondary">
+                        <span class="text-muted">Account Status:</span>
+                        <span class="badge bg-{{ 'success' if current_user.is_active else 'danger' }}">
+                            {{ 'Active' if current_user.is_active else 'Inactive' }}
+                        </span>
+                    </div>
+                    <div class="d-flex justify-content-between py-2">
+                        <span class="text-muted">User ID:</span>
+                        <span class="text-light">#{{ current_user.id }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Account Details -->
+        <div class="col-lg-8 mb-4">
+            <div class="bg-dark border border-secondary rounded-3 p-4">
+                <h5 class="text-light mb-3">
+                    <i class="fas fa-info-circle me-2"></i>Account Information
+                </h5>
+                
+                <form>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-light">First Name</label>
+                            <input type="text" class="form-control bg-secondary border-secondary text-light" 
+                                   value="{{ current_user.first_name or '' }}" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-light">Last Name</label>
+                            <input type="text" class="form-control bg-secondary border-secondary text-light" 
+                                   value="{{ current_user.last_name or '' }}" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-light">Username</label>
+                            <input type="text" class="form-control bg-secondary border-secondary text-light" 
+                                   value="{{ current_user.username }}" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-light">Email Address</label>
+                            <input type="email" class="form-control bg-secondary border-secondary text-light" 
+                                   value="{{ current_user.email }}" readonly>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Note:</strong> To update your profile information, please contact our support team.
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Trading Statistics -->
+        <div class="col-lg-6 mb-4">
+            <div class="bg-dark border border-secondary rounded-3 p-4">
+                <h5 class="text-light mb-3">
+                    <i class="fas fa-chart-bar me-2"></i>Trading Statistics
+                </h5>
+                
+                <div class="trading-stats">
+                    <div class="d-flex justify-content-between py-2 border-bottom border-secondary">
+                        <span class="text-muted">Total Trades:</span>
+                        <span class="text-light">{{ current_user.trades.count() }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-2 border-bottom border-secondary">
+                        <span class="text-muted">Won Trades:</span>
+                        <span class="text-success">{{ current_user.trades.filter_by(status='won').count() }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-2 border-bottom border-secondary">
+                        <span class="text-muted">Lost Trades:</span>
+                        <span class="text-danger">{{ current_user.trades.filter_by(status='lost').count() }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-2 border-bottom border-secondary">
+                        <span class="text-muted">Active Trades:</span>
+                        <span class="text-warning">{{ current_user.trades.filter_by(status='active').count() }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-2">
+                        <span class="text-muted">Win Rate:</span>
+                        <span class="text-info">
+                            {% set total_trades = current_user.trades.count() %}
+                            {% set won_trades = current_user.trades.filter_by(status='won').count() %}
+                            {% if total_trades > 0 %}
+                                {{ "%.1f"|format((won_trades / total_trades) * 100) }}%
+                            {% else %}
+                                0.0%
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Wallet Overview -->
+        <div class="col-lg-6 mb-4">
+            <div class="bg-dark border border-secondary rounded-3 p-4">
+                <h5 class="text-light mb-3">
+                    <i class="fas fa-wallet me-2"></i>Wallet Overview
+                </h5>
+                
+                {% if current_user.wallet %}
+                <div class="wallet-stats">
+                    <div class="d-flex justify-content-between py-2 border-bottom border-secondary">
+                        <span class="text-muted">Live Balance:</span>
+                        <span class="text-success">${{ "%.2f"|format(current_user.wallet.balance) }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-2 border-bottom border-secondary">
+                        <span class="text-muted">Demo Balance:</span>
+                        <span class="text-info">${{ "%.2f"|format(current_user.wallet.demo_balance) }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-2 border-bottom border-secondary">
+                        <span class="text-muted">Total Invested:</span>
+                        <span class="text-warning">${{ "%.2f"|format(current_user.wallet.total_invested) }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-2">
+                        <span class="text-muted">Total Withdrawn:</span>
+                        <span class="text-danger">${{ "%.2f"|format(current_user.wallet.total_withdrawn) }}</span>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="fas fa-wallet text-muted fa-2x mb-2"></i>
+                    <p class="text-muted">No wallet information available</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Staking Positions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="bg-dark border border-secondary rounded-3 p-4">
+                <h5 class="text-light mb-3">
+                    <i class="fas fa-coins me-2"></i>Staking Positions
+                </h5>
+                
+                {% set active_positions = current_user.staking_positions.filter_by(status='active').all() %}
+                {% if active_positions %}
+                <div class="row g-3">
+                    {% for position in active_positions %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="staking-card bg-secondary bg-opacity-25 rounded p-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="text-light mb-0">${{ "%.2f"|format(position.amount) }}</h6>
+                                <span class="badge bg-primary">{{ position.apy }}% APY</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <small class="text-muted">Duration:</small>
+                                <small class="text-light">{{ position.duration_days }} days</small>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <small class="text-muted">Started:</small>
+                                <small class="text-light">{{ position.start_date.strftime('%m/%d/%Y') }}</small>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <small class="text-muted">Rewards:</small>
+                                <small class="text-success">+${{ "%.2f"|format(position.calculate_rewards()) }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="fas fa-coins text-muted fa-2x mb-2"></i>
+                    <p class="text-muted">No active staking positions</p>
+                    <a href="{{ url_for('staking') }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus me-2"></i>Start Staking
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Profile page specific scripts
+document.addEventListener('DOMContentLoaded', function() {
+    // Add any profile-specific functionality here
+    console.log('Profile page loaded');
+});
+</script>
+{% endblock %}

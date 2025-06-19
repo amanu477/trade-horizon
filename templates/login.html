@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Login - TradePro{% endblock %}
+
+{% block main_class %}container{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="login-card bg-dark border border-success rounded-3 p-4">
+            <div class="text-center mb-4">
+                <i class="fas fa-chart-line text-success fa-3x mb-3"></i>
+                <h3 class="text-light">Welcome Back</h3>
+                <p class="text-muted">Sign in to your trading account</p>
+            </div>
+            
+            <form method="POST">
+                {{ form.hidden_tag() }}
+                
+                <div class="mb-3">
+                    {{ form.email.label(class="form-label text-light") }}
+                    {{ form.email(class="form-control bg-secondary border-success text-light", placeholder="Enter your email") }}
+                    {% if form.email.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.email.errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    {{ form.password.label(class="form-label text-light") }}
+                    {{ form.password(class="form-control bg-secondary border-success text-light", placeholder="Enter your password") }}
+                    {% if form.password.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.password.errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="d-grid mb-3">
+                    <button type="submit" class="btn btn-success btn-lg">
+                        <i class="fas fa-sign-in-alt me-2"></i>Sign In
+                    </button>
+                </div>
+            </form>
+            
+            <div class="text-center">
+                <p class="text-muted mb-0">Don't have an account?</p>
+                <a href="{{ url_for('register') }}" class="text-success text-decoration-none">
+                    Create one now
+                </a>
+            </div>
+            
+            <hr class="border-secondary my-4">
+            
+            <div class="text-center">
+                <small class="text-muted">Demo Credentials:</small><br>
+                <small class="text-muted">Email: admin@trading.com</small><br>
+                <small class="text-muted">Password: admin123</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

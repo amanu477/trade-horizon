@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+
+{% block title %}Live Trading - TradePro{% endblock %}
+
+{% block main_class %}container-fluid p-0{% endblock %}
+
+{% block content %}
+<div class="trading-platform">
+    <!-- Trading Header -->
+    <div class="trading-header bg-dark border-bottom border-success p-3">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h4 class="text-light mb-0">
+                        <i class="fas fa-dollar-sign text-success me-2"></i>Live Trading
+                        <span class="badge bg-success ms-2">REAL MONEY</span>
+                    </h4>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <div class="d-flex justify-content-md-end align-items-center gap-3">
+                        <div class="balance-display">
+                            <span class="text-muted">Live Balance:</span>
+                            <span class="text-success fw-bold fs-5 ms-2" id="live-balance">
+                                ${{ "%.2f"|format(current_user.wallet.balance) }}
+                            </span>
+                        </div>
+                        <a href="{{ url_for('demo_trading') }}" class="btn btn-info btn-sm">
+                            <i class="fas fa-play me-1"></i>Switch to Demo
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row g-0">
+        <!-- Chart Section -->
+        <div class="col-lg-8">
+            <div class="chart-container bg-dark p-3" style="min-height: 600px;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="asset-selector">
+                        <select class="form-select bg-secondary text-light border-success" id="asset-select" style="width: auto;">
+                            <option value="EURUSD">EUR/USD</option>
+                            <option value="GBPUSD">GBP/USD</option>
+                            <option value="USDJPY">USD/JPY</option>
+                            <option value="BTCUSD">BTC/USD</option>
+                            <option value="ETHUSD">ETH/USD</option>
+                            <option value="XAUUSD">Gold/USD</option>
+                            <option value="CRUDE">Crude Oil</option>
+                        </select>
+                    </div>
+                    <div class="current-price text-light">
+                        <span class="fs-4 fw-bold" id="current-price">1.08450</span>
+                        <span class="price-change text-success ms-2" id="price-change">+0.0023 (+0.21%)</span>
+                    </div>
+                </div>
+                
+                <!-- Chart Canvas -->
+                <div class="chart-wrapper position-relative">
+                    <canvas id="trading-chart" style="height: 500px;"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Trading Panel -->
+        <div class="col-lg-4">
+            <div class="trading-panel bg-dark border-start border-success p-4" style="min-height: 600px;">
+                <!-- Risk Warning -->
+                <div class="alert alert-warning mb-3">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Risk Warning:</strong> Trading involves substantial risk of loss.
+                </div>
+                
+                <!-- Trade Form -->
+                <form method="POST" action="{{ url_for('place_trade') }}" id="trade-form">
+                    {{ form.hidden_tag() }}
+                    <input type="hidden" name="is_demo" value="false">
+                    
+                    <!-- Asset Selection -->
+                    <div class="mb-3">
+                        {{ form.asset.label(class="form-label text-light") }}
+                        {{ form.asset(class="form-select bg-secondary text-light border-success", id="trade-asset") }}
+                    </div>
+                    
+                    <!-- Direction Selection -->
+                    <div class="mb-3">
+                        {{ form.trade_type.label(class="form-label text-light") }}
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="trade_type" id="call-btn" value="call" checked>
+                            <label class="btn btn-outline-success" for="call-btn">
+                                <i class="fas fa-arrow-up me-1"></i>CALL (Higher)
+                            </label>
+                            <input type="radio" class="btn-check" name="trade_type" id="put-btn" value="put">
+                            <label class="btn btn-outline-danger" for="put-btn">
+                                <i class="fas fa-arrow-down me-1"></i>PUT (Lower)
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Amount Input -->
+                    <div class="mb-3">
+                        {{ form.amount.label(class="form-label text-light") }}
+                        <div class="input-group">
+                            <span class="input-group-text bg-secondary border-success text-light">$</span>
+                            {{ form.amount(class="form-control bg-secondary border-success text-light", id="trade-amount", min="1", max=current_user.wallet.balance, value="10") }}
+                        </div>
+                        <div class="quick-amounts mt-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary me-1" onclick="setAmount(10)">$10</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary me-1" onclick="setAmount(25)">$25</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary me-1" onclick="setAmount(50)">$50</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setAmount(100)">$100</button>
+                        </div>
+                        <small class="text-muted">Available: ${{ "%.2f"|format(current_user.wallet.balance) }}</small>
+                    </div>
+                    
+                    <!-- Expiry Time -->
+                    <div class="mb-3">
+                        {{ form.expiry_minutes.label(class="form-label text-light") }}
+                        {{ form.expiry_minutes(class="form-select bg-secondary text-light border-success") }}
+                    </div>
+                    
+                    <!-- Potential Profit -->
+                    <div class="potential-profit bg-secondary bg-opacity-25 rounded p-3 mb-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Investment:</span>
+                            <span class="text-light" id="investment-amount">$10.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Payout:</span>
+                            <span class="text-success">85%</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-light fw-bold">Potential Profit:</span>
+                            <span class="text-success fw-bold" id="potential-profit">$8.50</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Trade Button -->
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success btn-lg" id="trade-btn">
+                            <i class="fas fa-dollar-sign me-2"></i>Place Live Trade
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- Market Status -->
+                <div class="market-status mt-4 p-3 bg-success bg-opacity-25 rounded">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-circle text-success me-2" style="font-size: 8px;"></i>
+                        <span class="text-light">Markets Open</span>
+                    </div>
+                    <small class="text-muted">Trading available 24/7</small>
+                </div>
+                
+                <!-- Low Balance Warning -->
+                {% if current_user.wallet.balance < 10 %}
+                <div class="alert alert-danger mt-3">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    <strong>Low Balance:</strong> Consider depositing more funds to continue trading.
+                    <a href="{{ url_for('wallet') }}" class="btn btn-sm btn-outline-light ms-2">Deposit</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Active Trades Section -->
+    <div class="active-trades bg-dark border-top border-success p-3">
+        <div class="container-fluid">
+            <h6 class="text-light mb-3">
+                <i class="fas fa-clock me-2"></i>Active Trades
+            </h6>
+            <div id="active-trades-list">
+                <div class="text-center text-muted py-3">
+                    <i class="fas fa-info-circle me-2"></i>No active trades. Place a trade to see it here.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/trading.js') }}"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+// Live Trading Specific Scripts
+document.addEventListener('DOMContentLoaded', function() {
+    initializeTradingInterface('live');
+    
+    // Update amount display
+    document.getElementById('trade-amount').addEventListener('input', function() {
+        updatePotentialProfit();
+        validateAmount();
+    });
+    
+    // Sync asset selectors
+    document.getElementById('asset-select').addEventListener('change', function() {
+        document.getElementById('trade-asset').value = this.value;
+        loadAssetChart(this.value);
+    });
+    
+    document.getElementById('trade-asset').addEventListener('change', function() {
+        document.getElementById('asset-select').value = this.value;
+        loadAssetChart(this.value);
+    });
+});
+
+function setAmount(amount) {
+    const maxBalance = {{ current_user.wallet.balance }};
+    const finalAmount = Math.min(amount, maxBalance);
+    document.getElementById('trade-amount').value = finalAmount;
+    updatePotentialProfit();
+    validateAmount();
+}
+
+function updatePotentialProfit() {
+    const amount = parseFloat(document.getElementById('trade-amount').value) || 0;
+    const payout = 0.85; // 85%
+    const profit = amount * payout;
+    
+    document.getElementById('investment-amount').textContent = '$' + amount.toFixed(2);
+    document.getElementById('potential-profit').textContent = '$' + profit.toFixed(2);
+}
+
+function validateAmount() {
+    const amount = parseFloat(document.getElementById('trade-amount').value) || 0;
+    const maxBalance = {{ current_user.wallet.balance }};
+    const tradeBtn = document.getElementById('trade-btn');
+    
+    if (amount > maxBalance) {
+        tradeBtn.disabled = true;
+        tradeBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Insufficient Balance';
+        tradeBtn.classList.remove('btn-success');
+        tradeBtn.classList.add('btn-danger');
+    } else if (amount < 1) {
+        tradeBtn.disabled = true;
+        tradeBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Minimum $1';
+        tradeBtn.classList.remove('btn-success');
+        tradeBtn.classList.add('btn-warning');
+    } else {
+        tradeBtn.disabled = false;
+        tradeBtn.innerHTML = '<i class="fas fa-dollar-sign me-2"></i>Place Live Trade';
+        tradeBtn.classList.remove('btn-danger', 'btn-warning');
+        tradeBtn.classList.add('btn-success');
+    }
+}
+
+// Initialize
+updatePotentialProfit();
+validateAmount();
+</script>
+{% endblock %}

@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}Order Management - TradePro Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="bg-warning rounded-3 p-4 text-dark">
+                <h2 class="mb-2">
+                    <i class="fas fa-list me-2"></i>Order Management
+                </h2>
+                <p class="mb-0">View and manipulate user trades</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="bg-dark border border-secondary rounded-3 p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="text-light mb-0">
+                        <i class="fas fa-chart-line me-2"></i>Recent Trades
+                    </h5>
+                    <span class="badge bg-warning">{{ trades|length }} Trades</span>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>User</th>
+                                <th>Asset</th>
+                                <th>Type</th>
+                                <th>Amount</th>
+                                <th>Entry Price</th>
+                                <th>Status</th>
+                                <th>P&L</th>
+                                <th>Expiry</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for trade in trades %}
+                            <tr>
+                                <td>#{{ trade.id }}</td>
+                                <td>
+                                    <strong>{{ trade.user.username }}</strong>
+                                    {% if trade.is_demo %}
+                                    <span class="badge bg-info ms-1">DEMO</span>
+                                    {% endif %}
+                                </td>
+                                <td><strong>{{ trade.asset }}</strong></td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if trade.trade_type == 'call' else 'danger' }}">
+                                        {{ trade.trade_type.upper() }}
+                                    </span>
+                                </td>
+                                <td>${{ "%.2f"|format(trade.amount) }}</td>
+                                <td>{{ "%.5f"|format(trade.entry_price) }}</td>
+                                <td>
+                                    {% if trade.status == 'won' %}
+                                    <span class="badge bg-success">WON</span>
+                                    {% elif trade.status == 'lost' %}
+                                    <span class="badge bg-danger">LOST</span>
+                                    {% elif trade.status == 'active' %}
+                                    <span class="badge bg-warning">ACTIVE</span>
+                                    {% elif trade.status == 'cancelled' %}
+                                    <span class="badge bg-secondary">CANCELLED</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-{{ 'success' if trade.profit_loss > 0 else 'danger' if trade.profit_loss < 0 else 'muted' }}">
+                                    {% if trade.profit_loss != 0 %}
+                                    ${{ "%.2f"|format(trade.profit_loss) }}
+                                    {% else %}
+                                    --
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small>{{ trade.expiry_time.strftime('%m/%d %H:%M') }}</small>
+                                    {% if trade.is_expired() and trade.status == 'active' %}
+                                    <br><span class="badge bg-danger">EXPIRED</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if trade.status == 'active' %}
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle" 
+                                                data-bs-toggle="dropdown">
+                                            Actions
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li>
+                                                <form method="POST" action="{{ url_for('admin_manipulate_trade', trade_id=trade.id) }}" class="d-inline">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                                    <input type="hidden" name="action" value="force_win">
+                                                    <button type="submit" class="dropdown-item text-success" 
+                                                            onclick="return confirm('Force this trade to WIN?')">
+                                                        <i class="fas fa-check me-1"></i>Force Win
+                                                    </button>
+                                                </form>
+                                            </li>
+                                            <li>
+                                                <form method="POST" action="{{ url_for('admin_manipulate_trade', trade_id=trade.id) }}" class="d-inline">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                                    <input type="hidden" name="action" value="force_lose">
+                                                    <button type="submit" class="dropdown-item text-danger" 
+                                                            onclick="return confirm('Force this trade to LOSE?')">
+                                                        <i class="fas fa-times me-1"></i>Force Lose
+                                                    </button>
+                                                </form>
+                                            </li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                <form method="POST" action="{{ url_for('admin_manipulate_trade', trade_id=trade.id) }}" class="d-inline">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                                    <input type="hidden" name="action" value="cancel">
+                                                    <button type="submit" class="dropdown-item text-warning" 
+                                                            onclick="return confirm('Cancel this trade and refund user?')">
+                                                        <i class="fas fa-ban me-1"></i>Cancel & Refund
+                                                    </button>
+                                                </form>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    {% else %}
+                                    <span class="text-muted">No actions</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                {% if not trades %}
+                <div class="text-center py-4">
+                    <i class="fas fa-chart-line text-muted fa-3x mb-3"></i>
+                    <h6 class="text-muted">No trades found</h6>
+                    <p class="text-muted">Trades will appear here as users place them</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Admin Instructions -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <h6 class="alert-heading">
+                    <i class="fas fa-info-circle me-2"></i>Order Manipulation Guide
+                </h6>
+                <p class="mb-2"><strong>Force Win:</strong> Manually set the trade as won and credit the user with profits.</p>
+                <p class="mb-2"><strong>Force Lose:</strong> Manually set the trade as lost (user keeps no money).</p>
+                <p class="mb-0"><strong>Cancel & Refund:</strong> Cancel the trade and return the investment amount to the user.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
