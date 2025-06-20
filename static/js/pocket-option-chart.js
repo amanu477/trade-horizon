@@ -173,6 +173,9 @@ class PocketOptionChart {
         this.loadMarketData().then(() => {
             this.renderChart();
             this.hideLoading();
+        }).catch(error => {
+            console.error('Error in createChart:', error);
+            this.hideLoading();
         });
     }
     
@@ -180,51 +183,69 @@ class PocketOptionChart {
         this.showLoading();
         
         try {
+            console.log(`Loading market data for ${this.currentAsset} with timeframe ${this.timeframe}`);
             const response = await fetch(`/api/chart-data/${this.currentAsset}?interval=${this.timeframe}`);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
             const data = await response.json();
+            console.log('Received chart data:', data);
+            
+            if (data.error) {
+                throw new Error(data.error);
+            }
             
             if (data.data && data.data.length > 0) {
+                console.log(`Processing ${data.data.length} data points`);
                 this.processMarketData(data.data);
             } else {
+                console.log('No real data available, using sample data');
                 this.generateSampleData();
             }
         } catch (error) {
             console.error('Error loading market data:', error);
+            console.log('Falling back to sample data');
             this.generateSampleData();
         }
     }
     
     processMarketData(marketData) {
+        console.log('Processing market data:', marketData.length, 'points');
         this.data = marketData.map(point => ({
             time: new Date(point.timestamp),
-            open: point.open || point.price,
-            high: point.high || point.price * 1.001,
-            low: point.low || point.price * 0.999,
-            close: point.close || point.price,
-            volume: point.volume || Math.random() * 1000
+            open: parseFloat(point.open) || parseFloat(point.close) || parseFloat(point.price),
+            high: parseFloat(point.high) || parseFloat(point.close) || parseFloat(point.price),
+            low: parseFloat(point.low) || parseFloat(point.close) || parseFloat(point.price),
+            close: parseFloat(point.close) || parseFloat(point.price),
+            volume: parseInt(point.volume) || Math.floor(Math.random() * 1000)
         }));
+        
+        console.log('Processed data sample:', this.data.slice(-3));
         
         // Update current price
         if (this.data.length > 0) {
             const latestPrice = this.data[this.data.length - 1].close;
-            this.updatePriceDisplay(latestPrice);
+            this.updatePriceDisplay(latestPrice, 0);
         }
     }
     
     generateSampleData() {
+        console.log('Generating sample data for', this.currentAsset);
         const basePrice = this.getBasePrice(this.currentAsset);
         this.data = [];
         
         let currentPrice = basePrice;
         const now = new Date();
         
-        for (let i = 100; i >= 0; i--) {
+        for (let i = 50; i >= 0; i--) {
             const time = new Date(now.getTime() - i * 60000); // 1 minute intervals
             
             // Generate realistic OHLC data
-            const variation = (Math.random() - 0.5) * basePrice * 0.001;
+            const variation = (Math.random() - 0.5) * basePrice * 0.002;
             const open = currentPrice;
-            const volatility = basePrice * 0.0005;
+            const volatility = basePrice * 0.001;
             
             const high = open + Math.random() * volatility;
             const low = open - Math.random() * volatility;
@@ -236,13 +257,14 @@ class PocketOptionChart {
                 high: Math.max(open, high, close),
                 low: Math.min(open, low, close),
                 close: close,
-                volume: Math.random() * 1000 + 100
+                volume: Math.floor(Math.random() * 1000 + 100)
             });
             
             currentPrice = close;
         }
         
-        this.updatePriceDisplay(currentPrice);
+        console.log('Generated', this.data.length, 'sample data points');
+        this.updatePriceDisplay(currentPrice, 0);
     }
     
     renderChart() {
@@ -487,15 +509,27 @@ class PocketOptionChart {
     async addNewDataPoint() {
         try {
             const response = await fetch(`/api/market-data/${this.currentAsset}`);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            
             const marketData = await response.json();
+            console.log('Adding new data point:', marketData);
+            
+            if (marketData.error) {
+                throw new Error(marketData.error);
+            }
             
             if (marketData.price) {
                 const now = new Date();
+                const lastPoint = this.data[this.data.length - 1];
+                
                 const newPoint = {
                     time: now,
-                    open: this.data[this.data.length - 1]?.close || marketData.price,
-                    high: marketData.price * 1.0001,
-                    low: marketData.price * 0.9999,
+                    open: lastPoint?.close || marketData.price,
+                    high: marketData.price * (1 + Math.random() * 0.0005),
+                    low: marketData.price * (1 - Math.random() * 0.0005),
                     close: marketData.price,
                     volume: Math.random() * 100 + 50
                 };
@@ -516,24 +550,85 @@ class PocketOptionChart {
                     this.chart.update('none');
                 }
                 
-                this.updatePriceDisplay(marketData.price, marketData.change_percent);
+                this.updatePriceDisplay(marketData.price, marketData.change_percent || 0);
+            } else {
+                console.warn('No price in market data response');
             }
         } catch (error) {
             console.error('Error updating chart data:', error);
+            // Add fallback data point
+            this.addFallbackDataPoint();
         }
+    }
+    
+    addFallbackDataPoint() {
+        if (this.data.length === 0) return;
+        
+        const lastPoint = this.data[this.data.length - 1];
+        const basePrice = lastPoint.close;
+        const variation = (Math.random() - 0.5) * basePrice * 0.001;
+        const newPrice = basePrice + variation;
+        
+        const newPoint = {
+            time: new Date(),
+            open: lastPoint.close,
+            high: newPrice * (1 + Math.random() * 0.0005),
+            low: newPrice * (1 - Math.random() * 0.0005),
+            close: newPrice,
+            volume: Math.random() * 100 + 50
+        };
+        
+        this.data.push(newPoint);
+        
+        if (this.data.length > 100) {
+            this.data.shift();
+        }
+        
+        if (this.chart) {
+            this.chart.data.datasets[0].data = this.data.map(point => ({
+                x: point.time,
+                y: point.close
+            }));
+            this.chart.update('none');
+        }
+        
+        const changePercent = (variation / basePrice) * 100;
+        this.updatePriceDisplay(newPrice, changePercent);
     }
     
     updateRealTimePrice() {
         fetch(`/api/market-data/${this.currentAsset}`)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
+                console.log('Real-time price data:', data);
+                if (data.error) {
+                    throw new Error(data.error);
+                }
                 if (data.price) {
-                    this.updatePriceDisplay(data.price, data.change_percent);
+                    this.updatePriceDisplay(data.price, data.change_percent || 0);
+                } else {
+                    console.warn('No price data in response');
                 }
             })
             .catch(error => {
                 console.error('Error updating price:', error);
+                // Use fallback price update
+                this.updateFallbackPrice();
             });
+    }
+    
+    updateFallbackPrice() {
+        const basePrice = this.getBasePrice(this.currentAsset);
+        const variation = (Math.random() - 0.5) * basePrice * 0.001;
+        const currentPrice = basePrice + variation;
+        const changePercent = variation / basePrice * 100;
+        
+        this.updatePriceDisplay(currentPrice, changePercent);
     }
     
     updatePriceDisplay(price, changePercent = 0) {

@@ -1,5 +1,6 @@
 import requests
 import yfinance as yf
+import pandas as pd
 import json
 from datetime import datetime, timedelta
 import random
@@ -61,36 +62,53 @@ class RealMarketData:
     def get_historical_data(self, symbol, period='1d', interval='1m'):
         """Get historical data for charts"""
         try:
+            print(f"Attempting to fetch historical data for {symbol}")
             yf_symbol = self._get_yf_symbol(symbol)
             if not yf_symbol:
+                print(f"No Yahoo Finance symbol found for {symbol}, using fallback")
                 return self._generate_fallback_data(symbol)
             
+            print(f"Using Yahoo Finance symbol: {yf_symbol}")
             ticker = yf.Ticker(yf_symbol)
             
-            # For forex, use shorter periods due to market hours
+            # Adjust parameters for different asset types
             if symbol in self.forex_pairs:
+                # Forex markets - use recent data with 5m intervals
                 hist = ticker.history(period='1d', interval='5m')
+                print(f"Fetching forex data: period=1d, interval=5m")
             else:
+                # Stocks/crypto - use requested parameters
                 hist = ticker.history(period=period, interval=interval)
+                print(f"Fetching non-forex data: period={period}, interval={interval}")
+            
+            print(f"Retrieved history shape: {hist.shape if not hist.empty else 'Empty'}")
             
             if hist.empty:
+                print("No historical data retrieved, using fallback")
                 return self._generate_fallback_data(symbol)
             
             data_points = []
             for timestamp, row in hist.iterrows():
-                data_points.append({
-                    'timestamp': timestamp.isoformat(),
-                    'open': float(row['Open']),
-                    'high': float(row['High']),
-                    'low': float(row['Low']),
-                    'close': float(row['Close']),
-                    'volume': int(row['Volume']) if row['Volume'] else 0
-                })
+                try:
+                    data_points.append({
+                        'timestamp': timestamp.isoformat(),
+                        'open': float(row['Open']),
+                        'high': float(row['High']),
+                        'low': float(row['Low']),
+                        'close': float(row['Close']),
+                        'volume': int(row['Volume']) if not pd.isna(row['Volume']) else 0
+                    })
+                except Exception as row_error:
+                    print(f"Error processing row: {row_error}")
+                    continue
             
+            print(f"Processed {len(data_points)} data points")
             return data_points[-50:]  # Return last 50 points
             
         except Exception as e:
             print(f"Error fetching historical data for {symbol}: {e}")
+            import traceback
+            traceback.print_exc()
             return self._generate_fallback_data(symbol)
 
     def get_market_info(self, symbol):
