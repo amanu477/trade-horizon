@@ -461,28 +461,24 @@ class FastTradingInterface {
         // Ensure minimum and maximum visible candles
         visibleCount = Math.max(10, Math.min(visibleCount, totalData));
         
-        // Default to showing latest data with some padding on the right
-        if (this.panOffset === 0) {
-            // Show recent data with 20% padding on the right for current candle visibility
-            const paddingCandles = Math.floor(visibleCount * 0.2);
-            let endIndex = totalData;
-            let startIndex = Math.max(0, endIndex - visibleCount + paddingCandles);
-            return this.data.slice(startIndex, endIndex);
+        // Calculate the viewing window based on pan offset
+        // panOffset of 0 = show latest data (rightmost position)
+        // positive panOffset = pan left (show older data)
+        // negative panOffset = pan right (show space to the right of current data)
+        
+        let endIndex = totalData - this.panOffset;
+        let startIndex = endIndex - visibleCount;
+        
+        // Constrain to valid data range
+        startIndex = Math.max(0, startIndex);
+        endIndex = Math.min(totalData, startIndex + visibleCount);
+        
+        // Ensure we have enough data
+        if (endIndex - startIndex < visibleCount && startIndex > 0) {
+            startIndex = Math.max(0, endIndex - visibleCount);
         }
         
-        // When panning, center around the offset position
-        let centerIndex = totalData - 1 - this.panOffset;
-        let startIndex = Math.max(0, centerIndex - Math.floor(visibleCount / 2));
-        let endIndex = Math.min(totalData, startIndex + visibleCount);
-        
-        // Adjust if we hit boundaries
-        if (endIndex - startIndex < visibleCount) {
-            if (startIndex > 0) {
-                startIndex = Math.max(0, endIndex - visibleCount);
-            } else {
-                endIndex = Math.min(totalData, startIndex + visibleCount);
-            }
-        }
+        console.log(`Visible data: start=${startIndex}, end=${endIndex}, total=${totalData}, offset=${this.panOffset}`);
         
         return this.data.slice(startIndex, endIndex);
     }
