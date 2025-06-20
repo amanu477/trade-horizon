@@ -9,48 +9,46 @@
     <!-- Professional trading interface will be rendered here -->
 </div>
 
+<!-- Load Fast Trading Interface immediately -->
+<script src="{{ url_for('static', filename='js/fast-trading-interface.js') }}"></script>
+
 <script>
-// Initialize professional trading interface for live mode
-function initializeLiveTrading() {
-    console.log('Initializing live trading interface...');
+// Initialize immediately without waiting
+(function() {
+    console.log('Loading live trading interface...');
     
-    if (typeof ProfessionalTradingChart !== 'undefined') {
-        window.tradingChart = new ProfessionalTradingChart('professional-trading-interface', {
+    // Use fast interface for immediate loading
+    if (typeof FastTradingInterface !== 'undefined') {
+        window.tradingChart = new FastTradingInterface('professional-trading-interface', {
             asset: 'EURUSD',
-            timeframe: '1m',
             mode: 'live'
         });
-        console.log('Live trading interface initialized successfully');
-        return true;
-    }
-    return false;
-}
-
-// Try to initialize immediately if scripts are loaded
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() {
-        // Small delay to ensure all scripts are loaded
-        setTimeout(() => {
-            if (!initializeLiveTrading()) {
-                console.error('ProfessionalTradingChart not available');
-                document.getElementById('professional-trading-interface').innerHTML = `
-                    <div style="display: flex; align-items: center; justify-content: center; height: 100vh; background: #1e2328; color: white;">
-                        <div style="text-align: center;">
-                            <div style="font-size: 18px; margin-bottom: 10px;">Loading Live Trading...</div>
-                            <div style="font-size: 14px; color: #848e9c;">Initializing professional interface</div>
-                            <div style="margin-top: 20px;">
-                                <button onclick="location.reload()" style="background: #02c076; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
-                                    Reload Page
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
+        console.log('Live trading interface loaded successfully');
+    } else {
+        console.log('FastTradingInterface not available, trying ProfessionalTradingChart...');
+        
+        // Fallback to advanced interface if available
+        const tryAdvanced = () => {
+            if (typeof ProfessionalTradingChart !== 'undefined') {
+                window.tradingChart = new ProfessionalTradingChart('professional-trading-interface', {
+                    asset: 'EURUSD',
+                    timeframe: '1m',
+                    mode: 'live'
+                });
+                console.log('Advanced trading interface loaded');
+            } else {
+                console.log('Advanced interface not available, showing fast interface...');
+                // Show basic working interface
+                document.getElementById('professional-trading-interface').innerHTML = FastTradingInterface.createBasicInterface('live');
             }
-        }, 100);
-    });
-} else {
-    initializeLiveTrading();
-}
+        };
+        
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', tryAdvanced);
+        } else {
+            tryAdvanced();
+        }
+    }
+})();
 </script>
 {% endblock %}
