@@ -45,6 +45,11 @@ class FastTradingInterface {
                                 <option value="XAUUSD">XAU/USD</option>
                             </select>
                             
+                            <div style="color: #f1f1f1; font-size: 14px;">
+                                <span id="current-price">Loading...</span>
+                                <span style="margin-left: 8px;" id="price-change">Real-time data</span>
+                            </div>
+                            
                             <!-- Timeframe Selector -->
                             <div style="display: flex; gap: 4px;">
                                 <button class="timeframe-btn" data-timeframe="1m" style="background: #f1f1f1; color: #1e2328; border: none; padding: 4px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;">1m</button>
@@ -61,10 +66,6 @@ class FastTradingInterface {
                                 <button id="zoom-in" style="background: #2b3139; color: #848e9c; border: none; padding: 4px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;" title="Zoom In">+</button>
                                 <button id="zoom-reset" style="background: #2b3139; color: #848e9c; border: none; padding: 4px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;" title="Reset Zoom">⌂</button>
                             </div>
-                        </div>
-                        <div style="color: #f1f1f1; font-size: 14px;">
-                            <span id="current-price">1.16537</span>
-                            <span style="color: #02c076; margin-left: 8px;" id="price-change">+0.0012 (+0.10%)</span>
                         </div>
                     </div>
                     
@@ -503,7 +504,7 @@ class FastTradingInterface {
         
         // Timeframe buttons
         document.querySelectorAll('.timeframe-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            btn.addEventListener('click', async (e) => {
                 // Update active state
                 document.querySelectorAll('.timeframe-btn').forEach(b => {
                     b.style.background = '#2b3139';
