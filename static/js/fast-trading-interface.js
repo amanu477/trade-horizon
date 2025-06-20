@@ -177,7 +177,61 @@ class FastTradingInterface {
         this.canvas.height = container.offsetHeight - 30;
     }
     
-    generateData() {
+    async generateData() {
+        console.log(`Loading real market data for ${this.currentAsset}...`);
+        
+        try {
+            // Try to load real market data first
+            await this.loadRealMarketData();
+        } catch (error) {
+            console.error('Failed to load real data, using fallback:', error);
+            this.generateFallbackData();
+        }
+    }
+    
+    async loadRealMarketData() {
+        try {
+            // Get real historical data from Twelve Data API
+            const response = await fetch(`/api/chart-data-new/${this.currentAsset}?interval=${this.timeframe}&outputsize=${this.getDataPointsForTimeframe()}`);
+            const data = await response.json();
+            
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            
+            if (data.data && data.data.length > 0) {
+                console.log(`Loaded ${data.data.length} real market data points for ${this.currentAsset}`);
+                
+                // Process real market data
+                this.data = data.data.map(point => ({
+                    time: new Date(point.timestamp),
+                    open: parseFloat(point.open),
+                    high: parseFloat(point.high),
+                    low: parseFloat(point.low),
+                    close: parseFloat(point.close),
+                    volume: parseInt(point.volume) || 0
+                })).sort((a, b) => a.time - b.time);
+                
+                this.lastPriceIndex = Date.now();
+                const currentPrice = this.data[this.data.length - 1].close;
+                this.updatePriceDisplay(currentPrice);
+                
+                // Start real-time updates
+                this.startRealTimeDataFeed();
+                
+                return;
+            }
+        } catch (error) {
+            console.error('Error loading real market data:', error);
+        }
+        
+        // If real data fails, use fallback
+        throw new Error('Real data unavailable');
+    }
+    
+    generateFallbackData() {
+        console.log(`Generating fallback data for ${this.currentAsset} (real data unavailable)`);
+        
         const basePrice = this.getBasePrice(this.currentAsset);
         this.data = [];
         
@@ -219,6 +273,51 @@ class FastTradingInterface {
         this.lastPriceIndex = Date.now();
         
         this.updatePriceDisplay(currentPrice);
+    }
+    
+    startRealTimeDataFeed() {
+        // Update with real market data every 5 seconds
+        setInterval(async () => {
+            try {
+                const response = await fetch(`/api/market-data-new/${this.currentAsset}`);
+                const marketInfo = await response.json();
+                
+                if (marketInfo.price) {
+                    const currentTime = new Date();
+                    const lastCandle = this.data[this.data.length - 1];
+                    
+                    // Check if we need a new candle based on timeframe
+                    const timeDiff = currentTime.getTime() - lastCandle.time.getTime();
+                    const intervalMs = this.getIntervalMs();
+                    
+                    if (timeDiff >= intervalMs) {
+                        // Create new candle
+                        this.data.push({
+                            time: currentTime,
+                            open: lastCandle.close,
+                            high: Math.max(lastCandle.close, marketInfo.price),
+                            low: Math.min(lastCandle.close, marketInfo.price),
+                            close: marketInfo.price
+                        });
+                        
+                        // Keep data within limits
+                        const maxDataPoints = this.getDataPointsForTimeframe() * 2;
+                        if (this.data.length > maxDataPoints) {
+                            this.data.shift();
+                        }
+                    } else {
+                        // Update current candle
+                        lastCandle.close = marketInfo.price;
+                        lastCandle.high = Math.max(lastCandle.high, marketInfo.price);
+                        lastCandle.low = Math.min(lastCandle.low, marketInfo.price);
+                    }
+                    
+                    this.updatePriceDisplay(marketInfo.price);
+                }
+            } catch (error) {
+                console.error('Error updating real-time data:', error);
+            }
+        }, 5000);
     }
     
     getDataPointsForTimeframe() {
@@ -395,9 +494,10 @@ class FastTradingInterface {
     
     setupEvents() {
         // Asset selector
-        document.getElementById('asset-select').addEventListener('change', (e) => {
+        document.getElementById('asset-select').addEventListener('change', async (e) => {
             this.currentAsset = e.target.value;
-            this.generateData();
+            console.log(`Switching to ${this.currentAsset} - loading real market data...`);
+            await this.generateData();
             this.renderChart();
         });
         
@@ -413,7 +513,8 @@ class FastTradingInterface {
                 e.target.style.color = '#1e2328';
                 
                 this.timeframe = e.target.dataset.timeframe;
-                this.generateData();
+                console.log(`Switching to ${this.timeframe} timeframe - loading real market data...`);
+                await this.generateData();
                 this.renderChart();
             });
         });
@@ -734,8 +835,31 @@ class FastTradingInterface {
     }
     
     updatePriceDisplay(price) {
-        document.getElementById('current-price').textContent = price.toFixed(5);
-        document.getElementById('price-scale').textContent = price.toFixed(5);
+        const priceElement = document.getElementById('current-price');
+        const priceScaleElement = document.getElementById('price-scale');
+        
+        if (priceElement) {
+            const oldPrice = parseFloat(priceElement.textContent) || price;
+            priceElement.textContent = price.toFixed(5);
+            
+            // Update price change indicator
+            const changeElement = document.getElementById('price-change');
+            if (changeElement) {
+                const change = price - oldPrice;
+                const changePercent = ((change / oldPrice) * 100);
+                
+                if (Math.abs(change) > 0.00001) {
+                    const color = change > 0 ? '#02c076' : '#f6465d';
+                    const sign = change > 0 ? '+' : '';
+                    changeElement.style.color = color;
+                    changeElement.textContent = `${sign}${change.toFixed(5)} (${sign}${changePercent.toFixed(2)}%)`;
+                }
+            }
+        }
+        
+        if (priceScaleElement) {
+            priceScaleElement.textContent = price.toFixed(5);
+        }
     }
     
     startUpdates() {
@@ -746,49 +870,13 @@ class FastTradingInterface {
             document.getElementById('timer').textContent = `00:00:${nextMinute.toString().padStart(2, '0')}`;
         }, 1000);
         
-        // Update prices and trades
+        // Update trade timers (real price updates are handled in startRealTimeDataFeed)
         setInterval(() => {
             if (this.data.length > 0) {
-                // Add new candle periodically
-                const shouldAddNewCandle = Date.now() - this.lastPriceIndex > 60000; // Every minute for 1m timeframe
-                
-                if (shouldAddNewCandle) {
-                    const lastCandle = this.data[this.data.length - 1];
-                    const variation = (Math.random() - 0.5) * lastCandle.close * 0.003;
-                    const newPrice = lastCandle.close + variation;
-                    
-                    // Add new candle
-                    this.data.push({
-                        time: new Date(),
-                        open: lastCandle.close,
-                        high: newPrice + Math.random() * lastCandle.close * 0.001,
-                        low: newPrice - Math.random() * lastCandle.close * 0.001,
-                        close: newPrice
-                    });
-                    
-                    // Keep more historical data for better chart viewing
-                    const maxDataPoints = this.getDataPointsForTimeframe() * 2; // Keep double for scrolling
-                    if (this.data.length > maxDataPoints) {
-                        this.data.shift();
-                    }
-                    
-                    this.lastPriceIndex = Date.now();
-                } else {
-                    // Update current candle
-                    const lastCandle = this.data[this.data.length - 1];
-                    const variation = (Math.random() - 0.5) * lastCandle.close * 0.001;
-                    const newPrice = lastCandle.close + variation;
-                    
-                    lastCandle.close = newPrice;
-                    lastCandle.high = Math.max(lastCandle.high, newPrice);
-                    lastCandle.low = Math.min(lastCandle.low, newPrice);
-                }
-                
-                this.updatePriceDisplay(this.data[this.data.length - 1].close);
                 this.updateTradesList(); // Update countdown timers
                 this.renderChart();
             }
-        }, 2000);
+        }, 1000);
     }
     
     getBasePrice(asset) {
