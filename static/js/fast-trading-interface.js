@@ -6,7 +6,11 @@ class FastTradingInterface {
         this.container = document.getElementById(containerId);
         this.currentAsset = options.asset || 'EURUSD';
         this.mode = options.mode || 'demo';
+        this.timeframe = '1m';
         this.data = [];
+        this.zoomLevel = 1;
+        this.panOffset = 0;
+        this.activeTrades = [];
         
         if (this.container) {
             this.init();
@@ -38,6 +42,23 @@ class FastTradingInterface {
                                 <option value="ETHUSD">ETH/USD</option>
                                 <option value="XAUUSD">XAU/USD</option>
                             </select>
+                            
+                            <!-- Timeframe Selector -->
+                            <div style="display: flex; gap: 4px;">
+                                <button class="timeframe-btn" data-timeframe="1m" style="background: #f1f1f1; color: #1e2328; border: none; padding: 4px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;">1m</button>
+                                <button class="timeframe-btn" data-timeframe="5m" style="background: #2b3139; color: #848e9c; border: none; padding: 4px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;">5m</button>
+                                <button class="timeframe-btn" data-timeframe="15m" style="background: #2b3139; color: #848e9c; border: none; padding: 4px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;">15m</button>
+                                <button class="timeframe-btn" data-timeframe="1h" style="background: #2b3139; color: #848e9c; border: none; padding: 4px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;">1h</button>
+                                <button class="timeframe-btn" data-timeframe="4h" style="background: #2b3139; color: #848e9c; border: none; padding: 4px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;">4h</button>
+                                <button class="timeframe-btn" data-timeframe="1d" style="background: #2b3139; color: #848e9c; border: none; padding: 4px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;">1d</button>
+                            </div>
+                            
+                            <!-- Zoom Controls -->
+                            <div style="display: flex; gap: 4px; margin-left: 8px;">
+                                <button id="zoom-out" style="background: #2b3139; color: #848e9c; border: none; padding: 4px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;" title="Zoom Out">−</button>
+                                <button id="zoom-in" style="background: #2b3139; color: #848e9c; border: none; padding: 4px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;" title="Zoom In">+</button>
+                                <button id="zoom-reset" style="background: #2b3139; color: #848e9c; border: none; padding: 4px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;" title="Reset Zoom">⌂</button>
+                            </div>
                         </div>
                         <div style="color: #f1f1f1; font-size: 14px;">
                             <span id="current-price">1.16537</span>
@@ -150,8 +171,12 @@ class FastTradingInterface {
         let currentPrice = basePrice;
         const now = new Date();
         
-        for (let i = 50; i >= 0; i--) {
-            const time = new Date(now.getTime() - i * 60000);
+        // Generate more data points based on timeframe
+        const dataPoints = this.getDataPointsForTimeframe();
+        const intervalMs = this.getIntervalMs();
+        
+        for (let i = dataPoints; i >= 0; i--) {
+            const time = new Date(now.getTime() - i * intervalMs);
             const variation = (Math.random() - 0.5) * basePrice * 0.003;
             const open = currentPrice;
             const close = open + variation;
@@ -172,6 +197,30 @@ class FastTradingInterface {
         this.updatePriceDisplay(currentPrice);
     }
     
+    getDataPointsForTimeframe() {
+        const points = {
+            '1m': 100,
+            '5m': 80,
+            '15m': 60,
+            '1h': 48,
+            '4h': 24,
+            '1d': 30
+        };
+        return points[this.timeframe] || 100;
+    }
+    
+    getIntervalMs() {
+        const intervals = {
+            '1m': 60000,
+            '5m': 300000,
+            '15m': 900000,
+            '1h': 3600000,
+            '4h': 14400000,
+            '1d': 86400000
+        };
+        return intervals[this.timeframe] || 60000;
+    }
+    
     renderChart() {
         if (!this.ctx || !this.data.length) return;
         
@@ -182,8 +231,12 @@ class FastTradingInterface {
         this.ctx.fillStyle = '#131722';
         this.ctx.fillRect(0, 0, width, height);
         
-        // Calculate price range
-        const prices = this.data.flatMap(d => [d.high, d.low]);
+        // Apply zoom and pan
+        const visibleData = this.getVisibleData();
+        if (!visibleData.length) return;
+        
+        // Calculate price range for visible data
+        const prices = visibleData.flatMap(d => [d.high, d.low]);
         const minPrice = Math.min(...prices);
         const maxPrice = Math.max(...prices);
         const priceRange = maxPrice - minPrice;
@@ -193,23 +246,14 @@ class FastTradingInterface {
         const chartMaxPrice = maxPrice + padding;
         const chartPriceRange = chartMaxPrice - chartMinPrice;
         
-        // Draw grid
-        this.ctx.strokeStyle = '#2a2e39';
-        this.ctx.lineWidth = 0.5;
+        // Draw grid with better styling
+        this.drawGrid(width, height, chartMinPrice, chartMaxPrice);
         
-        for (let i = 0; i <= 5; i++) {
-            const y = (i / 5) * height;
-            this.ctx.beginPath();
-            this.ctx.moveTo(0, y);
-            this.ctx.lineTo(width, y);
-            this.ctx.stroke();
-        }
+        // Draw candlesticks with zoom
+        const candleWidth = Math.max(1, (width / visibleData.length) * 0.8 * this.zoomLevel);
+        const candleSpacing = width / visibleData.length;
         
-        // Draw candlesticks
-        const candleWidth = Math.max(2, (width / this.data.length) * 0.8);
-        const candleSpacing = width / this.data.length;
-        
-        this.data.forEach((candle, index) => {
+        visibleData.forEach((candle, index) => {
             const x = index * candleSpacing + candleSpacing / 2;
             const openY = height - ((candle.open - chartMinPrice) / chartPriceRange) * height;
             const closeY = height - ((candle.close - chartMinPrice) / chartPriceRange) * height;
@@ -221,7 +265,7 @@ class FastTradingInterface {
             
             // Draw wick
             this.ctx.strokeStyle = color;
-            this.ctx.lineWidth = 1;
+            this.ctx.lineWidth = Math.max(0.5, this.zoomLevel);
             this.ctx.beginPath();
             this.ctx.moveTo(x, highY);
             this.ctx.lineTo(x, lowY);
@@ -233,6 +277,83 @@ class FastTradingInterface {
             const bodyHeight = Math.abs(closeY - openY);
             this.ctx.fillRect(x - candleWidth / 2, bodyTop, candleWidth, Math.max(1, bodyHeight));
         });
+        
+        // Draw trade positions
+        this.drawTradePositions(chartMinPrice, chartMaxPrice, chartPriceRange, height);
+    }
+    
+    getVisibleData() {
+        const totalData = this.data.length;
+        const visibleCount = Math.floor(totalData / this.zoomLevel);
+        const startIndex = Math.max(0, Math.min(totalData - visibleCount, this.panOffset));
+        const endIndex = Math.min(totalData, startIndex + visibleCount);
+        
+        return this.data.slice(startIndex, endIndex);
+    }
+    
+    drawGrid(width, height, minPrice, maxPrice) {
+        // Horizontal grid lines
+        this.ctx.strokeStyle = '#2a2e39';
+        this.ctx.lineWidth = 0.5;
+        
+        for (let i = 0; i <= 8; i++) {
+            const y = (i / 8) * height;
+            this.ctx.beginPath();
+            this.ctx.moveTo(0, y);
+            this.ctx.lineTo(width, y);
+            this.ctx.stroke();
+        }
+        
+        // Vertical grid lines
+        for (let i = 0; i <= 10; i++) {
+            const x = (i / 10) * width;
+            this.ctx.beginPath();
+            this.ctx.moveTo(x, 0);
+            this.ctx.lineTo(x, height);
+            this.ctx.stroke();
+        }
+    }
+    
+    drawTradePositions(minPrice, maxPrice, priceRange, height) {
+        const positionsContainer = document.getElementById('trade-positions');
+        if (!positionsContainer) return;
+        
+        positionsContainer.innerHTML = '';
+        
+        this.activeTrades.forEach(trade => {
+            const priceY = height - ((trade.entryPrice - minPrice) / priceRange) * height;
+            
+            const tradeMarker = document.createElement('div');
+            tradeMarker.style.cssText = `
+                position: absolute;
+                left: 90%;
+                top: ${priceY - 10}px;
+                background: ${trade.type === 'buy' ? '#02c076' : '#f6465d'};
+                color: white;
+                padding: 2px 8px;
+                border-radius: 3px;
+                font-size: 10px;
+                font-weight: 600;
+                pointer-events: auto;
+                z-index: 100;
+            `;
+            tradeMarker.textContent = `${trade.type.toUpperCase()} $${trade.amount}`;
+            tradeMarker.title = `Entry: ${trade.entryPrice.toFixed(5)}\nExpiry: ${trade.expiryTime}`;
+            
+            positionsContainer.appendChild(tradeMarker);
+            
+            // Draw entry line
+            const canvas = this.canvas;
+            const ctx = this.ctx;
+            ctx.strokeStyle = trade.type === 'buy' ? '#02c076' : '#f6465d';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([3, 3]);
+            ctx.beginPath();
+            ctx.moveTo(0, priceY);
+            ctx.lineTo(canvas.width * 0.88, priceY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        });
     }
     
     setupEvents() {
@@ -241,6 +362,81 @@ class FastTradingInterface {
             this.currentAsset = e.target.value;
             this.generateData();
             this.renderChart();
+        });
+        
+        // Timeframe buttons
+        document.querySelectorAll('.timeframe-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                // Update active state
+                document.querySelectorAll('.timeframe-btn').forEach(b => {
+                    b.style.background = '#2b3139';
+                    b.style.color = '#848e9c';
+                });
+                e.target.style.background = '#f1f1f1';
+                e.target.style.color = '#1e2328';
+                
+                this.timeframe = e.target.dataset.timeframe;
+                this.generateData();
+                this.renderChart();
+            });
+        });
+        
+        // Zoom controls
+        document.getElementById('zoom-in').addEventListener('click', () => {
+            this.zoomLevel = Math.min(5, this.zoomLevel * 1.5);
+            this.renderChart();
+        });
+        
+        document.getElementById('zoom-out').addEventListener('click', () => {
+            this.zoomLevel = Math.max(0.5, this.zoomLevel / 1.5);
+            this.renderChart();
+        });
+        
+        document.getElementById('zoom-reset').addEventListener('click', () => {
+            this.zoomLevel = 1;
+            this.panOffset = 0;
+            this.renderChart();
+        });
+        
+        // Mouse wheel zoom
+        this.canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            if (e.deltaY < 0) {
+                this.zoomLevel = Math.min(5, this.zoomLevel * 1.1);
+            } else {
+                this.zoomLevel = Math.max(0.5, this.zoomLevel / 1.1);
+            }
+            this.renderChart();
+        });
+        
+        // Mouse drag for panning
+        let isDragging = false;
+        let startX = 0;
+        
+        this.canvas.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startX = e.clientX;
+            this.canvas.style.cursor = 'grabbing';
+        });
+        
+        this.canvas.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                const deltaX = e.clientX - startX;
+                this.panOffset -= Math.floor(deltaX / 5);
+                this.panOffset = Math.max(0, this.panOffset);
+                startX = e.clientX;
+                this.renderChart();
+            }
+        });
+        
+        this.canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+            this.canvas.style.cursor = 'crosshair';
+        });
+        
+        this.canvas.addEventListener('mouseleave', () => {
+            isDragging = false;
+            this.canvas.style.cursor = 'crosshair';
         });
         
         // Amount input
@@ -274,6 +470,25 @@ class FastTradingInterface {
         }
         
         const currentPrice = this.data[this.data.length - 1].close;
+        const expiryTime = new Date(Date.now() + 60000); // 1 minute
+        
+        // Add trade to active trades for visualization
+        const trade = {
+            id: Date.now(),
+            type: type,
+            amount: amount,
+            entryPrice: currentPrice,
+            expiryTime: expiryTime.toLocaleTimeString(),
+            asset: this.currentAsset
+        };
+        
+        this.activeTrades.push(trade);
+        
+        // Remove trade after expiry
+        setTimeout(() => {
+            this.activeTrades = this.activeTrades.filter(t => t.id !== trade.id);
+            this.renderChart();
+        }, 60000);
         
         // Submit trade to backend
         this.submitTrade({
@@ -284,15 +499,25 @@ class FastTradingInterface {
             is_demo: this.mode === 'demo'
         });
         
-        this.showNotification(`${type.toUpperCase()} trade placed: $${amount}`, 'success');
+        this.showNotification(`${type.toUpperCase()} trade placed: $${amount} at ${currentPrice.toFixed(5)}`, 'success');
+        this.renderChart(); // Redraw to show trade position
     }
     
     async submitTrade(tradeData) {
         try {
+            // Get CSRF token from meta tag or form
+            const csrfToken = document.querySelector('meta[name=csrf-token]')?.getAttribute('content') ||
+                             document.querySelector('input[name=csrf_token]')?.value ||
+                             this.getCSRFToken();
+            
             const formData = new FormData();
             Object.keys(tradeData).forEach(key => {
                 formData.append(key, tradeData[key]);
             });
+            
+            if (csrfToken) {
+                formData.append('csrf_token', csrfToken);
+            }
             
             const response = await fetch('/place_trade', {
                 method: 'POST',
@@ -305,10 +530,25 @@ class FastTradingInterface {
             const result = await response.json();
             if (result.success) {
                 console.log('Trade placed successfully:', result);
+                this.showNotification('Trade executed successfully!', 'success');
+            } else {
+                console.error('Trade failed:', result.message);
+                this.showNotification(result.message || 'Trade failed', 'error');
             }
         } catch (error) {
             console.error('Error placing trade:', error);
+            this.showNotification('Network error placing trade', 'error');
         }
+    }
+    
+    getCSRFToken() {
+        // Try to get CSRF token from any existing form
+        const forms = document.querySelectorAll('form');
+        for (let form of forms) {
+            const token = form.querySelector('input[name=csrf_token]');
+            if (token) return token.value;
+        }
+        return null;
     }
     
     showNotification(message, type) {
