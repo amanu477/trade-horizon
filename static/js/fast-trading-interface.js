@@ -135,13 +135,21 @@ class FastTradingInterface {
                         <!-- Expiry Time -->
                         <div style="margin-bottom: 16px;">
                             <div style="color: #f1f1f1; font-size: 12px; margin-bottom: 8px;">Expiry Time</div>
-                            <select id="expiry-select" style="background: #2b3139; color: #f1f1f1; border: none; padding: 8px 12px; border-radius: 6px; width: 100%; font-size: 14px;">
-                                <option value="1">1 Minute</option>
-                                <option value="5">5 Minutes</option>
-                                <option value="15">15 Minutes</option>
-                                <option value="30">30 Minutes</option>
-                                <option value="60">1 Hour</option>
-                            </select>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <input type="number" id="expiry-minutes" min="1" max="1440" value="5" 
+                                       style="background: #2b3139; color: #f1f1f1; border: none; padding: 8px 12px; border-radius: 6px; width: 80px; font-size: 14px; text-align: center;">
+                                <select id="expiry-unit" style="background: #2b3139; color: #f1f1f1; border: none; padding: 8px 12px; border-radius: 6px; font-size: 14px;">
+                                    <option value="minutes">Minutes</option>
+                                    <option value="hours">Hours</option>
+                                </select>
+                            </div>
+                            <div style="display: flex; gap: 4px; margin-top: 8px;">
+                                <button type="button" class="quick-expiry" data-minutes="1" style="background: #2b3139; color: #848e9c; border: none; padding: 4px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;">1m</button>
+                                <button type="button" class="quick-expiry" data-minutes="5" style="background: #f1f1f1; color: #1e2328; border: none; padding: 4px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;">5m</button>
+                                <button type="button" class="quick-expiry" data-minutes="15" style="background: #2b3139; color: #848e9c; border: none; padding: 4px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;">15m</button>
+                                <button type="button" class="quick-expiry" data-minutes="30" style="background: #2b3139; color: #848e9c; border: none; padding: 4px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;">30m</button>
+                                <button type="button" class="quick-expiry" data-minutes="60" style="background: #2b3139; color: #848e9c; border: none; padding: 4px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;">1h</button>
+                            </div>
                         </div>
                         
                         <!-- Payout -->
@@ -416,13 +424,17 @@ class FastTradingInterface {
         // Ensure minimum and maximum visible candles
         visibleCount = Math.max(10, Math.min(visibleCount, totalData));
         
-        // Calculate visible window with proper panning
+        // Calculate visible window with improved panning
         let startIndex = Math.max(0, totalData - visibleCount - this.panOffset);
         let endIndex = Math.min(totalData, startIndex + visibleCount);
         
-        // Adjust if we're at the boundaries
-        if (endIndex - startIndex < visibleCount && startIndex > 0) {
-            startIndex = Math.max(0, endIndex - visibleCount);
+        // Ensure we always show the requested number of candles when possible
+        if (endIndex - startIndex < visibleCount) {
+            if (startIndex > 0) {
+                startIndex = Math.max(0, endIndex - visibleCount);
+            } else {
+                endIndex = Math.min(totalData, startIndex + visibleCount);
+            }
         }
         
         return this.data.slice(startIndex, endIndex);
@@ -548,39 +560,80 @@ class FastTradingInterface {
             this.renderChart();
         });
         
-        // Mouse drag for panning
+        // Mouse drag for panning with improved functionality
         let isDragging = false;
         let startX = 0;
+        let lastX = 0;
         
         this.canvas.addEventListener('mousedown', (e) => {
             isDragging = true;
             startX = e.clientX;
+            lastX = e.clientX;
             this.canvas.style.cursor = 'grabbing';
+            e.preventDefault();
         });
         
         this.canvas.addEventListener('mousemove', (e) => {
             if (isDragging) {
-                const deltaX = e.clientX - startX;
-                const sensitivity = 2; // Adjust panning sensitivity
-                this.panOffset -= Math.floor(deltaX / sensitivity);
+                const deltaX = e.clientX - lastX;
+                const sensitivity = 1; // More responsive panning
+                const panDelta = Math.floor(deltaX / sensitivity);
+                
+                this.panOffset += panDelta; // Reverse direction for natural feel
                 
                 // Allow panning through all historical data
-                const maxOffset = Math.max(0, this.data.length - Math.floor(this.data.length / this.zoomLevel));
+                const visibleCount = Math.floor(this.data.length / this.zoomLevel);
+                const maxOffset = Math.max(0, this.data.length - visibleCount);
                 this.panOffset = Math.max(0, Math.min(maxOffset, this.panOffset));
                 
-                startX = e.clientX;
+                lastX = e.clientX;
                 this.renderChart();
+                e.preventDefault();
             }
         });
         
-        this.canvas.addEventListener('mouseup', () => {
+        this.canvas.addEventListener('mouseup', (e) => {
+            isDragging = false;
+            this.canvas.style.cursor = 'crosshair';
+            e.preventDefault();
+        });
+        
+        this.canvas.addEventListener('mouseleave', (e) => {
             isDragging = false;
             this.canvas.style.cursor = 'crosshair';
         });
         
-        this.canvas.addEventListener('mouseleave', () => {
+        // Touch events for mobile
+        this.canvas.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                isDragging = true;
+                startX = e.touches[0].clientX;
+                lastX = e.touches[0].clientX;
+                e.preventDefault();
+            }
+        });
+        
+        this.canvas.addEventListener('touchmove', (e) => {
+            if (isDragging && e.touches.length === 1) {
+                const deltaX = e.touches[0].clientX - lastX;
+                const sensitivity = 1;
+                const panDelta = Math.floor(deltaX / sensitivity);
+                
+                this.panOffset += panDelta;
+                
+                const visibleCount = Math.floor(this.data.length / this.zoomLevel);
+                const maxOffset = Math.max(0, this.data.length - visibleCount);
+                this.panOffset = Math.max(0, Math.min(maxOffset, this.panOffset));
+                
+                lastX = e.touches[0].clientX;
+                this.renderChart();
+                e.preventDefault();
+            }
+        });
+        
+        this.canvas.addEventListener('touchend', (e) => {
             isDragging = false;
-            this.canvas.style.cursor = 'crosshair';
+            e.preventDefault();
         });
         
         // Amount input
@@ -588,6 +641,41 @@ class FastTradingInterface {
             const amount = parseFloat(e.target.value) || 0;
             const payout = (amount * 0.92).toFixed(2);
             document.getElementById('payout-amount').textContent = payout;
+        });
+        
+        // Quick expiry buttons
+        document.querySelectorAll('.quick-expiry').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                // Update active state
+                document.querySelectorAll('.quick-expiry').forEach(b => {
+                    b.style.background = '#2b3139';
+                    b.style.color = '#848e9c';
+                });
+                e.target.style.background = '#f1f1f1';
+                e.target.style.color = '#1e2328';
+                
+                const minutes = parseInt(e.target.dataset.minutes);
+                if (minutes >= 60) {
+                    document.getElementById('expiry-minutes').value = minutes / 60;
+                    document.getElementById('expiry-unit').value = 'hours';
+                } else {
+                    document.getElementById('expiry-minutes').value = minutes;
+                    document.getElementById('expiry-unit').value = 'minutes';
+                }
+            });
+        });
+        
+        // Expiry time validation
+        document.getElementById('expiry-minutes').addEventListener('input', (e) => {
+            const value = parseInt(e.target.value);
+            const unit = document.getElementById('expiry-unit').value;
+            const maxMinutes = unit === 'hours' ? 24 : 1440; // 24 hours or 1440 minutes (24 hours)
+            
+            if (value < 1) {
+                e.target.value = 1;
+            } else if (value > maxMinutes) {
+                e.target.value = maxMinutes;
+            }
         });
         
         // Trade buttons
@@ -608,7 +696,9 @@ class FastTradingInterface {
     
     placeTrade(type) {
         const amount = parseFloat(document.getElementById('amount-input').value);
-        const expiryMinutes = parseInt(document.getElementById('expiry-select').value);
+        const expiryValue = parseInt(document.getElementById('expiry-minutes').value);
+        const expiryUnit = document.getElementById('expiry-unit').value;
+        const expiryMinutes = expiryUnit === 'hours' ? expiryValue * 60 : expiryValue;
         
         if (!amount || amount < 1) {
             this.showNotification('Please enter a valid amount', 'error');
