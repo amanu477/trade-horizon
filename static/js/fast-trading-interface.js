@@ -74,12 +74,8 @@ class FastTradingInterface {
                         <canvas id="trading-canvas" style="width: 100%; height: 100%;"></canvas>
                         
                         <!-- Price Scale -->
-                        <div style="position: absolute; right: 0; top: 0; bottom: 30px; width: 60px; background: #1e2328; border-left: 1px solid #2b3139; display: flex; flex-direction: column; justify-content: space-between; padding: 20px 8px;">
-                            <div style="color: #f1f1f1; font-size: 10px;">1.16400</div>
-                            <div style="color: #f1f1f1; font-size: 10px;">1.16300</div>
-                            <div style="color: #fcd535; font-size: 10px; background: #2b3139; padding: 2px 4px; border-radius: 2px;" id="price-scale">1.16229</div>
-                            <div style="color: #f1f1f1; font-size: 10px;">1.16100</div>
-                            <div style="color: #f1f1f1; font-size: 10px;">1.15990</div>
+                        <div id="price-scale-container" style="position: absolute; right: 0; top: 0; bottom: 30px; width: 60px; background: #1e2328; border-left: 1px solid #2b3139; display: flex; flex-direction: column; justify-content: space-between; padding: 10px 4px;">
+                            <!-- Dynamic price labels will be added here -->
                         </div>
                         
                         <!-- Time Scale -->
@@ -386,9 +382,9 @@ class FastTradingInterface {
         // Draw grid with better styling
         this.drawGrid(width, height, chartMinPrice, chartMaxPrice);
         
-        // Draw candlesticks with proper zoom spacing
+        // Draw candlesticks with improved spacing and visibility
         const candleSpacing = width / visibleData.length;
-        const candleWidth = Math.max(1, Math.min(candleSpacing * 0.8, candleSpacing - 2));
+        const candleWidth = Math.max(2, Math.min(candleSpacing * 0.7, candleSpacing - 1));
         
         visibleData.forEach((candle, index) => {
             const x = index * candleSpacing + candleSpacing / 2;
@@ -400,26 +396,37 @@ class FastTradingInterface {
             const isGreen = candle.close > candle.open;
             const color = isGreen ? '#02c076' : '#f6465d';
             
-            // Draw wick
+            // Draw wick with better visibility
             this.ctx.strokeStyle = color;
-            this.ctx.lineWidth = Math.max(0.5, this.zoomLevel);
+            this.ctx.lineWidth = Math.max(1, Math.min(2, candleWidth * 0.1));
             this.ctx.beginPath();
             this.ctx.moveTo(x, highY);
             this.ctx.lineTo(x, lowY);
             this.ctx.stroke();
             
-            // Draw body
+            // Draw body with improved visibility
             this.ctx.fillStyle = color;
             const bodyTop = Math.min(openY, closeY);
-            const bodyHeight = Math.abs(closeY - openY);
-            this.ctx.fillRect(x - candleWidth / 2, bodyTop, candleWidth, Math.max(1, bodyHeight));
+            const bodyHeight = Math.max(2, Math.abs(closeY - openY)); // Minimum height for visibility
+            this.ctx.fillRect(x - candleWidth / 2, bodyTop, candleWidth, bodyHeight);
+            
+            // Add border for hollow candles when close > open
+            if (candle.close > candle.open) {
+                this.ctx.strokeStyle = color;
+                this.ctx.lineWidth = 1;
+                this.ctx.strokeRect(x - candleWidth / 2, bodyTop, candleWidth, bodyHeight);
+            }
         });
+        
+        // Draw current price line
+        this.drawCurrentPriceLine(chartMinPrice, chartMaxPrice, chartPriceRange, height);
         
         // Draw trade positions
         this.drawTradePositions(chartMinPrice, chartMaxPrice, chartPriceRange, height);
         
-        // Update time scale
+        // Update time scale and price scale
         this.updateTimeScale(visibleData);
+        this.updatePriceScale(chartMinPrice, chartMaxPrice);
     }
     
     getVisibleData() {
@@ -508,6 +515,48 @@ class FastTradingInterface {
             ctx.stroke();
             ctx.setLineDash([]);
         });
+    }
+    
+    drawCurrentPriceLine(minPrice, maxPrice, priceRange, height) {
+        if (!this.data.length) return;
+        
+        const currentPrice = this.data[this.data.length - 1].close;
+        const priceY = height - ((currentPrice - minPrice) / priceRange) * height;
+        
+        // Draw current price line
+        this.ctx.strokeStyle = '#fcd535'; // Yellow/gold color
+        this.ctx.lineWidth = 2;
+        this.ctx.setLineDash([5, 5]); // Dashed line
+        this.ctx.beginPath();
+        this.ctx.moveTo(0, priceY);
+        this.ctx.lineTo(this.canvas.width, priceY);
+        this.ctx.stroke();
+        this.ctx.setLineDash([]); // Reset dash
+        
+        // Draw price label on the right
+        const priceText = currentPrice.toFixed(5);
+        this.ctx.font = '12px Arial';
+        this.ctx.fillStyle = '#1e2328';
+        
+        const textWidth = this.ctx.measureText(priceText).width;
+        const labelX = this.canvas.width - textWidth - 8;
+        const labelY = priceY;
+        
+        // Background for price label
+        this.ctx.fillStyle = '#fcd535';
+        this.ctx.fillRect(labelX - 4, labelY - 8, textWidth + 8, 16);
+        
+        // Price text
+        this.ctx.fillStyle = '#1e2328';
+        this.ctx.fillText(priceText, labelX, labelY + 4);
+        
+        // Small triangle pointer
+        this.ctx.fillStyle = '#fcd535';
+        this.ctx.beginPath();
+        this.ctx.moveTo(labelX - 4, labelY - 3);
+        this.ctx.lineTo(labelX - 8, labelY);
+        this.ctx.lineTo(labelX - 4, labelY + 3);
+        this.ctx.fill();
     }
     
     setupEvents() {
@@ -1024,6 +1073,47 @@ class FastTradingInterface {
                 timeLabel.textContent = timeStr;
                 timeScale.appendChild(timeLabel);
             }
+        }
+    }
+    
+    updatePriceScale(minPrice, maxPrice) {
+        const priceScaleContainer = document.getElementById('price-scale-container');
+        if (!priceScaleContainer) return;
+        
+        priceScaleContainer.innerHTML = '';
+        
+        const priceRange = maxPrice - minPrice;
+        const labelCount = 8;
+        
+        for (let i = 0; i < labelCount; i++) {
+            const ratio = i / (labelCount - 1);
+            const price = maxPrice - (ratio * priceRange);
+            
+            const priceLabel = document.createElement('div');
+            priceLabel.style.cssText = `
+                color: #f1f1f1;
+                font-size: 10px;
+                text-align: right;
+                line-height: 1;
+                margin: 2px 0;
+            `;
+            
+            // Highlight current price
+            if (this.data.length > 0) {
+                const currentPrice = this.data[this.data.length - 1].close;
+                if (Math.abs(price - currentPrice) < priceRange * 0.1) {
+                    priceLabel.style.cssText += `
+                        background: #fcd535;
+                        color: #1e2328;
+                        padding: 2px 4px;
+                        border-radius: 2px;
+                        font-weight: 600;
+                    `;
+                }
+            }
+            
+            priceLabel.textContent = price.toFixed(5);
+            priceScaleContainer.appendChild(priceLabel);
         }
     }
 }
