@@ -32,8 +32,9 @@ function updatePotentialProfit() {
 
 // Load asset chart (called from template)
 function loadAssetChart(asset) {
-    if (pocketChart) {
-        pocketChart.changeAsset(asset);
+    if (professionalChart) {
+        professionalChart.currentAsset = asset;
+        professionalChart.loadRealMarketData();
     } else if (window.tradingInterface) {
         window.tradingInterface.currentAsset = asset;
         window.tradingInterface.updateChart();
@@ -41,16 +42,15 @@ function loadAssetChart(asset) {
 }
 
 // Professional chart instance
-let pocketChart = null;
+let professionalChart = null;
 
 // Initialize trading interface when page loads
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize Pocket Option style chart if on trading page
-    const chartContainer = document.getElementById('pocket-chart-container');
-    if (chartContainer && typeof PocketOptionChart !== 'undefined') {
-        pocketChart = new PocketOptionChart('pocket-chart-container', {
+    // Initialize Professional Trading Interface
+    const tradingContainer = document.getElementById('professional-trading-interface');
+    if (tradingContainer && typeof ProfessionalTradingChart !== 'undefined') {
+        professionalChart = new ProfessionalTradingChart('professional-trading-interface', {
             asset: 'EURUSD',
-            type: 'candlestick',
             timeframe: '1m'
         });
     }
