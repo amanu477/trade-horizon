@@ -204,6 +204,8 @@ class ProfessionalTradingChart {
     }
     
     async loadRealMarketData() {
+        this.showLoading();
+        
         try {
             console.log(`Loading real market data for ${this.currentAsset}`);
             
@@ -232,7 +234,37 @@ class ProfessionalTradingChart {
             this.generateRealisticData();
         }
         
+        this.hideLoading();
         this.renderChart();
+    }
+    
+    showLoading() {
+        const container = this.canvas?.parentElement || this.container;
+        if (container) {
+            const loader = container.querySelector('.chart-loading') || document.createElement('div');
+            loader.className = 'chart-loading';
+            loader.style.cssText = `
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                color: #f1f1f1;
+                text-align: center;
+                z-index: 1000;
+            `;
+            loader.innerHTML = `
+                <div style="font-size: 16px; margin-bottom: 8px;">Loading Market Data...</div>
+                <div style="font-size: 12px; color: #848e9c;">Connecting to real-time feeds</div>
+            `;
+            container.appendChild(loader);
+        }
+    }
+    
+    hideLoading() {
+        const loader = document.querySelector('.chart-loading');
+        if (loader) {
+            loader.remove();
+        }
     }
     
     processMarketData(marketData) {
@@ -279,10 +311,15 @@ class ProfessionalTradingChart {
     }
     
     renderChart() {
-        if (!this.ctx || !this.data.length) return;
+        if (!this.ctx || !this.data.length) {
+            console.log('Cannot render chart: missing context or data');
+            return;
+        }
         
         const width = this.canvas.width;
         const height = this.canvas.height;
+        
+        console.log(`Rendering chart with ${this.data.length} data points, canvas: ${width}x${height}`);
         
         // Clear canvas
         this.ctx.fillStyle = '#131722';
@@ -302,6 +339,8 @@ class ProfessionalTradingChart {
         // Calculate dimensions
         const candleWidth = Math.max(2, (width / this.data.length) * 0.8);
         const candleSpacing = width / this.data.length;
+        
+        console.log(`Price range: ${chartMinPrice.toFixed(5)} - ${chartMaxPrice.toFixed(5)}`);
         
         // Draw grid lines
         this.drawGrid(width, height, chartMinPrice, chartMaxPrice);
@@ -334,6 +373,7 @@ class ProfessionalTradingChart {
         });
         
         this.updatePriceScale(chartMinPrice, chartMaxPrice);
+        console.log('Chart rendered successfully');
     }
     
     drawGrid(width, height, minPrice, maxPrice) {

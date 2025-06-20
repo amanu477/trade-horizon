@@ -8,157 +8,33 @@
 <div id="professional-trading-interface" style="height: 100vh; overflow: hidden;">
     <!-- Professional trading interface will be rendered here -->
 </div>
-        
-        <!-- Trading Panel -->
-        <div class="col-lg-4">
-            <div class="trading-panel bg-dark border-start border-success p-4" style="min-height: 600px;">
-                <!-- Trade Form -->
-                <form method="POST" action="{{ url_for('place_trade') }}" id="trade-form">
-                    {{ form.hidden_tag() }}
-                    <input type="hidden" name="is_demo" value="true">
-                    
-                    <!-- Asset Selection -->
-                    <div class="mb-3">
-                        {{ form.asset.label(class="form-label text-light") }}
-                        {{ form.asset(class="form-select bg-secondary text-light border-success", id="trade-asset") }}
-                    </div>
-                    
-                    <!-- Direction Selection -->
-                    <div class="mb-3">
-                        {{ form.trade_type.label(class="form-label text-light") }}
-                        <div class="btn-group w-100" role="group">
-                            <input type="radio" class="btn-check" name="trade_type" id="call-btn" value="call" checked>
-                            <label class="btn btn-outline-success" for="call-btn">
-                                <i class="fas fa-arrow-up me-1"></i>CALL (Higher)
-                            </label>
-                            <input type="radio" class="btn-check" name="trade_type" id="put-btn" value="put">
-                            <label class="btn btn-outline-danger" for="put-btn">
-                                <i class="fas fa-arrow-down me-1"></i>PUT (Lower)
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <!-- Amount Input -->
-                    <div class="mb-3">
-                        {{ form.amount.label(class="form-label text-light") }}
-                        <div class="input-group">
-                            <span class="input-group-text bg-secondary border-success text-light">$</span>
-                            {{ form.amount(class="form-control bg-secondary border-success text-light", id="trade-amount", min="1", max="1000", value="10") }}
-                        </div>
-                        <div class="quick-amounts mt-2">
-                            <button type="button" class="btn btn-sm btn-outline-secondary me-1" onclick="setAmount(10)">$10</button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary me-1" onclick="setAmount(25)">$25</button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary me-1" onclick="setAmount(50)">$50</button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setAmount(100)">$100</button>
-                        </div>
-                    </div>
-                    
-                    <!-- Expiry Time -->
-                    <div class="mb-3">
-                        {{ form.expiry_minutes.label(class="form-label text-light") }}
-                        {{ form.expiry_minutes(class="form-select bg-secondary text-light border-success") }}
-                    </div>
-                    
-                    <!-- Potential Profit -->
-                    <div class="potential-profit bg-secondary bg-opacity-25 rounded p-3 mb-3">
-                        <div class="d-flex justify-content-between mb-2">
-                            <span class="text-muted">Investment:</span>
-                            <span class="text-light" id="investment-amount">$10.00</span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span class="text-muted">Payout:</span>
-                            <span class="text-success" id="current-payout">
-                                <span id="payout-percentage">85</span>%
-                                <i class="fas fa-sync-alt ms-1" id="payout-loading" style="display: none;"></i>
-                            </span>
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <span class="text-light fw-bold">Potential Profit:</span>
-                            <span class="text-success fw-bold" id="potential-profit">$8.50</span>
-                        </div>
-                        <div class="mt-2">
-                            <small class="text-muted" id="payout-factors">
-                                Live payout based on market conditions
-                            </small>
-                        </div>
-                    </div>
-                    
-                    <!-- Trade Button -->
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-info btn-lg" id="trade-btn">
-                            <i class="fas fa-play me-2"></i>Place Demo Trade
-                        </button>
-                    </div>
-                </form>
-                
-                <!-- Market Status -->
-                <div class="market-status mt-4 p-3 bg-success bg-opacity-25 rounded">
-                    <div class="d-flex align-items-center">
-                        <i class="fas fa-circle text-success me-2" style="font-size: 8px;"></i>
-                        <span class="text-light">Markets Open</span>
-                    </div>
-                    <small class="text-muted">Trading available 24/7</small>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Active Trades Section -->
-    <div class="active-trades bg-dark border-top border-success p-3">
-        <div class="container-fluid">
-            <h6 class="text-light mb-3">
-                <i class="fas fa-clock me-2"></i>Active Trades
-            </h6>
-            <div id="active-trades-list">
-                <div class="text-center text-muted py-3">
-                    <i class="fas fa-info-circle me-2"></i>No active trades. Place a trade to see it here.
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
 
-{% block scripts %}
-<script src="{{ url_for('static', filename='js/trading.js') }}"></script>
-<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
 <script>
-// Demo Trading Specific Scripts
+// Initialize professional trading interface for demo mode
 document.addEventListener('DOMContentLoaded', function() {
-    initializeTradingInterface('demo');
+    console.log('Initializing demo trading interface...');
     
-    // Update amount display
-    document.getElementById('trade-amount').addEventListener('input', function() {
-        updatePotentialProfit();
-    });
-    
-    // Sync asset selectors
-    document.getElementById('asset-select').addEventListener('change', function() {
-        document.getElementById('trade-asset').value = this.value;
-        loadAssetChart(this.value);
-    });
-    
-    document.getElementById('trade-asset').addEventListener('change', function() {
-        document.getElementById('asset-select').value = this.value;
-        loadAssetChart(this.value);
-    });
+    if (typeof ProfessionalTradingChart !== 'undefined') {
+        window.tradingChart = new ProfessionalTradingChart('professional-trading-interface', {
+            asset: 'EURUSD',
+            timeframe: '1m',
+            mode: 'demo'
+        });
+        
+        console.log('Demo trading interface initialized successfully');
+    } else {
+        console.error('ProfessionalTradingChart not found');
+        
+        // Fallback: show loading message
+        document.getElementById('professional-trading-interface').innerHTML = `
+            <div style="display: flex; align-items: center; justify-content: center; height: 100vh; background: #1e2328; color: white;">
+                <div style="text-align: center;">
+                    <div style="font-size: 18px; margin-bottom: 10px;">Loading Demo Trading...</div>
+                    <div style="font-size: 14px; color: #848e9c;">Initializing professional interface</div>
+                </div>
+            </div>
+        `;
+    }
 });
-
-function setAmount(amount) {
-    document.getElementById('trade-amount').value = amount;
-    updatePotentialProfit();
-}
-
-function updatePotentialProfit() {
-    const amount = parseFloat(document.getElementById('trade-amount').value) || 0;
-    const payout = 0.85; // 85%
-    const profit = amount * payout;
-    
-    document.getElementById('investment-amount').textContent = '$' + amount.toFixed(2);
-    document.getElementById('potential-profit').textContent = '$' + profit.toFixed(2);
-}
-
-// Initialize
-updatePotentialProfit();
 </script>
 {% endblock %}
