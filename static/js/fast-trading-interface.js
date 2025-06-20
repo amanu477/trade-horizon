@@ -455,30 +455,29 @@ class FastTradingInterface {
     }
     
     getVisibleData() {
+        if (!this.data || this.data.length === 0) return [];
+        
         const totalData = this.data.length;
         let visibleCount = Math.floor(totalData / this.zoomLevel);
+        visibleCount = Math.max(20, Math.min(visibleCount, totalData)); // Show at least 20 candles
         
-        // Ensure minimum and maximum visible candles
-        visibleCount = Math.max(10, Math.min(visibleCount, totalData));
+        // Simple panning logic:
+        // panOffset = 0: show latest data
+        // panOffset > 0: show older data (pan left)
+        // panOffset < 0: show space to the right (pan right)
         
-        // Calculate the viewing window based on pan offset
-        // panOffset of 0 = show latest data (rightmost position)
-        // positive panOffset = pan left (show older data)
-        // negative panOffset = pan right (show space to the right of current data)
+        let startIndex = totalData - visibleCount - this.panOffset;
+        let endIndex = startIndex + visibleCount;
         
-        let endIndex = totalData - this.panOffset;
-        let startIndex = endIndex - visibleCount;
-        
-        // Constrain to valid data range
-        startIndex = Math.max(0, startIndex);
-        endIndex = Math.min(totalData, startIndex + visibleCount);
-        
-        // Ensure we have enough data
-        if (endIndex - startIndex < visibleCount && startIndex > 0) {
-            startIndex = Math.max(0, endIndex - visibleCount);
+        // Keep within bounds
+        if (startIndex < 0) {
+            startIndex = 0;
+            endIndex = Math.min(visibleCount, totalData);
         }
-        
-        console.log(`Visible data: start=${startIndex}, end=${endIndex}, total=${totalData}, offset=${this.panOffset}`);
+        if (endIndex > totalData) {
+            endIndex = totalData;
+            startIndex = Math.max(0, totalData - visibleCount);
+        }
         
         return this.data.slice(startIndex, endIndex);
     }
@@ -646,54 +645,45 @@ class FastTradingInterface {
             this.renderChart();
         });
         
-        // Mouse drag for chart panning - Fixed implementation
+        // Chart dragging system - Completely rewritten
         let isDragging = false;
-        let startX = 0;
+        let lastMouseX = 0;
         
-        const handleMouseDown = (e) => {
+        this.canvas.addEventListener('mousedown', (e) => {
             isDragging = true;
-            startX = e.clientX;
+            lastMouseX = e.clientX;
             this.canvas.style.cursor = 'grabbing';
-            console.log('Mouse down - dragging started');
-        };
+            e.preventDefault();
+        });
         
-        const handleMouseMove = (e) => {
+        document.addEventListener('mousemove', (e) => {
             if (!isDragging) return;
             
-            const deltaX = e.clientX - startX;
-            const sensitivity = 3; // Adjust for responsiveness
+            const deltaX = e.clientX - lastMouseX;
+            const candlesPerPixel = 0.5; // How many candles to move per pixel
+            const candleShift = Math.round(deltaX * candlesPerPixel);
             
-            if (Math.abs(deltaX) > sensitivity) {
-                const panAmount = Math.floor(deltaX / sensitivity);
+            if (Math.abs(candleShift) >= 1) {
+                this.panOffset += candleShift; // Add to move in natural direction
                 
-                // Update pan offset (negative for natural left/right movement)
-                this.panOffset -= panAmount;
-                
-                // Allow panning with proper constraints
+                // Set reasonable bounds for panning
                 const visibleCount = Math.floor(this.data.length / this.zoomLevel);
-                const maxOffset = this.data.length - visibleCount; // Don't pan beyond oldest data
-                const minOffset = -visibleCount; // Allow some space to the right
+                const minOffset = -20; // Allow some space to the right
+                const maxOffset = this.data.length - 10; // Allow panning to oldest data
+                
                 this.panOffset = Math.max(minOffset, Math.min(maxOffset, this.panOffset));
                 
-                console.log(`Panning: offset=${this.panOffset}, delta=${panAmount}`);
-                
-                startX = e.clientX; // Reset start position
+                lastMouseX = e.clientX;
                 this.renderChart();
             }
-        };
+        });
         
-        const handleMouseUp = () => {
+        document.addEventListener('mouseup', () => {
             if (isDragging) {
                 isDragging = false;
                 this.canvas.style.cursor = 'crosshair';
-                console.log('Mouse up - dragging stopped');
             }
-        };
-        
-        // Add event listeners
-        this.canvas.addEventListener('mousedown', handleMouseDown);
-        document.addEventListener('mousemove', handleMouseMove); // Use document for global mouse move
-        document.addEventListener('mouseup', handleMouseUp); // Use document for global mouse up
+        });
         
         // Touch events for mobile
         this.canvas.addEventListener('touchstart', (e) => {
