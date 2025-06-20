@@ -11,7 +11,7 @@
 
 <script>
 // Initialize professional trading interface for demo mode
-document.addEventListener('DOMContentLoaded', function() {
+function initializeDemoTrading() {
     console.log('Initializing demo trading interface...');
     
     if (typeof ProfessionalTradingChart !== 'undefined') {
@@ -20,21 +20,37 @@ document.addEventListener('DOMContentLoaded', function() {
             timeframe: '1m',
             mode: 'demo'
         });
-        
         console.log('Demo trading interface initialized successfully');
-    } else {
-        console.error('ProfessionalTradingChart not found');
-        
-        // Fallback: show loading message
-        document.getElementById('professional-trading-interface').innerHTML = `
-            <div style="display: flex; align-items: center; justify-content: center; height: 100vh; background: #1e2328; color: white;">
-                <div style="text-align: center;">
-                    <div style="font-size: 18px; margin-bottom: 10px;">Loading Demo Trading...</div>
-                    <div style="font-size: 14px; color: #848e9c;">Initializing professional interface</div>
-                </div>
-            </div>
-        `;
-    }
-});
+        return true;
+    } 
+    return false;
+}
+
+// Try to initialize immediately if scripts are loaded
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        // Small delay to ensure all scripts are loaded
+        setTimeout(() => {
+            if (!initializeDemoTrading()) {
+                console.error('ProfessionalTradingChart not available');
+                document.getElementById('professional-trading-interface').innerHTML = `
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100vh; background: #1e2328; color: white;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 18px; margin-bottom: 10px;">Loading Demo Trading...</div>
+                            <div style="font-size: 14px; color: #848e9c;">Initializing professional interface</div>
+                            <div style="margin-top: 20px;">
+                                <button onclick="location.reload()" style="background: #02c076; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
+                                    Reload Page
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }, 100);
+    });
+} else {
+    initializeDemoTrading();
+}
 </script>
 {% endblock %}

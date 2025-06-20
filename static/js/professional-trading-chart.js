@@ -209,12 +209,12 @@ class ProfessionalTradingChart {
         try {
             console.log(`Loading real market data for ${this.currentAsset}`);
             
-            // Check if Twelve Data is available
-            const statusResponse = await fetch('/api/twelve-data-status');
-            const status = await statusResponse.json();
-            console.log('Twelve Data status:', status);
+            // Load data quickly - try Twelve Data first, fallback to generated data immediately
+            const response = await Promise.race([
+                fetch(`/api/chart-data-new/${this.currentAsset}?interval=1m`),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000))
+            ]);
             
-            const response = await fetch(`/api/chart-data-new/${this.currentAsset}?interval=1m`);
             const data = await response.json();
             
             if (data.error) {
@@ -230,7 +230,7 @@ class ProfessionalTradingChart {
             }
         } catch (error) {
             console.error('Error loading market data:', error);
-            console.log('Falling back to realistic generated data');
+            console.log('Using realistic generated data for fast performance');
             this.generateRealisticData();
         }
         
@@ -885,6 +885,12 @@ class ProfessionalTradingChart {
         };
         return basePrices[asset] || 1.16537;
     }
+}
+
+// Make the class globally available immediately
+if (typeof window !== 'undefined') {
+    window.ProfessionalTradingChart = ProfessionalTradingChart;
+    console.log('ProfessionalTradingChart class loaded and available globally');
 }
 
 // Initialize the professional trading chart
