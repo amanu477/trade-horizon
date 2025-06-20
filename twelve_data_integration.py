@@ -11,7 +11,7 @@ import time
 
 class TwelveDataAPI:
     def __init__(self):
-        self.api_key = os.environ.get('TWELVE_DATA_API_KEY')
+        self.api_key = os.environ.get('TWELVE_DATA_API_KEY') or '88e2a5f9f6d84b6a86dd8366660d8247'
         self.base_url = 'https://api.twelvedata.com'
         
         # Symbol mappings for different asset types

@@ -9,6 +9,16 @@ from app import app, db
 from models import User, Wallet, Trade, StakingPosition, Transaction, MarketData
 from forms import LoginForm, RegisterForm, TradeForm, StakingForm, WithdrawForm, DepositForm, AdminUserForm
 from utils import generate_market_price, get_asset_price
+from market_data import market_data
+from payout_manager import payout_manager
+try:
+    from twelve_data_integration import twelve_data_api
+except ImportError:
+    twelve_data_api = None
+import logging
+
+# Configure logging for debugging
+logging.basicConfig(level=logging.DEBUG)
 
 @app.route('/')
 def index():
@@ -139,6 +149,112 @@ def live_trading():
 @app.route('/place_trade', methods=['POST'])
 @login_required
 def place_trade():
+    try:
+        # Handle both form and AJAX requests
+        if request.is_json:
+            data = request.get_json()
+        else:
+            data = request.form
+        
+        # Extract trade data
+        asset = data.get('asset')
+        trade_type = data.get('trade_type')
+        amount = float(data.get('amount', 0))
+        expiry_minutes = int(data.get('expiry_minutes', 1))
+        is_demo = data.get('is_demo', 'true').lower() == 'true'
+        
+        # Validation
+        if not asset or not trade_type or amount <= 0:
+            if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'message': 'Invalid trade parameters'}), 400
+            flash('Invalid trade data', 'error')
+            return redirect(request.referrer or url_for('demo_trading'))
+        
+        # Check balance
+        wallet = current_user.wallet
+        available_balance = wallet.demo_balance if is_demo else wallet.balance
+        
+        if available_balance < amount:
+            message = 'Insufficient balance for this trade'
+            if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'message': message}), 400
+            flash(message, 'error')
+            return redirect(request.referrer or url_for('demo_trading'))
+        
+        # Get current market price
+        try:
+            entry_price = market_data.get_real_price(asset)
+        except:
+            entry_price = get_asset_price(asset)
+        
+        # Calculate expiry time
+        expiry_time = datetime.utcnow() + timedelta(minutes=expiry_minutes)
+        
+        # Get payout percentage
+        try:
+            payout_percentage = payout_manager.get_current_payout(asset, expiry_minutes)
+        except:
+            payout_percentage = 85.0
+        
+        # Create trade
+        trade = Trade(
+            user_id=current_user.id,
+            asset=asset,
+            trade_type=trade_type,
+            amount=amount,
+            entry_price=entry_price,
+            expiry_time=expiry_time,
+            payout_percentage=payout_percentage,
+            is_demo=is_demo
+        )
+        
+        # Deduct amount from balance
+        if is_demo:
+            wallet.demo_balance -= amount
+        else:
+            wallet.balance -= amount
+        
+        # Create transaction record
+        transaction = Transaction(
+            user_id=current_user.id,
+            transaction_type='trade',
+            amount=-amount,
+            description=f'Trade: {asset} {trade_type.upper()} ${amount}'
+        )
+        
+        db.session.add(trade)
+        db.session.add(transaction)
+        db.session.commit()
+        
+        # Return response
+        response_data = {
+            'success': True,
+            'trade_id': trade.id,
+            'entry_price': entry_price,
+            'expiry_time': expiry_time.isoformat(),
+            'payout_percentage': payout_percentage,
+            'message': f'Trade placed successfully! Entry price: ${entry_price:.5f}'
+        }
+        
+        if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify(response_data)
+        
+        flash(response_data['message'], 'success')
+        return redirect(request.referrer or url_for('demo_trading'))
+        
+    except Exception as e:
+        logging.error(f"Error placing trade: {e}")
+        error_message = 'An error occurred while placing the trade'
+        
+        if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'message': error_message}), 500
+        
+        flash(error_message, 'error')
+        return redirect(request.referrer or url_for('demo_trading'))
+
+@app.route('/place_trade_old', methods=['POST'])
+@login_required
+def place_trade_old():
     form = TradeForm()
     if form.validate_on_submit():
         is_demo = request.form.get('is_demo') == 'true'
@@ -441,10 +557,10 @@ def admin_manipulate_trade(trade_id):
     flash(f'Trade {trade_id} {action} successfully', 'success')
     return redirect(url_for('admin_orders'))
 
-# API Routes
+# Legacy API Route (keeping for compatibility)
 @app.route('/api/market_data/<symbol>')
-def api_market_data(symbol):
-    """Get current market price for symbol"""
+def api_market_data_legacy(symbol):
+    """Get current market price for symbol (legacy endpoint)"""
     price = get_asset_price(symbol)
     return jsonify({
         'symbol': symbol,
@@ -452,9 +568,9 @@ def api_market_data(symbol):
         'timestamp': datetime.utcnow().isoformat()
     })
 
-@app.route('/api/chart_data/<symbol>')
-def api_chart_data(symbol):
-    """Generate sample chart data for trading interface"""
+@app.route('/api/chart_data_legacy/<symbol>')
+def api_chart_data_legacy(symbol):
+    """Generate sample chart data for trading interface (legacy)"""
     # Generate sample OHLC data
     base_price = get_asset_price(symbol)
     data = []
@@ -474,11 +590,64 @@ def api_chart_data(symbol):
     
     return jsonify(data)
 
+@app.route('/api/twelve-data-status')
+def api_twelve_data_status():
+    """Check Twelve Data API status and usage"""
+    try:
+        if not twelve_data_api or not twelve_data_api.api_key:
+            return jsonify({
+                'status': 'not_configured',
+                'message': 'Twelve Data API key not set'
+            })
+        
+        usage = twelve_data_api.check_api_usage()
+        is_working = twelve_data_api.is_api_working()
+        
+        return jsonify({
+            'status': 'configured',
+            'working': is_working,
+            'usage': usage,
+            'message': 'Twelve Data API is ready' if is_working else 'API key configured but not responding'
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@app.route('/api/market-data-new/<symbol>')
+def api_market_data_new(symbol):
+    """Get real market data for symbol"""
+    try:
+        market_info = market_data.get_market_info(symbol)
+        return jsonify(market_info)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/chart-data-new/<symbol>')
+def api_chart_data_new(symbol):
+    """Get real chart data for trading interface"""
+    try:
+        period = request.args.get('period', '1d')
+        interval = request.args.get('interval', '5m')
+        
+        chart_data = market_data.get_historical_data(symbol, period, interval)
+        
+        return jsonify({
+            'symbol': symbol,
+            'data': chart_data,
+            'period': period,
+            'interval': interval
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.context_processor
 def inject_global_vars():
     """Inject global variables into all templates"""
     return {
-        'current_year': datetime.utcnow().year
+        'current_year': datetime.utcnow().year,
+        'app_name': 'TradePro'
     }
 
 # Background task to process expired trades

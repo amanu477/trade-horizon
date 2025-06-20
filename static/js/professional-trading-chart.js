@@ -202,7 +202,7 @@ class ProfessionalTradingChart {
             const status = await statusResponse.json();
             console.log('Twelve Data status:', status);
             
-            const response = await fetch(`/api/chart-data/${this.currentAsset}?interval=1m`);
+            const response = await fetch(`/api/chart-data-new/${this.currentAsset}?interval=1m`);
             const data = await response.json();
             
             if (data.error) {
@@ -418,6 +418,7 @@ class ProfessionalTradingChart {
         const assetDropdown = document.getElementById('asset-dropdown');
         assetDropdown.addEventListener('change', (e) => {
             this.currentAsset = e.target.value;
+            console.log(`Switching to asset: ${this.currentAsset}`);
             this.loadRealMarketData();
         });
         
@@ -446,11 +447,15 @@ class ProfessionalTradingChart {
         });
         
         // Trade buttons
-        document.getElementById('buy-btn').addEventListener('click', () => {
+        document.getElementById('buy-btn').addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('Buy button clicked');
             this.placeTrade('buy');
         });
         
-        document.getElementById('sell-btn').addEventListener('click', () => {
+        document.getElementById('sell-btn').addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('Sell button clicked');
             this.placeTrade('sell');
         });
         
@@ -479,9 +484,18 @@ class ProfessionalTradingChart {
     }
     
     placeTrade(type) {
-        const amount = parseFloat(document.getElementById('trade-amount').value);
+        console.log(`Placing ${type} trade`);
+        
+        const amountInput = document.getElementById('trade-amount');
+        const amount = parseFloat(amountInput.value);
+        
         if (!amount || amount < 1) {
-            alert('Please enter a valid amount');
+            this.showTradeError('Please enter a valid amount (minimum $1)');
+            return;
+        }
+        
+        if (!this.data || this.data.length === 0) {
+            this.showTradeError('Market data not available. Please wait...');
             return;
         }
         
@@ -499,6 +513,9 @@ class ProfessionalTradingChart {
             payout: this.getCurrentPayout()
         };
         
+        console.log('Trade details:', trade);
+        
+        // Add to local trades list
         this.trades.push(trade);
         this.displayActiveTrades();
         
@@ -507,27 +524,65 @@ class ProfessionalTradingChart {
         
         // Start countdown
         this.startTradeCountdown(trade);
+        
+        // Disable buttons temporarily to prevent double-clicking
+        this.disableTradeButtons(2000);
+    }
+    
+    disableTradeButtons(duration) {
+        const buyBtn = document.getElementById('buy-btn');
+        const sellBtn = document.getElementById('sell-btn');
+        
+        buyBtn.disabled = true;
+        sellBtn.disabled = true;
+        buyBtn.style.opacity = '0.6';
+        sellBtn.style.opacity = '0.6';
+        
+        setTimeout(() => {
+            buyBtn.disabled = false;
+            sellBtn.disabled = false;
+            buyBtn.style.opacity = '1';
+            sellBtn.style.opacity = '1';
+        }, duration);
     }
     
     async submitTradeToBackend(trade) {
         try {
+            // Get CSRF token
+            const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || 
+                             document.querySelector('meta[name="csrf-token"]')?.content;
+            
             const formData = new FormData();
             formData.append('asset', trade.asset);
             formData.append('trade_type', trade.type === 'buy' ? 'call' : 'put');
             formData.append('amount', trade.amount);
             formData.append('expiry_minutes', '1');
-            formData.append('is_demo', 'true');
+            formData.append('is_demo', window.location.pathname.includes('demo') ? 'true' : 'false');
+            
+            if (csrfToken) {
+                formData.append('csrf_token', csrfToken);
+            }
             
             const response = await fetch('/place_trade', {
                 method: 'POST',
-                body: formData
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
             });
             
-            if (response.ok) {
-                console.log('Trade submitted successfully');
+            const result = await response.json();
+            
+            if (response.ok && result.success) {
+                console.log('Trade submitted successfully:', result);
+                this.showTradeConfirmation(result);
+            } else {
+                console.error('Trade submission failed:', result);
+                this.showTradeError(result.message || 'Trade failed');
             }
         } catch (error) {
             console.error('Error submitting trade:', error);
+            this.showTradeError('Network error occurred');
         }
     }
     
@@ -593,6 +648,52 @@ class ProfessionalTradingChart {
         this.displayActiveTrades();
     }
     
+    showTradeConfirmation(result) {
+        // Show success notification in the interface
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #02c076;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 6px;
+            z-index: 10000;
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        `;
+        notification.textContent = `Trade placed successfully! ID: ${result.trade_id || 'N/A'}`;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+    
+    showTradeError(message) {
+        // Show error notification in the interface
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #f6465d;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 6px;
+            z-index: 10000;
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        `;
+        notification.textContent = `Trade Error: ${message}`;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.remove();
+        }, 5000);
+    }
+    
     showTradesTab(tab) {
         // Implementation for showing different trade tabs
         if (tab === 'opened') {
@@ -600,8 +701,38 @@ class ProfessionalTradingChart {
         } else {
             // Show closed trades
             const closedTrades = this.trades.filter(t => t.status !== 'active');
-            // Implement closed trades display
+            this.displayClosedTrades(closedTrades);
         }
+    }
+    
+    displayClosedTrades(closedTrades) {
+        const activeTradesContainer = document.querySelector('.active-trades');
+        
+        if (closedTrades.length === 0) {
+            activeTradesContainer.innerHTML = `
+                <div class="no-trades" style="text-align: center; color: #848e9c; margin-top: 40px;">
+                    <div style="font-size: 14px; margin-bottom: 8px;">No closed trades</div>
+                </div>
+            `;
+            return;
+        }
+        
+        activeTradesContainer.innerHTML = closedTrades.map(trade => `
+            <div class="trade-item" style="background: #2b3139; border-radius: 6px; padding: 12px; margin-bottom: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <div style="color: #f1f1f1; font-weight: 600;">${trade.asset}</div>
+                    <div style="color: ${trade.status === 'won' ? '#02c076' : '#f6465d'}; font-size: 12px;">
+                        ${trade.status.toUpperCase()}
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; color: #848e9c;">
+                    <div>$${trade.amount}</div>
+                    <div style="color: ${trade.profit > 0 ? '#02c076' : '#f6465d'};">
+                        ${trade.profit > 0 ? '+' : ''}$${trade.profit.toFixed(2)}
+                    </div>
+                </div>
+            </div>
+        `).join('');
     }
     
     startRealTimeUpdates() {
@@ -618,7 +749,7 @@ class ProfessionalTradingChart {
     
     async addNewDataPoint() {
         try {
-            const response = await fetch(`/api/market-data/${this.currentAsset}`);
+            const response = await fetch(`/api/market-data-new/${this.currentAsset}`);
             const data = await response.json();
             
             if (data.price) {
