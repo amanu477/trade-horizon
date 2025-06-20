@@ -8,4 +8,33 @@
 <div id="professional-trading-interface" style="height: 100vh; overflow: hidden;">
     <!-- Professional trading interface will be rendered here -->
 </div>
+
+<script>
+// Initialize professional trading interface for live mode
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Initializing live trading interface...');
+    
+    if (typeof ProfessionalTradingChart !== 'undefined') {
+        window.tradingChart = new ProfessionalTradingChart('professional-trading-interface', {
+            asset: 'EURUSD',
+            timeframe: '1m',
+            mode: 'live'
+        });
+        
+        console.log('Live trading interface initialized successfully');
+    } else {
+        console.error('ProfessionalTradingChart not found');
+        
+        // Fallback: show loading message
+        document.getElementById('professional-trading-interface').innerHTML = `
+            <div style="display: flex; align-items: center; justify-content: center; height: 100vh; background: #1e2328; color: white;">
+                <div style="text-align: center;">
+                    <div style="font-size: 18px; margin-bottom: 10px;">Loading Live Trading...</div>
+                    <div style="font-size: 14px; color: #848e9c;">Initializing professional interface</div>
+                </div>
+            </div>
+        `;
+    }
+});
+</script>
 {% endblock %}

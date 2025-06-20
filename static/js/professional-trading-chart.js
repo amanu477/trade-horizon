@@ -4,9 +4,15 @@
 class ProfessionalTradingChart {
     constructor(containerId, options = {}) {
         this.container = document.getElementById(containerId);
+        if (!this.container) {
+            console.error(`Container with id '${containerId}' not found`);
+            return;
+        }
+        
         this.currentAsset = options.asset || 'EURUSD';
         this.chartType = 'candlestick';
         this.timeframe = '1m';
+        this.mode = options.mode || 'demo'; // demo or live
         this.data = [];
         this.trades = [];
         this.chart = null;
@@ -15,9 +21,13 @@ class ProfessionalTradingChart {
     }
     
     init() {
+        if (!this.container) return;
+        
+        console.log(`Initializing ${this.mode} trading interface for ${this.currentAsset}`);
         this.createInterface();
         this.loadRealMarketData();
         this.setupEventListeners();
+        this.loadUserBalance();
         this.startRealTimeUpdates();
     }
     
@@ -416,11 +426,13 @@ class ProfessionalTradingChart {
     setupEventListeners() {
         // Asset selector
         const assetDropdown = document.getElementById('asset-dropdown');
-        assetDropdown.addEventListener('change', (e) => {
-            this.currentAsset = e.target.value;
-            console.log(`Switching to asset: ${this.currentAsset}`);
-            this.loadRealMarketData();
-        });
+        if (assetDropdown) {
+            assetDropdown.addEventListener('change', (e) => {
+                this.currentAsset = e.target.value;
+                console.log(`Switching to asset: ${this.currentAsset}`);
+                this.loadRealMarketData();
+            });
+        }
         
         // Chart type buttons
         document.querySelectorAll('.tool-btn[data-type]').forEach(btn => {
@@ -442,22 +454,31 @@ class ProfessionalTradingChart {
         
         // Trade amount input
         const amountInput = document.getElementById('trade-amount');
-        amountInput.addEventListener('input', () => {
-            this.updatePayoutDisplay();
-        });
+        if (amountInput) {
+            amountInput.addEventListener('input', () => {
+                this.updatePayoutDisplay();
+            });
+        }
         
         // Trade buttons
-        document.getElementById('buy-btn').addEventListener('click', (e) => {
-            e.preventDefault();
-            console.log('Buy button clicked');
-            this.placeTrade('buy');
-        });
+        const buyBtn = document.getElementById('buy-btn');
+        const sellBtn = document.getElementById('sell-btn');
         
-        document.getElementById('sell-btn').addEventListener('click', (e) => {
-            e.preventDefault();
-            console.log('Sell button clicked');
-            this.placeTrade('sell');
-        });
+        if (buyBtn) {
+            buyBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('Buy button clicked');
+                this.placeTrade('buy');
+            });
+        }
+        
+        if (sellBtn) {
+            sellBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('Sell button clicked');
+                this.placeTrade('sell');
+            });
+        }
         
         // Tab switching
         document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -533,17 +554,32 @@ class ProfessionalTradingChart {
         const buyBtn = document.getElementById('buy-btn');
         const sellBtn = document.getElementById('sell-btn');
         
-        buyBtn.disabled = true;
-        sellBtn.disabled = true;
-        buyBtn.style.opacity = '0.6';
-        sellBtn.style.opacity = '0.6';
-        
-        setTimeout(() => {
-            buyBtn.disabled = false;
-            sellBtn.disabled = false;
-            buyBtn.style.opacity = '1';
-            sellBtn.style.opacity = '1';
-        }, duration);
+        if (buyBtn && sellBtn) {
+            buyBtn.disabled = true;
+            sellBtn.disabled = true;
+            buyBtn.style.opacity = '0.6';
+            sellBtn.style.opacity = '0.6';
+            
+            setTimeout(() => {
+                buyBtn.disabled = false;
+                sellBtn.disabled = false;
+                buyBtn.style.opacity = '1';
+                sellBtn.style.opacity = '1';
+            }, duration);
+        }
+    }
+    
+    async loadUserBalance() {
+        try {
+            // Get user balance for the current mode
+            const balanceDisplay = document.getElementById('balance-display');
+            if (balanceDisplay) {
+                // This would typically fetch from the server
+                balanceDisplay.textContent = this.mode === 'demo' ? '$10,000.00' : '$1,000.00';
+            }
+        } catch (error) {
+            console.error('Error loading balance:', error);
+        }
     }
     
     async submitTradeToBackend(trade) {
@@ -557,7 +593,7 @@ class ProfessionalTradingChart {
             formData.append('trade_type', trade.type === 'buy' ? 'call' : 'put');
             formData.append('amount', trade.amount);
             formData.append('expiry_minutes', '1');
-            formData.append('is_demo', window.location.pathname.includes('demo') ? 'true' : 'false');
+            formData.append('is_demo', this.mode === 'demo' ? 'true' : 'false');
             
             if (csrfToken) {
                 formData.append('csrf_token', csrfToken);
