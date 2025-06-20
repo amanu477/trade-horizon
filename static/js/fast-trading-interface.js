@@ -286,13 +286,19 @@ class FastTradingInterface {
     }
     
     startRealTimeDataFeed() {
-        // Update with real market data every 5 seconds
+        // Store the current live price separately from candle data
+        this.livePrice = null;
+        
+        // Update with real market data every 2 seconds for more responsive updates
         setInterval(async () => {
             try {
                 const response = await fetch(`/api/market-data-new/${this.currentAsset}`);
                 const marketInfo = await response.json();
                 
                 if (marketInfo.price) {
+                    // Store live price for immediate display
+                    this.livePrice = marketInfo.price;
+                    
                     const currentTime = new Date();
                     const lastCandle = this.data[this.data.length - 1];
                     
@@ -316,7 +322,7 @@ class FastTradingInterface {
                             this.data.shift();
                         }
                     } else {
-                        // Update current candle
+                        // Update current candle with live price
                         lastCandle.close = marketInfo.price;
                         lastCandle.high = Math.max(lastCandle.high, marketInfo.price);
                         lastCandle.low = Math.min(lastCandle.low, marketInfo.price);
@@ -327,7 +333,26 @@ class FastTradingInterface {
             } catch (error) {
                 console.error('Error updating real-time data:', error);
             }
-        }, 5000);
+        }, 2000);
+        
+        // Add faster visual updates for smoother live price movement
+        setInterval(() => {
+            if (this.livePrice && this.data.length > 0) {
+                // Simulate small price movements between real updates
+                const lastPrice = this.livePrice;
+                const volatility = this.getAssetVolatility(this.currentAsset);
+                const variation = (Math.random() - 0.5) * lastPrice * volatility * 0.1;
+                this.livePrice = lastPrice + variation;
+                
+                // Update the current candle with simulated live movement
+                const lastCandle = this.data[this.data.length - 1];
+                lastCandle.close = this.livePrice;
+                lastCandle.high = Math.max(lastCandle.high, this.livePrice);
+                lastCandle.low = Math.min(lastCandle.low, this.livePrice);
+                
+                this.updatePriceDisplay(this.livePrice);
+            }
+        }, 500); // Update every 500ms for smooth movement
     }
     
     getDataPointsForTimeframe() {
@@ -520,7 +545,8 @@ class FastTradingInterface {
     drawCurrentPriceLine(minPrice, maxPrice, priceRange, height) {
         if (!this.data.length) return;
         
-        const currentPrice = this.data[this.data.length - 1].close;
+        // Use live price if available, otherwise use last candle close
+        const currentPrice = this.livePrice || this.data[this.data.length - 1].close;
         const priceY = height - ((currentPrice - minPrice) / priceRange) * height;
         
         // Draw current price line
@@ -1020,13 +1046,13 @@ class FastTradingInterface {
             document.getElementById('timer').textContent = `00:00:${nextMinute.toString().padStart(2, '0')}`;
         }, 1000);
         
-        // Update trade timers (real price updates are handled in startRealTimeDataFeed)
+        // Update trade timers and chart rendering
         setInterval(() => {
             if (this.data.length > 0) {
                 this.updateTradesList(); // Update countdown timers
-                this.renderChart();
+                this.renderChart(); // Render chart to show live price line updates
             }
-        }, 1000);
+        }, 250); // More frequent updates for smoother live price display
     }
     
     getBasePrice(asset) {
@@ -1100,7 +1126,7 @@ class FastTradingInterface {
             
             // Highlight current price
             if (this.data.length > 0) {
-                const currentPrice = this.data[this.data.length - 1].close;
+                const currentPrice = this.livePrice || this.data[this.data.length - 1].close;
                 if (Math.abs(price - currentPrice) < priceRange * 0.1) {
                     priceLabel.style.cssText += `
                         background: #fcd535;
