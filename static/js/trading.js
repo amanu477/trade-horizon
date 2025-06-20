@@ -147,6 +147,18 @@ class TradingInterface {
             tradeBtn.innerHTML = '<span class="loading-spinner me-2"></span>Processing...';
         }
         
+        // Add trade marker to chart if available
+        if (window.pocketChart) {
+            const form = e.target;
+            const formData = new FormData(form);
+            const tradeType = formData.get('trade_type');
+            const currentPrice = parseFloat(document.getElementById('chart-current-price')?.textContent || '0');
+            
+            if (currentPrice > 0) {
+                window.pocketChart.addTradeMarker(currentPrice, tradeType);
+            }
+        }
+        
         // Form will submit normally, this just provides visual feedback
         setTimeout(() => {
             if (tradeBtn) {

@@ -32,26 +32,26 @@ function updatePotentialProfit() {
 
 // Load asset chart (called from template)
 function loadAssetChart(asset) {
-    if (advancedChart) {
-        advancedChart.updateAsset(asset);
+    if (pocketChart) {
+        pocketChart.changeAsset(asset);
     } else if (window.tradingInterface) {
         window.tradingInterface.currentAsset = asset;
         window.tradingInterface.updateChart();
     }
 }
 
-// Advanced chart instance
-let advancedChart = null;
+// Professional chart instance
+let pocketChart = null;
 
 // Initialize trading interface when page loads
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize advanced chart if on trading page
-    const chartCanvas = document.getElementById('trading-chart');
-    if (chartCanvas && typeof AdvancedTradingChart !== 'undefined') {
-        advancedChart = new AdvancedTradingChart('trading-chart', {
+    // Initialize Pocket Option style chart if on trading page
+    const chartContainer = document.getElementById('pocket-chart-container');
+    if (chartContainer && typeof PocketOptionChart !== 'undefined') {
+        pocketChart = new PocketOptionChart('pocket-chart-container', {
             asset: 'EURUSD',
-            type: 'line',
-            timeframe: '5m'
+            type: 'candlestick',
+            timeframe: '1m'
         });
     }
     
@@ -125,22 +125,22 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Setup asset selector synchronization
-    document.querySelectorAll('#asset-select, #trade-asset').forEach(select => {
+    document.querySelectorAll('#asset-select, #trade-asset, #chart-asset-selector').forEach(select => {
         select.addEventListener('change', function() {
             const newAsset = this.value;
             
             // Sync all asset selectors
-            document.querySelectorAll('#asset-select, #trade-asset').forEach(otherSelect => {
+            document.querySelectorAll('#asset-select, #trade-asset, #chart-asset-selector').forEach(otherSelect => {
                 if (otherSelect !== this) {
                     otherSelect.value = newAsset;
                 }
             });
             
-            // Update price display with real data
-            updateRealTimePrice(newAsset);
-            
             // Update chart
             loadAssetChart(newAsset);
+            
+            // Update price display with real data
+            updateRealTimePrice(newAsset);
             
             // Update payout
             if (window.setupPayoutUpdates) {
@@ -229,25 +229,9 @@ function startPriceUpdates() {
 // Start price updates when page loads
 // Setup chart controls
 function setupChartControls() {
-    // Chart type switcher
-    document.querySelectorAll('input[name="chart-type"]').forEach(input => {
-        input.addEventListener('change', function() {
-            if (advancedChart) {
-                advancedChart.switchChartType(this.value);
-            }
-        });
-    });
-    
-    // Timeframe selector
-    const timeframeSelect = document.getElementById('chart-timeframe');
-    if (timeframeSelect) {
-        timeframeSelect.addEventListener('change', function() {
-            if (advancedChart) {
-                advancedChart.timeframe = this.value;
-                advancedChart.loadRealMarketData();
-            }
-        });
-    }
+    // Chart controls are now handled within PocketOptionChart class
+    // This function is kept for compatibility
+    console.log('Chart controls initialized via PocketOptionChart');
 }
 
 // Setup real-time payout updates

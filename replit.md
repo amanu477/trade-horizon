@@ -127,6 +127,9 @@ TradePro is a Flask-based binary options trading platform that provides both dem
 - Secure session management
 
 ## Changelog
+- June 20, 2025: Implemented Pocket Option-style professional trading chart with advanced features
+- June 20, 2025: Added real-time payout calculation system based on market volatility
+- June 20, 2025: Created comprehensive trade tracking with live price feeds
 - June 20, 2025: Integrated real market data from Yahoo Finance for forex, crypto, commodities and stocks
 - June 20, 2025: Added real-time trade tracking system with live price updates
 - June 20, 2025: Fixed chart data to use actual market data instead of simulated data
