@@ -115,21 +115,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
             
-            // Update price display
-            const priceDisplay = document.getElementById('current-price');
-            if (priceDisplay) {
-                const basePrice = getAssetBasePrice(newAsset);
-                const variation = (Math.random() - 0.5) * basePrice * 0.001;
-                const currentPrice = basePrice + variation;
-                const change = variation > 0 ? '+' : '';
-                
-                priceDisplay.innerHTML = `
-                    <div class="fs-4 fw-bold text-light">${currentPrice.toFixed(5)}</div>
-                    <div class="small ${variation > 0 ? 'text-success' : 'text-danger'}">
-                        ${change}${(variation / basePrice * 100).toFixed(2)}%
-                    </div>
-                `;
-            }
+            // Update price display with real data
+            updateRealTimePrice(newAsset);
             
             // Update chart
             loadAssetChart(newAsset);
@@ -151,27 +138,63 @@ function getAssetBasePrice(asset) {
     return basePrices[asset] || 1.00000;
 }
 
+// Update price display with real market data
+async function updateRealTimePrice(asset) {
+    try {
+        const response = await fetch(`/api/market-data/${asset}`);
+        const data = await response.json();
+        
+        if (data.price) {
+            const priceDisplay = document.getElementById('current-price');
+            if (priceDisplay) {
+                const changeSign = data.change >= 0 ? '+' : '';
+                const changeClass = data.change >= 0 ? 'text-success' : 'text-danger';
+                
+                priceDisplay.innerHTML = `
+                    <div class="fs-4 fw-bold text-light">${data.price.toFixed(5)}</div>
+                    <div class="small ${changeClass}">
+                        ${changeSign}${data.change.toFixed(5)} (${changeSign}${data.change_percent.toFixed(2)}%)
+                    </div>
+                `;
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching real-time price:', error);
+        // Fallback to simulated price
+        updateFallbackPrice(asset);
+    }
+}
+
+function updateFallbackPrice(asset) {
+    const priceDisplay = document.getElementById('current-price');
+    if (priceDisplay) {
+        const basePrice = getAssetBasePrice(asset);
+        const variation = (Math.random() - 0.5) * basePrice * 0.001;
+        const currentPrice = basePrice + variation;
+        const change = variation > 0 ? '+' : '';
+        
+        priceDisplay.innerHTML = `
+            <div class="fs-4 fw-bold text-light">${currentPrice.toFixed(5)}</div>
+            <div class="small ${variation > 0 ? 'text-success' : 'text-danger'}">
+                ${change}${(variation / basePrice * 100).toFixed(2)}%
+            </div>
+        `;
+    }
+}
+
 // Start price updates for current asset
 function startPriceUpdates() {
+    const assetSelect = document.getElementById('asset-select');
+    const currentAsset = assetSelect ? assetSelect.value : 'EURUSD';
+    
+    // Update immediately
+    updateRealTimePrice(currentAsset);
+    
+    // Then update every 5 seconds
     setInterval(() => {
-        const assetSelect = document.getElementById('asset-select');
         const currentAsset = assetSelect ? assetSelect.value : 'EURUSD';
-        
-        const priceDisplay = document.getElementById('current-price');
-        if (priceDisplay) {
-            const basePrice = getAssetBasePrice(currentAsset);
-            const variation = (Math.random() - 0.5) * basePrice * 0.001;
-            const currentPrice = basePrice + variation;
-            const change = variation > 0 ? '+' : '';
-            
-            priceDisplay.innerHTML = `
-                <div class="fs-4 fw-bold text-light">${currentPrice.toFixed(5)}</div>
-                <div class="small ${variation > 0 ? 'text-success' : 'text-danger'}">
-                    ${change}${(variation / basePrice * 100).toFixed(2)}%
-                </div>
-            `;
-        }
-    }, 2000);
+        updateRealTimePrice(currentAsset);
+    }, 5000);
 }
 
 // Start price updates when page loads

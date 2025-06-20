@@ -1,0 +1,162 @@
+<!-- Active Trades Section -->
+<div class="active-trades-section bg-dark p-4 rounded">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="text-light mb-0">
+            <i class="fas fa-chart-line text-success me-2"></i>Active Trades
+        </h5>
+        <span class="badge bg-info">{{ active_trades|length }} Active</span>
+    </div>
+    
+    {% if active_trades %}
+        <div class="table-responsive">
+            <table class="table table-dark table-hover">
+                <thead>
+                    <tr>
+                        <th>Asset</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                        <th>Entry Price</th>
+                        <th>Current Price</th>
+                        <th>Status</th>
+                        <th>Time Left</th>
+                        <th>P&L</th>
+                    </tr>
+                </thead>
+                <tbody id="active-trades-table">
+                    {% for trade in active_trades %}
+                    <tr data-trade-id="{{ trade.id }}" class="trade-row">
+                        <td>
+                            <strong class="text-info">{{ trade.asset }}</strong>
+                        </td>
+                        <td>
+                            <span class="badge {{ 'bg-success' if trade.trade_type == 'call' else 'bg-danger' }}">
+                                <i class="fas {{ 'fa-arrow-up' if trade.trade_type == 'call' else 'fa-arrow-down' }} me-1"></i>
+                                {{ trade.trade_type.upper() }}
+                            </span>
+                        </td>
+                        <td class="text-light fw-bold">${{ "%.2f"|format(trade.amount) }}</td>
+                        <td class="text-muted">{{ "%.5f"|format(trade.entry_price) }}</td>
+                        <td class="current-price text-warning" data-asset="{{ trade.asset }}">
+                            <span class="loading-text">Loading...</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-warning text-dark">
+                                <i class="fas fa-clock me-1"></i>Active
+                            </span>
+                        </td>
+                        <td class="time-remaining text-info" data-expiry="{{ trade.expiry_time.isoformat() }}">
+                            <span class="countdown">Calculating...</span>
+                        </td>
+                        <td class="pnl-display">
+                            <span class="text-muted">Pending</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Auto-refresh notice -->
+        <div class="text-center mt-3">
+            <small class="text-muted">
+                <i class="fas fa-sync-alt me-1"></i>
+                Prices update every 5 seconds • Trades auto-close at expiry
+            </small>
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-chart-line text-muted mb-3" style="font-size: 3rem;"></i>
+            <h6 class="text-muted">No Active Trades</h6>
+            <p class="text-muted">Your active trades will appear here</p>
+            <a href="{{ url_for('demo_trading') }}" class="btn btn-info btn-sm">
+                <i class="fas fa-play me-1"></i>Start Demo Trading
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+// Real-time updates for active trades
+let activeTradesInterval;
+
+function initActiveTradesUpdates() {
+    if (activeTradesInterval) {
+        clearInterval(activeTradesInterval);
+    }
+    
+    // Update immediately
+    updateActiveTrades();
+    
+    // Then update every 5 seconds
+    activeTradesInterval = setInterval(updateActiveTrades, 5000);
+}
+
+async function updateActiveTrades() {
+    const tradeRows = document.querySelectorAll('.trade-row');
+    
+    for (const row of tradeRows) {
+        const tradeId = row.dataset.tradeId;
+        const asset = row.querySelector('.current-price').dataset.asset;
+        const expiryTime = row.querySelector('.time-remaining').dataset.expiry;
+        
+        try {
+            // Get current price
+            const priceResponse = await fetch(`/api/market-data/${asset}`);
+            const priceData = await priceResponse.json();
+            
+            if (priceData.price) {
+                const currentPriceEl = row.querySelector('.current-price');
+                const previousPrice = parseFloat(currentPriceEl.textContent) || 0;
+                const newPrice = priceData.price;
+                
+                // Update price with color indication
+                currentPriceEl.innerHTML = `
+                    <span class="${newPrice > previousPrice ? 'text-success' : newPrice < previousPrice ? 'text-danger' : 'text-warning'}">
+                        ${newPrice.toFixed(5)}
+                        ${newPrice > previousPrice ? '<i class="fas fa-arrow-up ms-1"></i>' : 
+                          newPrice < previousPrice ? '<i class="fas fa-arrow-down ms-1"></i>' : ''}
+                    </span>
+                `;
+            }
+            
+            // Update countdown
+            updateCountdown(row.querySelector('.countdown'), expiryTime);
+            
+        } catch (error) {
+            console.error('Error updating trade data:', error);
+        }
+    }
+}
+
+function updateCountdown(element, expiryTime) {
+    const now = new Date();
+    const expiry = new Date(expiryTime);
+    const diff = expiry - now;
+    
+    if (diff <= 0) {
+        element.innerHTML = '<span class="text-danger">Expired</span>';
+        // Reload page to show updated trades
+        setTimeout(() => window.location.reload(), 2000);
+        return;
+    }
+    
+    const minutes = Math.floor(diff / 60000);
+    const seconds = Math.floor((diff % 60000) / 1000);
+    
+    element.innerHTML = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
+// Start updates when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.querySelector('.trade-row')) {
+        initActiveTradesUpdates();
+    }
+});
+
+// Clean up on page unload
+window.addEventListener('beforeunload', function() {
+    if (activeTradesInterval) {
+        clearInterval(activeTradesInterval);
+    }
+});
+</script>

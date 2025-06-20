@@ -146,7 +146,7 @@ class TradingChart {
             }
             
             // Generate initial data
-            this.generateInitialData();
+            await this.generateInitialData();
             
             this.chart = new Chart(this.ctx, {
                 type: 'line',
