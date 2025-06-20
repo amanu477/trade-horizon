@@ -1,3 +1,8 @@
+"""
+Real-world market data integration using Twelve Data API
+Provides professional-grade financial data for trading platform
+"""
+
 import requests
 import yfinance as yf
 import pandas as pd
@@ -5,6 +10,14 @@ import json
 from datetime import datetime, timedelta
 import random
 import time
+import os
+
+# Import Twelve Data integration
+try:
+    from twelve_data_integration import twelve_data_api
+    TWELVE_DATA_AVAILABLE = True
+except ImportError:
+    TWELVE_DATA_AVAILABLE = False
 
 class RealMarketData:
     def __init__(self):
@@ -37,9 +50,18 @@ class RealMarketData:
         }
 
     def get_real_price(self, symbol):
-        """Get real-time price from Yahoo Finance"""
+        """Get real-time price from Twelve Data API or Yahoo Finance fallback"""
         try:
-            # Map our symbols to Yahoo Finance symbols
+            # Try Twelve Data first if available and configured
+            if TWELVE_DATA_AVAILABLE and os.environ.get('TWELVE_DATA_API_KEY'):
+                try:
+                    price = twelve_data_api.get_real_time_price(symbol)
+                    if price and price > 0:
+                        return price
+                except Exception as e:
+                    print(f"Twelve Data error for {symbol}: {e}")
+            
+            # Fallback to Yahoo Finance
             yf_symbol = self._get_yf_symbol(symbol)
             if not yf_symbol:
                 return self._get_fallback_price(symbol)
@@ -63,6 +85,22 @@ class RealMarketData:
         """Get historical data for charts"""
         try:
             print(f"Attempting to fetch historical data for {symbol}")
+            
+            # Try Twelve Data first if available and configured
+            if TWELVE_DATA_AVAILABLE and os.environ.get('TWELVE_DATA_API_KEY'):
+                try:
+                    # Map interval format for Twelve Data
+                    twelve_interval = self._map_interval_to_twelve_data(interval)
+                    print(f"Using Twelve Data with interval: {twelve_interval}")
+                    
+                    chart_data = twelve_data_api.get_time_series(symbol, twelve_interval, 100)
+                    if chart_data and len(chart_data) > 0:
+                        print(f"Retrieved {len(chart_data)} data points from Twelve Data")
+                        return chart_data[-50:]  # Return last 50 points
+                except Exception as e:
+                    print(f"Twelve Data historical error for {symbol}: {e}")
+            
+            # Fallback to Yahoo Finance
             yf_symbol = self._get_yf_symbol(symbol)
             if not yf_symbol:
                 print(f"No Yahoo Finance symbol found for {symbol}, using fallback")
@@ -110,10 +148,33 @@ class RealMarketData:
             import traceback
             traceback.print_exc()
             return self._generate_fallback_data(symbol)
+    
+    def _map_interval_to_twelve_data(self, interval):
+        """Map our interval format to Twelve Data format"""
+        mapping = {
+            '1m': '1min',
+            '5m': '5min',
+            '15m': '15min',
+            '30m': '30min',
+            '1h': '1h',
+            '4h': '4h',
+            '1d': '1day'
+        }
+        return mapping.get(interval, '1min')
 
     def get_market_info(self, symbol):
         """Get comprehensive market information"""
         try:
+            # Try Twelve Data first if available and configured
+            if TWELVE_DATA_AVAILABLE and os.environ.get('TWELVE_DATA_API_KEY'):
+                try:
+                    quote_data = twelve_data_api.get_real_time_quote(symbol)
+                    if quote_data and quote_data.get('price', 0) > 0:
+                        return quote_data
+                except Exception as e:
+                    print(f"Twelve Data quote error for {symbol}: {e}")
+            
+            # Fallback to Yahoo Finance
             yf_symbol = self._get_yf_symbol(symbol)
             if not yf_symbol:
                 return self._get_fallback_info(symbol)
@@ -130,6 +191,10 @@ class RealMarketData:
             return {
                 'symbol': symbol,
                 'price': float(current_price) if current_price else 0,
+                'open': float(info.get('regularMarketOpen', current_price)) if current_price else 0,
+                'high': float(info.get('dayHigh', current_price)) if current_price else 0,
+                'low': float(info.get('dayLow', current_price)) if current_price else 0,
+                'close': float(current_price) if current_price else 0,
                 'change': float(change),
                 'change_percent': float(change_percent),
                 'volume': info.get('volume', 0),

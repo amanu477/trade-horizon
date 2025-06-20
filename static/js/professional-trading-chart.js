@@ -195,16 +195,30 @@ class ProfessionalTradingChart {
     
     async loadRealMarketData() {
         try {
+            console.log(`Loading real market data for ${this.currentAsset}`);
+            
+            // Check if Twelve Data is available
+            const statusResponse = await fetch('/api/twelve-data-status');
+            const status = await statusResponse.json();
+            console.log('Twelve Data status:', status);
+            
             const response = await fetch(`/api/chart-data/${this.currentAsset}?interval=1m`);
             const data = await response.json();
             
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            
             if (data.data && data.data.length > 0) {
+                console.log(`Received ${data.data.length} data points`);
                 this.processMarketData(data.data);
             } else {
+                console.log('No real data available, generating realistic data');
                 this.generateRealisticData();
             }
         } catch (error) {
             console.error('Error loading market data:', error);
+            console.log('Falling back to realistic generated data');
             this.generateRealisticData();
         }
         
