@@ -120,11 +120,19 @@
                         </div>
                         <div class="d-flex justify-content-between mb-2">
                             <span class="text-muted">Payout:</span>
-                            <span class="text-success">85%</span>
+                            <span class="text-success" id="current-payout">
+                                <span id="payout-percentage">85</span>%
+                                <i class="fas fa-sync-alt ms-1" id="payout-loading" style="display: none;"></i>
+                            </span>
                         </div>
                         <div class="d-flex justify-content-between">
                             <span class="text-light fw-bold">Potential Profit:</span>
                             <span class="text-success fw-bold" id="potential-profit">$8.50</span>
+                        </div>
+                        <div class="mt-2">
+                            <small class="text-muted" id="payout-factors">
+                                Live payout based on market conditions
+                            </small>
                         </div>
                     </div>
                     

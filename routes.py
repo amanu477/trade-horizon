@@ -107,9 +107,13 @@ def dashboard():
     won_trades = Trade.query.filter_by(user_id=current_user.id, status='won').count()
     win_rate = (won_trades / total_trades * 100) if total_trades > 0 else 0
     
+    # Get active trades
+    active_trades = Trade.query.filter_by(user_id=current_user.id, status='active').all()
+    
     return render_template('dashboard.html', 
                          wallet=wallet, 
                          recent_trades=recent_trades,
+                         active_trades=active_trades,
                          active_staking=active_staking,
                          total_staking_rewards=total_staking_rewards,
                          total_trades=total_trades,
@@ -146,12 +150,15 @@ def place_trade():
             flash('Insufficient balance', 'error')
             return redirect(request.referrer)
         
-        # Get current market price
-        current_price = get_asset_price(form.asset.data)
+        # Get real current market price
+        current_price = market_data.get_real_price(form.asset.data)
         
         # Create trade
         expiry_minutes = int(form.expiry_minutes.data)
         expiry_time = datetime.utcnow() + timedelta(minutes=expiry_minutes)
+        
+        # Get real-time payout percentage
+        payout_percentage = payout_manager.get_current_payout(form.asset.data, expiry_minutes)
         
         trade = Trade(
             user_id=current_user.id,
@@ -160,6 +167,7 @@ def place_trade():
             amount=form.amount.data,
             entry_price=current_price,
             expiry_time=expiry_time,
+            payout_percentage=payout_percentage,
             is_demo=is_demo
         )
         
@@ -181,7 +189,7 @@ def place_trade():
         db.session.add(transaction)
         db.session.commit()
         
-        flash(f'Trade placed successfully! {form.trade_type.data.title()} {form.asset.data} for ${form.amount.data}', 'success')
+        flash(f'Trade placed successfully! {form.trade_type.data.title()} {form.asset.data} for ${form.amount.data} (Payout: {payout_percentage}%)', 'success')
         return redirect(url_for('demo_trading' if is_demo else 'live_trading'))
     
     flash('Invalid trade parameters', 'error')

@@ -32,14 +32,29 @@ function updatePotentialProfit() {
 
 // Load asset chart (called from template)
 function loadAssetChart(asset) {
-    if (window.tradingInterface) {
+    if (advancedChart) {
+        advancedChart.updateAsset(asset);
+    } else if (window.tradingInterface) {
         window.tradingInterface.currentAsset = asset;
         window.tradingInterface.updateChart();
     }
 }
 
+// Advanced chart instance
+let advancedChart = null;
+
 // Initialize trading interface when page loads
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize advanced chart if on trading page
+    const chartCanvas = document.getElementById('trading-chart');
+    if (chartCanvas && typeof AdvancedTradingChart !== 'undefined') {
+        advancedChart = new AdvancedTradingChart('trading-chart', {
+            asset: 'EURUSD',
+            type: 'line',
+            timeframe: '5m'
+        });
+    }
+    
     // Initialize trading interface
     if (typeof TradingInterface !== 'undefined') {
         window.tradingInterface = new TradingInterface();
@@ -49,6 +64,12 @@ document.addEventListener('DOMContentLoaded', function() {
     if (typeof TradePro !== 'undefined') {
         window.tradeProApp = new TradePro();
     }
+    
+    // Setup chart controls
+    setupChartControls();
+    
+    // Setup real-time payout updates
+    setupPayoutUpdates();
     
     // Setup quick amount buttons
     document.querySelectorAll('.quick-amounts button').forEach(btn => {
@@ -120,6 +141,14 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Update chart
             loadAssetChart(newAsset);
+            
+            // Update payout
+            if (window.setupPayoutUpdates) {
+                setTimeout(() => {
+                    const updateEvent = new Event('change');
+                    this.dispatchEvent(updateEvent);
+                }, 100);
+            }
         });
     });
 });
@@ -198,6 +227,101 @@ function startPriceUpdates() {
 }
 
 // Start price updates when page loads
+// Setup chart controls
+function setupChartControls() {
+    // Chart type switcher
+    document.querySelectorAll('input[name="chart-type"]').forEach(input => {
+        input.addEventListener('change', function() {
+            if (advancedChart) {
+                advancedChart.switchChartType(this.value);
+            }
+        });
+    });
+    
+    // Timeframe selector
+    const timeframeSelect = document.getElementById('chart-timeframe');
+    if (timeframeSelect) {
+        timeframeSelect.addEventListener('change', function() {
+            if (advancedChart) {
+                advancedChart.timeframe = this.value;
+                advancedChart.loadRealMarketData();
+            }
+        });
+    }
+}
+
+// Setup real-time payout updates
+function setupPayoutUpdates() {
+    const payoutEl = document.getElementById('payout-percentage');
+    const factorsEl = document.getElementById('payout-factors');
+    const loadingEl = document.getElementById('payout-loading');
+    
+    if (!payoutEl) return;
+    
+    function updatePayout() {
+        const assetSelect = document.getElementById('asset-select');
+        const expirySelect = document.querySelector('select[name="expiry_minutes"]');
+        
+        if (!assetSelect || !expirySelect) return;
+        
+        const asset = assetSelect.value;
+        const expiryMinutes = expirySelect.value;
+        
+        if (loadingEl) loadingEl.style.display = 'inline';
+        
+        fetch(`/api/payout/${asset}/${expiryMinutes}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.payout_percentage) {
+                    payoutEl.textContent = data.payout_percentage.toFixed(1);
+                    
+                    if (factorsEl && data.factors) {
+                        factorsEl.textContent = data.factors.explanation;
+                    }
+                    
+                    // Update potential profit
+                    updatePotentialProfit();
+                }
+            })
+            .catch(error => {
+                console.error('Error updating payout:', error);
+            })
+            .finally(() => {
+                if (loadingEl) loadingEl.style.display = 'none';
+            });
+    }
+    
+    // Update payout when asset or expiry changes
+    document.addEventListener('change', function(e) {
+        if (e.target.matches('#asset-select, select[name="expiry_minutes"]')) {
+            updatePayout();
+        }
+    });
+    
+    // Update payout every 30 seconds
+    setInterval(updatePayout, 30000);
+    
+    // Initial update
+    setTimeout(updatePayout, 1000);
+}
+
+// Enhanced potential profit calculation
+function updatePotentialProfit() {
+    const amountInput = document.getElementById('trade-amount');
+    const investmentAmount = document.getElementById('investment-amount');
+    const potentialProfit = document.getElementById('potential-profit');
+    const payoutPercentage = document.getElementById('payout-percentage');
+    
+    if (amountInput && investmentAmount && potentialProfit && payoutPercentage) {
+        const amount = parseFloat(amountInput.value) || 0;
+        const payout = parseFloat(payoutPercentage.textContent) || 85;
+        const profit = amount * (payout / 100);
+        
+        investmentAmount.textContent = `$${amount.toFixed(2)}`;
+        potentialProfit.textContent = `$${profit.toFixed(2)}`;
+    }
+}
+
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', startPriceUpdates);
 } else {
