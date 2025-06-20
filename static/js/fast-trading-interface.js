@@ -340,8 +340,8 @@ class FastTradingInterface {
             if (this.livePrice && this.data.length > 0) {
                 // Simulate small price movements between real updates
                 const lastPrice = this.livePrice;
-                const volatility = this.getAssetVolatility(this.currentAsset);
-                const variation = (Math.random() - 0.5) * lastPrice * volatility * 0.1;
+                const volatility = this.getBasePrice(this.currentAsset) * 0.0005; // Small volatility
+                const variation = (Math.random() - 0.5) * volatility;
                 this.livePrice = lastPrice + variation;
                 
                 // Update the current candle with simulated live movement
@@ -461,11 +461,12 @@ class FastTradingInterface {
         // Ensure minimum and maximum visible candles
         visibleCount = Math.max(10, Math.min(visibleCount, totalData));
         
-        // Calculate visible window with improved panning
-        let startIndex = Math.max(0, totalData - visibleCount - this.panOffset);
+        // Calculate visible window with flexible panning for centering
+        let centerIndex = totalData - 1 - this.panOffset; // Center around this index
+        let startIndex = Math.max(0, centerIndex - Math.floor(visibleCount / 2));
         let endIndex = Math.min(totalData, startIndex + visibleCount);
         
-        // Ensure we always show the requested number of candles when possible
+        // Adjust if we hit boundaries
         if (endIndex - startIndex < visibleCount) {
             if (startIndex > 0) {
                 startIndex = Math.max(0, endIndex - visibleCount);
@@ -663,10 +664,10 @@ class FastTradingInterface {
                 // Update pan offset (negative for natural left/right movement)
                 this.panOffset -= panAmount;
                 
-                // Constrain panning within data bounds
+                // Allow more flexible panning - can go beyond current data
                 const visibleCount = Math.floor(this.data.length / this.zoomLevel);
-                const maxOffset = Math.max(0, this.data.length - visibleCount);
-                this.panOffset = Math.max(0, Math.min(maxOffset, this.panOffset));
+                const maxOffset = Math.max(0, this.data.length - Math.floor(visibleCount / 2)); // Allow centering
+                this.panOffset = Math.max(-Math.floor(visibleCount / 2), Math.min(maxOffset, this.panOffset));
                 
                 console.log(`Panning: offset=${this.panOffset}, delta=${panAmount}`);
                 
@@ -707,8 +708,8 @@ class FastTradingInterface {
                     this.panOffset -= panAmount;
                     
                     const visibleCount = Math.floor(this.data.length / this.zoomLevel);
-                    const maxOffset = Math.max(0, this.data.length - visibleCount);
-                    this.panOffset = Math.max(0, Math.min(maxOffset, this.panOffset));
+                    const maxOffset = Math.max(0, this.data.length - Math.floor(visibleCount / 2));
+                    this.panOffset = Math.max(-Math.floor(visibleCount / 2), Math.min(maxOffset, this.panOffset));
                     
                     startX = e.touches[0].clientX;
                     this.renderChart();
