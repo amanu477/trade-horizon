@@ -669,10 +669,11 @@ class FastTradingInterface {
                 // Update pan offset (negative for natural left/right movement)
                 this.panOffset -= panAmount;
                 
-                // Allow flexible panning with better range
+                // Allow panning with proper constraints
                 const visibleCount = Math.floor(this.data.length / this.zoomLevel);
-                const maxOffset = this.data.length; // Can pan to see all historical data
-                this.panOffset = Math.max(-visibleCount, Math.min(maxOffset, this.panOffset));
+                const maxOffset = this.data.length - visibleCount; // Don't pan beyond oldest data
+                const minOffset = -visibleCount; // Allow some space to the right
+                this.panOffset = Math.max(minOffset, Math.min(maxOffset, this.panOffset));
                 
                 console.log(`Panning: offset=${this.panOffset}, delta=${panAmount}`);
                 
