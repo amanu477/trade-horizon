@@ -177,6 +177,11 @@ class FastTradingInterface {
         
         this.canvas = document.getElementById('trading-canvas');
         this.ctx = this.canvas.getContext('2d');
+        
+        // Prevent default drag behavior
+        this.canvas.ondragstart = () => false;
+        this.canvas.onselectstart = () => false;
+        
         this.resizeCanvas();
     }
     
@@ -560,80 +565,85 @@ class FastTradingInterface {
             this.renderChart();
         });
         
-        // Mouse drag for panning with improved functionality
+        // Mouse drag for chart panning - Fixed implementation
         let isDragging = false;
         let startX = 0;
-        let lastX = 0;
         
-        this.canvas.addEventListener('mousedown', (e) => {
+        const handleMouseDown = (e) => {
             isDragging = true;
             startX = e.clientX;
-            lastX = e.clientX;
             this.canvas.style.cursor = 'grabbing';
-            e.preventDefault();
-        });
+            console.log('Mouse down - dragging started');
+        };
         
-        this.canvas.addEventListener('mousemove', (e) => {
-            if (isDragging) {
-                const deltaX = e.clientX - lastX;
-                const sensitivity = 1; // More responsive panning
-                const panDelta = Math.floor(deltaX / sensitivity);
+        const handleMouseMove = (e) => {
+            if (!isDragging) return;
+            
+            const deltaX = e.clientX - startX;
+            const sensitivity = 3; // Adjust for responsiveness
+            
+            if (Math.abs(deltaX) > sensitivity) {
+                const panAmount = Math.floor(deltaX / sensitivity);
                 
-                this.panOffset += panDelta; // Reverse direction for natural feel
+                // Update pan offset (negative for natural left/right movement)
+                this.panOffset -= panAmount;
                 
-                // Allow panning through all historical data
+                // Constrain panning within data bounds
                 const visibleCount = Math.floor(this.data.length / this.zoomLevel);
                 const maxOffset = Math.max(0, this.data.length - visibleCount);
                 this.panOffset = Math.max(0, Math.min(maxOffset, this.panOffset));
                 
-                lastX = e.clientX;
+                console.log(`Panning: offset=${this.panOffset}, delta=${panAmount}`);
+                
+                startX = e.clientX; // Reset start position
                 this.renderChart();
-                e.preventDefault();
             }
-        });
+        };
         
-        this.canvas.addEventListener('mouseup', (e) => {
-            isDragging = false;
-            this.canvas.style.cursor = 'crosshair';
-            e.preventDefault();
-        });
+        const handleMouseUp = () => {
+            if (isDragging) {
+                isDragging = false;
+                this.canvas.style.cursor = 'crosshair';
+                console.log('Mouse up - dragging stopped');
+            }
+        };
         
-        this.canvas.addEventListener('mouseleave', (e) => {
-            isDragging = false;
-            this.canvas.style.cursor = 'crosshair';
-        });
+        // Add event listeners
+        this.canvas.addEventListener('mousedown', handleMouseDown);
+        document.addEventListener('mousemove', handleMouseMove); // Use document for global mouse move
+        document.addEventListener('mouseup', handleMouseUp); // Use document for global mouse up
         
         // Touch events for mobile
         this.canvas.addEventListener('touchstart', (e) => {
             if (e.touches.length === 1) {
                 isDragging = true;
                 startX = e.touches[0].clientX;
-                lastX = e.touches[0].clientX;
                 e.preventDefault();
             }
         });
         
-        this.canvas.addEventListener('touchmove', (e) => {
+        document.addEventListener('touchmove', (e) => {
             if (isDragging && e.touches.length === 1) {
-                const deltaX = e.touches[0].clientX - lastX;
-                const sensitivity = 1;
-                const panDelta = Math.floor(deltaX / sensitivity);
+                const deltaX = e.touches[0].clientX - startX;
+                const sensitivity = 3;
                 
-                this.panOffset += panDelta;
-                
-                const visibleCount = Math.floor(this.data.length / this.zoomLevel);
-                const maxOffset = Math.max(0, this.data.length - visibleCount);
-                this.panOffset = Math.max(0, Math.min(maxOffset, this.panOffset));
-                
-                lastX = e.touches[0].clientX;
-                this.renderChart();
+                if (Math.abs(deltaX) > sensitivity) {
+                    const panAmount = Math.floor(deltaX / sensitivity);
+                    this.panOffset -= panAmount;
+                    
+                    const visibleCount = Math.floor(this.data.length / this.zoomLevel);
+                    const maxOffset = Math.max(0, this.data.length - visibleCount);
+                    this.panOffset = Math.max(0, Math.min(maxOffset, this.panOffset));
+                    
+                    startX = e.touches[0].clientX;
+                    this.renderChart();
+                }
                 e.preventDefault();
             }
         });
         
-        this.canvas.addEventListener('touchend', (e) => {
+        document.addEventListener('touchend', () => {
             isDragging = false;
-            e.preventDefault();
         });
         
         // Amount input
