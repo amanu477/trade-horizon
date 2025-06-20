@@ -82,11 +82,8 @@ class FastTradingInterface {
                         </div>
                         
                         <!-- Time Scale -->
-                        <div style="position: absolute; bottom: 0; left: 0; right: 60px; height: 30px; background: #1e2328; border-top: 1px solid #2b3139; display: flex; align-items: center; justify-content: space-around; font-size: 10px; color: #848e9c;">
-                            <span>16:30</span>
-                            <span>16:40</span>
-                            <span>16:50</span>
-                            <span>17:00</span>
+                        <div id="time-scale" style="position: absolute; bottom: 0; left: 0; right: 60px; height: 30px; background: #1e2328; border-top: 1px solid #2b3139; display: flex; align-items: center; justify-content: space-around; font-size: 10px; color: #848e9c;">
+                            <!-- Time labels will be dynamically updated -->
                         </div>
                     </div>
                 </div>
@@ -187,17 +184,25 @@ class FastTradingInterface {
         let currentPrice = basePrice;
         const now = new Date();
         
-        // Generate more data points based on timeframe
+        // Generate extensive historical data based on timeframe
         const dataPoints = this.getDataPointsForTimeframe();
         const intervalMs = this.getIntervalMs();
         
         for (let i = dataPoints; i >= 0; i--) {
             const time = new Date(now.getTime() - i * intervalMs);
-            const variation = (Math.random() - 0.5) * basePrice * 0.003;
+            
+            // Create more realistic price movements with trends
+            const trendFactor = Math.sin(i / 20) * 0.001; // Long-term trend
+            const noise = (Math.random() - 0.5) * basePrice * 0.002; // Short-term noise
+            const variation = trendFactor + noise;
+            
             const open = currentPrice;
-            const close = open + variation;
-            const high = Math.max(open, close) + Math.random() * basePrice * 0.001;
-            const low = Math.min(open, close) - Math.random() * basePrice * 0.001;
+            const close = open + (variation * currentPrice);
+            
+            // More realistic high/low spreads
+            const spread = basePrice * (0.0005 + Math.random() * 0.0015);
+            const high = Math.max(open, close) + spread;
+            const low = Math.min(open, close) - spread;
             
             this.data.push({
                 time: time,
@@ -210,19 +215,22 @@ class FastTradingInterface {
             currentPrice = close;
         }
         
+        // Initialize last price index for new candle generation
+        this.lastPriceIndex = Date.now();
+        
         this.updatePriceDisplay(currentPrice);
     }
     
     getDataPointsForTimeframe() {
         const points = {
-            '1m': 100,
-            '5m': 80,
-            '15m': 60,
-            '1h': 48,
-            '4h': 24,
-            '1d': 30
+            '1m': 300,  // 5 hours of 1-minute data
+            '5m': 288,  // 24 hours of 5-minute data
+            '15m': 192, // 48 hours of 15-minute data
+            '1h': 168,  // 1 week of hourly data
+            '4h': 180,  // 1 month of 4-hour data
+            '1d': 365   // 1 year of daily data
         };
-        return points[this.timeframe] || 100;
+        return points[this.timeframe] || 300;
     }
     
     getIntervalMs() {
@@ -296,17 +304,26 @@ class FastTradingInterface {
         
         // Draw trade positions
         this.drawTradePositions(chartMinPrice, chartMaxPrice, chartPriceRange, height);
+        
+        // Update time scale
+        this.updateTimeScale(visibleData);
     }
     
     getVisibleData() {
         const totalData = this.data.length;
         let visibleCount = Math.floor(totalData / this.zoomLevel);
         
-        // Ensure minimum visible candles to prevent overlap
-        visibleCount = Math.max(5, Math.min(visibleCount, totalData));
+        // Ensure minimum and maximum visible candles
+        visibleCount = Math.max(10, Math.min(visibleCount, totalData));
         
-        const startIndex = Math.max(0, Math.min(totalData - visibleCount, this.panOffset));
-        const endIndex = Math.min(totalData, startIndex + visibleCount);
+        // Calculate visible window with proper panning
+        let startIndex = Math.max(0, totalData - visibleCount - this.panOffset);
+        let endIndex = Math.min(totalData, startIndex + visibleCount);
+        
+        // Adjust if we're at the boundaries
+        if (endIndex - startIndex < visibleCount && startIndex > 0) {
+            startIndex = Math.max(0, endIndex - visibleCount);
+        }
         
         return this.data.slice(startIndex, endIndex);
     }
@@ -414,7 +431,7 @@ class FastTradingInterface {
         
         document.getElementById('zoom-reset').addEventListener('click', () => {
             this.zoomLevel = 1;
-            this.panOffset = 0;
+            this.panOffset = 0; // Reset to show latest data
             this.renderChart();
         });
         
@@ -442,8 +459,13 @@ class FastTradingInterface {
         this.canvas.addEventListener('mousemove', (e) => {
             if (isDragging) {
                 const deltaX = e.clientX - startX;
-                this.panOffset -= Math.floor(deltaX / 5);
-                this.panOffset = Math.max(0, this.panOffset);
+                const sensitivity = 2; // Adjust panning sensitivity
+                this.panOffset -= Math.floor(deltaX / sensitivity);
+                
+                // Allow panning through all historical data
+                const maxOffset = Math.max(0, this.data.length - Math.floor(this.data.length / this.zoomLevel));
+                this.panOffset = Math.max(0, Math.min(maxOffset, this.panOffset));
+                
                 startX = e.clientX;
                 this.renderChart();
             }
@@ -744,8 +766,9 @@ class FastTradingInterface {
                         close: newPrice
                     });
                     
-                    // Keep only recent data
-                    if (this.data.length > this.getDataPointsForTimeframe()) {
+                    // Keep more historical data for better chart viewing
+                    const maxDataPoints = this.getDataPointsForTimeframe() * 2; // Keep double for scrolling
+                    if (this.data.length > maxDataPoints) {
                         this.data.shift();
                     }
                     
@@ -778,6 +801,41 @@ class FastTradingInterface {
             'XAUUSD': 3382.20
         };
         return prices[asset] || 1.16537;
+    }
+    
+    updateTimeScale(visibleData) {
+        const timeScale = document.getElementById('time-scale');
+        if (!timeScale || !visibleData.length) return;
+        
+        timeScale.innerHTML = '';
+        
+        // Show 4-5 time labels across the visible data
+        const labelCount = 5;
+        const step = Math.floor(visibleData.length / (labelCount - 1));
+        
+        for (let i = 0; i < labelCount; i++) {
+            const index = Math.min(i * step, visibleData.length - 1);
+            const dataPoint = visibleData[index];
+            
+            if (dataPoint && dataPoint.time) {
+                const timeLabel = document.createElement('span');
+                timeLabel.style.color = '#848e9c';
+                timeLabel.style.fontSize = '10px';
+                
+                // Format time based on timeframe
+                let timeStr;
+                if (this.timeframe === '1d') {
+                    timeStr = dataPoint.time.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                } else if (this.timeframe === '4h' || this.timeframe === '1h') {
+                    timeStr = dataPoint.time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+                } else {
+                    timeStr = dataPoint.time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+                }
+                
+                timeLabel.textContent = timeStr;
+                timeScale.appendChild(timeLabel);
+            }
+        }
     }
 }
 
