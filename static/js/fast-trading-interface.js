@@ -11,6 +11,8 @@ class FastTradingInterface {
         this.zoomLevel = 1;
         this.panOffset = 0;
         this.activeTrades = [];
+        this.balance = this.mode === 'demo' ? 10000 : 1000;
+        this.lastPriceIndex = 0;
         
         if (this.container) {
             this.init();
@@ -100,9 +102,11 @@ class FastTradingInterface {
                         </div>
                     </div>
                     
-                    <!-- No Trades -->
-                    <div style="flex: 1; padding: 16px; text-align: center; color: #848e9c; margin-top: 40px;">
-                        <div style="font-size: 14px;">No opened trades</div>
+                    <!-- Active Trades List -->
+                    <div id="trades-list" style="flex: 1; padding: 16px; overflow-y: auto;">
+                        <div id="no-trades" style="text-align: center; color: #848e9c; margin-top: 40px; font-size: 14px;">
+                            No opened trades
+                        </div>
                     </div>
                     
                     <!-- Trading Form -->
@@ -128,6 +132,18 @@ class FastTradingInterface {
                                 <input type="number" id="amount-input" value="10" min="1" max="10000" 
                                        style="background: transparent; border: none; color: #f1f1f1; font-size: 24px; font-weight: 600; text-align: center; width: 100%; outline: none;">
                             </div>
+                        </div>
+                        
+                        <!-- Expiry Time -->
+                        <div style="margin-bottom: 16px;">
+                            <div style="color: #f1f1f1; font-size: 12px; margin-bottom: 8px;">Expiry Time</div>
+                            <select id="expiry-select" style="background: #2b3139; color: #f1f1f1; border: none; padding: 8px 12px; border-radius: 6px; width: 100%; font-size: 14px;">
+                                <option value="1">1 Minute</option>
+                                <option value="5">5 Minutes</option>
+                                <option value="15">15 Minutes</option>
+                                <option value="30">30 Minutes</option>
+                                <option value="60">1 Hour</option>
+                            </select>
                         </div>
                         
                         <!-- Payout -->
@@ -249,9 +265,9 @@ class FastTradingInterface {
         // Draw grid with better styling
         this.drawGrid(width, height, chartMinPrice, chartMaxPrice);
         
-        // Draw candlesticks with zoom
-        const candleWidth = Math.max(1, (width / visibleData.length) * 0.8 * this.zoomLevel);
+        // Draw candlesticks with proper zoom spacing
         const candleSpacing = width / visibleData.length;
+        const candleWidth = Math.max(1, Math.min(candleSpacing * 0.8, candleSpacing - 2));
         
         visibleData.forEach((candle, index) => {
             const x = index * candleSpacing + candleSpacing / 2;
@@ -284,7 +300,11 @@ class FastTradingInterface {
     
     getVisibleData() {
         const totalData = this.data.length;
-        const visibleCount = Math.floor(totalData / this.zoomLevel);
+        let visibleCount = Math.floor(totalData / this.zoomLevel);
+        
+        // Ensure minimum visible candles to prevent overlap
+        visibleCount = Math.max(5, Math.min(visibleCount, totalData));
+        
         const startIndex = Math.max(0, Math.min(totalData - visibleCount, this.panOffset));
         const endIndex = Math.min(totalData, startIndex + visibleCount);
         
@@ -381,14 +401,14 @@ class FastTradingInterface {
             });
         });
         
-        // Zoom controls
+        // Zoom controls with better limits
         document.getElementById('zoom-in').addEventListener('click', () => {
-            this.zoomLevel = Math.min(5, this.zoomLevel * 1.5);
+            this.zoomLevel = Math.min(8, this.zoomLevel * 1.5);
             this.renderChart();
         });
         
         document.getElementById('zoom-out').addEventListener('click', () => {
-            this.zoomLevel = Math.max(0.5, this.zoomLevel / 1.5);
+            this.zoomLevel = Math.max(0.3, this.zoomLevel / 1.5);
             this.renderChart();
         });
         
@@ -398,14 +418,14 @@ class FastTradingInterface {
             this.renderChart();
         });
         
-        // Mouse wheel zoom
+        // Mouse wheel zoom with better control
         this.canvas.addEventListener('wheel', (e) => {
             e.preventDefault();
-            if (e.deltaY < 0) {
-                this.zoomLevel = Math.min(5, this.zoomLevel * 1.1);
-            } else {
-                this.zoomLevel = Math.max(0.5, this.zoomLevel / 1.1);
-            }
+            const zoomFactor = e.deltaY < 0 ? 1.2 : 0.8;
+            const newZoom = this.zoomLevel * zoomFactor;
+            
+            // Limit zoom to prevent candlestick overlap
+            this.zoomLevel = Math.max(0.3, Math.min(8, newZoom));
             this.renderChart();
         });
         
@@ -464,43 +484,164 @@ class FastTradingInterface {
     
     placeTrade(type) {
         const amount = parseFloat(document.getElementById('amount-input').value);
+        const expiryMinutes = parseInt(document.getElementById('expiry-select').value);
+        
         if (!amount || amount < 1) {
             this.showNotification('Please enter a valid amount', 'error');
             return;
         }
         
-        const currentPrice = this.data[this.data.length - 1].close;
-        const expiryTime = new Date(Date.now() + 60000); // 1 minute
+        if (amount > this.balance) {
+            this.showNotification('Insufficient balance', 'error');
+            return;
+        }
         
-        // Add trade to active trades for visualization
+        const currentPrice = this.data[this.data.length - 1].close;
+        const expiryTime = new Date(Date.now() + expiryMinutes * 60000);
+        
+        // Create trade object
         const trade = {
             id: Date.now(),
             type: type,
             amount: amount,
             entryPrice: currentPrice,
-            expiryTime: expiryTime.toLocaleTimeString(),
-            asset: this.currentAsset
+            expiryTime: expiryTime,
+            expiryMinutes: expiryMinutes,
+            asset: this.currentAsset,
+            startTime: new Date(),
+            status: 'active'
         };
         
-        this.activeTrades.push(trade);
+        // Deduct amount from balance immediately
+        this.balance -= amount;
+        this.updateBalanceDisplay();
         
-        // Remove trade after expiry
+        this.activeTrades.push(trade);
+        this.updateTradesList();
+        
+        // Set timer to close trade
         setTimeout(() => {
-            this.activeTrades = this.activeTrades.filter(t => t.id !== trade.id);
-            this.renderChart();
-        }, 60000);
+            this.closeTrade(trade.id);
+        }, expiryMinutes * 60000);
         
         // Submit trade to backend
         this.submitTrade({
             asset: this.currentAsset,
             trade_type: type === 'buy' ? 'call' : 'put',
             amount: amount,
-            expiry_minutes: 1,
+            expiry_minutes: expiryMinutes,
             is_demo: this.mode === 'demo'
         });
         
         this.showNotification(`${type.toUpperCase()} trade placed: $${amount} at ${currentPrice.toFixed(5)}`, 'success');
-        this.renderChart(); // Redraw to show trade position
+        this.renderChart();
+    }
+    
+    closeTrade(tradeId) {
+        const tradeIndex = this.activeTrades.findIndex(t => t.id === tradeId);
+        if (tradeIndex === -1) return;
+        
+        const trade = this.activeTrades[tradeIndex];
+        const currentPrice = this.data[this.data.length - 1].close;
+        
+        // Determine if trade won or lost
+        let won = false;
+        if (trade.type === 'buy') {
+            won = currentPrice > trade.entryPrice;
+        } else {
+            won = currentPrice < trade.entryPrice;
+        }
+        
+        // Calculate profit/loss
+        let profit = 0;
+        if (won) {
+            profit = trade.amount * 0.85; // 85% payout
+            this.balance += trade.amount + profit;
+            this.showNotification(`Trade WON! +$${profit.toFixed(2)}`, 'success');
+        } else {
+            this.showNotification(`Trade LOST! -$${trade.amount.toFixed(2)}`, 'error');
+        }
+        
+        // Update trade status
+        trade.status = won ? 'won' : 'lost';
+        trade.exitPrice = currentPrice;
+        trade.profit = won ? profit : -trade.amount;
+        
+        // Move to closed trades and remove from active
+        this.activeTrades.splice(tradeIndex, 1);
+        
+        this.updateBalanceDisplay();
+        this.updateTradesList();
+        this.renderChart();
+    }
+    
+    updateBalanceDisplay() {
+        const balanceElement = document.querySelector('#professional-trading-interface').querySelector('[style*="Demo Balance"], [style*="Live Balance"]');
+        if (balanceElement) {
+            const nextElement = balanceElement.nextElementSibling;
+            if (nextElement) {
+                nextElement.textContent = `$${this.balance.toFixed(2)}`;
+            }
+        }
+    }
+    
+    updateTradesList() {
+        const tradesList = document.getElementById('trades-list');
+        const noTrades = document.getElementById('no-trades');
+        
+        if (this.activeTrades.length === 0) {
+            noTrades.style.display = 'block';
+            // Clear any existing trade items
+            const existingTrades = tradesList.querySelectorAll('.trade-item');
+            existingTrades.forEach(item => item.remove());
+            return;
+        }
+        
+        noTrades.style.display = 'none';
+        
+        // Clear existing trade items
+        const existingTrades = tradesList.querySelectorAll('.trade-item');
+        existingTrades.forEach(item => item.remove());
+        
+        // Add active trades
+        this.activeTrades.forEach(trade => {
+            const tradeElement = document.createElement('div');
+            tradeElement.className = 'trade-item';
+            tradeElement.style.cssText = `
+                background: #2b3139;
+                border-radius: 6px;
+                padding: 12px;
+                margin-bottom: 8px;
+                border-left: 3px solid ${trade.type === 'buy' ? '#02c076' : '#f6465d'};
+            `;
+            
+            const timeRemaining = Math.max(0, trade.expiryTime.getTime() - Date.now());
+            const minutesLeft = Math.floor(timeRemaining / 60000);
+            const secondsLeft = Math.floor((timeRemaining % 60000) / 1000);
+            
+            tradeElement.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="color: ${trade.type === 'buy' ? '#02c076' : '#f6465d'}; font-weight: 600; font-size: 12px;">
+                        ${trade.type.toUpperCase()} ${trade.asset}
+                    </span>
+                    <span style="color: #f1f1f1; font-size: 12px; font-weight: 600;">
+                        $${trade.amount}
+                    </span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                    <span style="color: #848e9c; font-size: 10px;">Entry:</span>
+                    <span style="color: #f1f1f1; font-size: 10px;">${trade.entryPrice.toFixed(5)}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: #848e9c; font-size: 10px;">Time:</span>
+                    <span style="color: #fcd535; font-size: 10px; font-weight: 600;">
+                        ${minutesLeft}:${secondsLeft.toString().padStart(2, '0')}
+                    </span>
+                </div>
+            `;
+            
+            tradesList.appendChild(tradeElement);
+        });
     }
     
     async submitTrade(tradeData) {
@@ -583,18 +724,45 @@ class FastTradingInterface {
             document.getElementById('timer').textContent = `00:00:${nextMinute.toString().padStart(2, '0')}`;
         }, 1000);
         
-        // Update prices
+        // Update prices and trades
         setInterval(() => {
             if (this.data.length > 0) {
-                const lastCandle = this.data[this.data.length - 1];
-                const variation = (Math.random() - 0.5) * lastCandle.close * 0.001;
-                const newPrice = lastCandle.close + variation;
+                // Add new candle periodically
+                const shouldAddNewCandle = Date.now() - this.lastPriceIndex > 60000; // Every minute for 1m timeframe
                 
-                lastCandle.close = newPrice;
-                lastCandle.high = Math.max(lastCandle.high, newPrice);
-                lastCandle.low = Math.min(lastCandle.low, newPrice);
+                if (shouldAddNewCandle) {
+                    const lastCandle = this.data[this.data.length - 1];
+                    const variation = (Math.random() - 0.5) * lastCandle.close * 0.003;
+                    const newPrice = lastCandle.close + variation;
+                    
+                    // Add new candle
+                    this.data.push({
+                        time: new Date(),
+                        open: lastCandle.close,
+                        high: newPrice + Math.random() * lastCandle.close * 0.001,
+                        low: newPrice - Math.random() * lastCandle.close * 0.001,
+                        close: newPrice
+                    });
+                    
+                    // Keep only recent data
+                    if (this.data.length > this.getDataPointsForTimeframe()) {
+                        this.data.shift();
+                    }
+                    
+                    this.lastPriceIndex = Date.now();
+                } else {
+                    // Update current candle
+                    const lastCandle = this.data[this.data.length - 1];
+                    const variation = (Math.random() - 0.5) * lastCandle.close * 0.001;
+                    const newPrice = lastCandle.close + variation;
+                    
+                    lastCandle.close = newPrice;
+                    lastCandle.high = Math.max(lastCandle.high, newPrice);
+                    lastCandle.low = Math.min(lastCandle.low, newPrice);
+                }
                 
-                this.updatePriceDisplay(newPrice);
+                this.updatePriceDisplay(this.data[this.data.length - 1].close);
+                this.updateTradesList(); // Update countdown timers
                 this.renderChart();
             }
         }, 2000);
