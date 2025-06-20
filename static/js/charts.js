@@ -39,13 +39,7 @@ class TradingChart {
             },
             scales: {
                 x: {
-                    type: 'time',
-                    time: {
-                        unit: 'minute',
-                        displayFormats: {
-                            minute: 'HH:mm'
-                        }
-                    },
+                    type: 'linear',
                     grid: {
                         color: 'rgba(255, 255, 255, 0.1)'
                     },
@@ -74,6 +68,7 @@ class TradingChart {
     init() {
         if (!this.canvas || !this.ctx) {
             console.error('Canvas element not found');
+            this.createFallbackChart();
             return;
         }
         
@@ -81,10 +76,51 @@ class TradingChart {
         if (typeof Chart === 'undefined') {
             this.loadChartJS().then(() => {
                 this.createChart();
+            }).catch(() => {
+                this.createFallbackChart();
             });
         } else {
             this.createChart();
         }
+    }
+    
+    createFallbackChart() {
+        if (!this.canvas || !this.ctx) return;
+        
+        // Simple fallback chart without Chart.js
+        this.ctx.fillStyle = '#1a1a1a';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        this.ctx.strokeStyle = '#00d4aa';
+        this.ctx.lineWidth = 2;
+        this.ctx.beginPath();
+        
+        // Draw simple price line
+        const points = 50;
+        let basePrice = this.getBasePrice(this.currentAsset);
+        
+        for (let i = 0; i < points; i++) {
+            const x = (i / points) * this.canvas.width;
+            const variation = (Math.random() - 0.5) * basePrice * 0.01;
+            const price = basePrice + variation;
+            const y = this.canvas.height / 2 + (variation * 1000);
+            
+            if (i === 0) {
+                this.ctx.moveTo(x, y);
+            } else {
+                this.ctx.lineTo(x, y);
+            }
+        }
+        
+        this.ctx.stroke();
+        
+        // Add price text
+        this.ctx.fillStyle = '#00d4aa';
+        this.ctx.font = '16px Arial';
+        this.ctx.fillText(`${this.currentAsset}: ${basePrice.toFixed(5)}`, 10, 30);
+        
+        console.log('Fallback chart created');
+        this.isInitialized = true;
     }
     
     async loadChartJS() {
@@ -104,6 +140,11 @@ class TradingChart {
     
     createChart() {
         try {
+            if (typeof Chart === 'undefined') {
+                this.createFallbackChart();
+                return;
+            }
+            
             // Generate initial data
             this.generateInitialData();
             

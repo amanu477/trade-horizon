@@ -174,14 +174,14 @@ def place_trade():
             user_id=current_user.id,
             transaction_type='trade',
             amount=-form.amount.data,
-            description=f'{form.trade_type.title()} {form.asset.data} - {expiry_minutes}min'
+            description=f'{form.trade_type.data.title()} {form.asset.data} - {expiry_minutes}min'
         )
         
         db.session.add(trade)
         db.session.add(transaction)
         db.session.commit()
         
-        flash(f'Trade placed successfully! {form.trade_type.title()} {form.asset.data} for ${form.amount.data}', 'success')
+        flash(f'Trade placed successfully! {form.trade_type.data.title()} {form.asset.data} for ${form.amount.data}', 'success')
         return redirect(url_for('demo_trading' if is_demo else 'live_trading'))
     
     flash('Invalid trade parameters', 'error')
