@@ -895,12 +895,12 @@ def api_process_expired_trade(trade_id):
                 'error': 'Trade already processed'
             })
         
-        # Check if trade is close to expiry (allow processing within 5 seconds of expiry)
+        # Allow processing when trade has expired or is within 1 second of expiry
         from datetime import datetime, timedelta
         current_time = datetime.utcnow()
-        time_buffer = timedelta(seconds=5)
+        time_buffer = timedelta(seconds=1)
         
-        # Allow processing if we're within 5 seconds of expiry time
+        # Allow processing if we're within 1 second of expiry time or past it
         if current_time < (trade.expiry_time - time_buffer):
             return jsonify({
                 'success': False,
@@ -911,7 +911,12 @@ def api_process_expired_trade(trade_id):
         from market_data import RealMarketData
         market_data = RealMarketData()
         current_price_data = market_data.get_real_price(trade.asset)
-        current_price = float(current_price_data['price'])
+        
+        # Handle price data properly
+        if isinstance(current_price_data, dict) and 'price' in current_price_data:
+            current_price = float(current_price_data['price'])
+        else:
+            current_price = float(current_price_data) if current_price_data else trade.entry_price
         
         # Calculate trade result
         trade.exit_price = current_price
