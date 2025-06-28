@@ -182,7 +182,10 @@ class SimpleTradingInterface {
                 this.loadWalletBalance();
                 setTimeout(() => this.loadActiveTrades(), 500);
             } else {
-                this.showMessage(data.error || 'Failed to place trade', 'error');
+                // Check if it's a balance issue to show as warning instead of error
+                const message = data.message || data.error || 'Failed to place trade';
+                const messageType = message.includes('Not enough balance') ? 'warning' : 'error';
+                this.showMessage(message, messageType);
             }
         } catch (error) {
             this.showMessage('Network error. Please try again.', 'error');
@@ -355,12 +358,20 @@ class SimpleTradingInterface {
         
         messageElement.textContent = message;
         messageElement.style.display = 'block';
-        messageElement.style.backgroundColor = type === 'success' ? '#26a69a' : '#ef5350';
+        
+        // Set appropriate colors based on message type
+        if (type === 'success') {
+            messageElement.style.backgroundColor = '#26a69a';
+        } else if (type === 'warning') {
+            messageElement.style.backgroundColor = '#f39c12';
+        } else {
+            messageElement.style.backgroundColor = '#ef5350';
+        }
         messageElement.style.color = 'white';
         
         setTimeout(() => {
             messageElement.style.display = 'none';
-        }, 3000);
+        }, 4000);
     }
     
     getCSRFToken() {

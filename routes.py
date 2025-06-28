@@ -236,9 +236,10 @@ def place_trade():
         logging.info(f"User balance check: available={available_balance}, required={amount}, demo={is_demo}")
         
         if available_balance < amount:
-            message = 'Insufficient balance for this trade'
-            logging.error(f"Insufficient balance: {available_balance} < {amount}")
-            return jsonify({'success': False, 'message': message}), 400
+            balance_type = "demo" if is_demo else "live"
+            message = f'Not enough balance. You have ${available_balance:.2f} in your {balance_type} account but need ${amount:.2f} for this trade.'
+            logging.info(f"Insufficient balance: available={available_balance}, required={amount}, demo={is_demo}")
+            return jsonify({'success': False, 'message': message})
         
         # Get current market price
         try:

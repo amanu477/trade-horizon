@@ -430,7 +430,10 @@ class TradingViewChart {
                             }
                         }
                     } else {
-                        this.showNotification(result.message || 'Failed to place trade', 'error');
+                        // Check if it's a balance issue to show as warning instead of error
+                        const message = result.message || result.error || 'Failed to place trade';
+                        const messageType = message.includes('Not enough balance') ? 'warning' : 'error';
+                        this.showNotification(message, messageType);
                     }
                 } else {
                     this.showNotification('Failed to place trade', 'error');
@@ -458,7 +461,7 @@ class TradingViewChart {
             color: white;
             font-weight: 500;
             z-index: 10001;
-            background: ${type === 'success' ? '#4CAF50' : '#f44336'};
+            background: ${type === 'success' ? '#4CAF50' : type === 'warning' ? '#f39c12' : '#f44336'};
         `;
         notification.textContent = message;
         
