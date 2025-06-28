@@ -2,6 +2,7 @@ from flask import render_template, redirect, url_for, flash, request, jsonify, s
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime, timedelta
+from decimal import Decimal
 import random
 import json
 
@@ -233,17 +234,18 @@ def place_trade():
             is_demo=is_demo
         )
         
-        # Deduct amount from balance
+        # Deduct amount from balance (convert to Decimal for compatibility)
+        amount_decimal = Decimal(str(amount))
         if is_demo:
-            wallet.demo_balance -= amount
+            wallet.demo_balance -= amount_decimal
         else:
-            wallet.balance -= amount
+            wallet.balance -= amount_decimal
         
         # Create transaction record
         transaction = Transaction(
             user_id=current_user.id,
             transaction_type='trade',
-            amount=-amount,
+            amount=-amount_decimal,
             description=f'Trade: {asset} {trade_type.upper()} ${amount}'
         )
         
