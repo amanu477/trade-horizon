@@ -739,9 +739,7 @@ def api_wallet_balance():
 def api_active_trades():
     """Get user's active trades"""
     try:
-        # First, process any expired trades
-        process_expired_trades_for_user(current_user.id)
-        
+        # Get active trades without processing expired ones first
         active_trades = Trade.query.filter_by(
             user_id=current_user.id,
             status='active'

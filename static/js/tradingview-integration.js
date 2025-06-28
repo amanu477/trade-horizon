@@ -711,32 +711,31 @@ class TradingViewChart {
         
         trades.forEach(trade => {
             if (trade.remaining_seconds > 0) {
+                // Store the initial remaining seconds for countdown
+                let remainingSeconds = trade.remaining_seconds;
+                
                 const timer = setInterval(() => {
-                    this.updateTradeTimer(trade.id, trade.expiry_time);
+                    remainingSeconds--;
+                    this.updateTradeTimerWithSeconds(trade.id, remainingSeconds);
+                    
+                    if (remainingSeconds <= 0) {
+                        clearInterval(timer);
+                        this.processExpiredTrade(trade.id);
+                    }
                 }, 1000);
                 this.tradeTimers.push(timer);
             }
         });
     }
     
-    updateTradeTimer(tradeId, expiryTime) {
+    updateTradeTimerWithSeconds(tradeId, remainingSeconds) {
         const timerElement = document.getElementById(`timer-${tradeId}`);
         if (!timerElement) return;
-        
-        const now = new Date();
-        const expiry = new Date(expiryTime);
-        const remainingSeconds = Math.max(0, Math.floor((expiry - now) / 1000));
         
         if (remainingSeconds <= 0) {
             timerElement.textContent = 'EXPIRED';
             timerElement.style.color = '#e74c3c';
             timerElement.style.fontWeight = 'bold';
-            
-            // Process expired trade only once
-            if (!timerElement.dataset.processed) {
-                timerElement.dataset.processed = 'true';
-                this.processExpiredTrade(tradeId);
-            }
         } else {
             timerElement.textContent = this.formatTime(remainingSeconds);
             
