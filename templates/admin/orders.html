@@ -54,7 +54,7 @@
                                 <td><strong>{{ trade.asset }}</strong></td>
                                 <td>
                                     <span class="badge bg-{{ 'success' if trade.trade_type == 'call' else 'danger' }}">
-                                        {{ trade.trade_type.upper() }}
+                                        {{ 'BUY' if trade.trade_type == 'call' else 'SELL' }}
                                     </span>
                                 </td>
                                 <td>${{ "%.2f"|format(trade.amount) }}</td>

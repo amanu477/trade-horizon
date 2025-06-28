@@ -178,10 +178,10 @@ class SimpleTradingView {
                 
                 <div style="display: flex; gap: 10px; margin-bottom: 20px;">
                     <button id="modal-call-btn" style="flex: 1; background: #26a69a; color: white; border: none; padding: 15px; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer;">
-                        ▲ CALL
+                        ▲ BUY
                     </button>
                     <button id="modal-put-btn" style="flex: 1; background: #ef5350; color: white; border: none; padding: 15px; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; opacity: 0.6;">
-                        ▼ PUT
+                        ▼ SELL
                     </button>
                 </div>
                 

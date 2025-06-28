@@ -137,6 +137,7 @@ TradePro is a Flask-based binary options trading platform that provides both dem
 - June 28, 2025: **System Status Monitoring** - Admin dashboard includes platform statistics showing total trades, active traders, demo users, live users, and real-time system health indicators
 - June 28, 2025: **Active Trades System** - Implemented complete active trades management with real-time countdown timers, automatic trade processing on expiration, and trade history system
 - June 28, 2025: **Automatic Trade Closure** - Trades automatically close when time expires, calculate win/loss based on market price, update user balance, and move to trade history
+- June 28, 2025: **Complete Order Type Update** - Changed all "CALL" to "BUY" and "PUT" to "SELL" throughout the entire application including admin panels, user interfaces, trading displays, and JavaScript components for consistent terminology
 - June 28, 2025: **Trading Button Update** - Replaced "Call" with "Buy" and "Put" with "Sell" buttons for more intuitive trading
 - June 28, 2025: **Direct Trade Execution** - Buy and Sell buttons now execute trades immediately without requiring separate "Place Trade" button
 - June 28, 2025: Removed Place Trade button and simplified trading workflow for faster execution

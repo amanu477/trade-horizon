@@ -224,9 +224,9 @@
                                         <td><strong>{{ trade.asset }}</strong></td>
                                         <td>
                                             {% if trade.trade_type == 'call' %}
-                                                <span class="badge bg-success">CALL</span>
+                                                <span class="badge bg-success">BUY</span>
                                             {% else %}
-                                                <span class="badge bg-danger">PUT</span>
+                                                <span class="badge bg-danger">SELL</span>
                                             {% endif %}
                                         </td>
                                         <td>${{ "%.2f"|format(trade.amount) }}</td>
@@ -309,9 +309,9 @@
                                         <td><strong>{{ trade.asset }}</strong></td>
                                         <td>
                                             {% if trade.trade_type == 'call' %}
-                                                <span class="badge bg-success">CALL</span>
+                                                <span class="badge bg-success">BUY</span>
                                             {% else %}
-                                                <span class="badge bg-danger">PUT</span>
+                                                <span class="badge bg-danger">SELL</span>
                                             {% endif %}
                                         </td>
                                         <td>${{ "%.2f"|format(trade.amount) }}</td>
