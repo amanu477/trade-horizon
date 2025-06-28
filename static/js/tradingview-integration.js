@@ -654,19 +654,32 @@ class TradingViewChart {
             timerElement.textContent = 'EXPIRED';
             timerElement.style.color = '#e74c3c';
             
-            // Remove expired trade after a delay
+            // Process expired trade and remove from active trades
             setTimeout(() => {
                 const tradeElement = document.getElementById(`trade-${tradeId}`);
                 if (tradeElement) {
-                    tradeElement.style.transition = 'opacity 0.5s';
-                    tradeElement.style.opacity = '0.5';
+                    // Show trade is processing
+                    tradeElement.style.border = '2px solid #f39c12';
+                    tradeElement.style.background = '#34495e';
+                    
+                    // Add processing indicator
+                    const processingDiv = document.createElement('div');
+                    processingDiv.style.cssText = 'text-align: center; color: #f39c12; font-weight: bold; margin-top: 8px;';
+                    processingDiv.textContent = 'Processing trade result...';
+                    tradeElement.appendChild(processingDiv);
+                    
                     setTimeout(() => {
-                        tradeElement.remove();
-                        this.loadActiveTrades(); // Refresh the list
-                        this.updateBalance(); // Update balance after trade closure
-                    }, 1000);
+                        tradeElement.style.transition = 'opacity 0.5s';
+                        tradeElement.style.opacity = '0';
+                        setTimeout(() => {
+                            tradeElement.remove();
+                            this.loadActiveTrades(); // Refresh the list
+                            this.updateBalance(); // Update balance after trade closure
+                            this.showNotification('Trade completed and moved to history', 'info');
+                        }, 500);
+                    }, 1500);
                 }
-            }, 2000);
+            }, 1000);
         } else {
             timerElement.textContent = this.formatTime(remainingSeconds);
             

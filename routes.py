@@ -756,6 +756,43 @@ def api_active_trades():
             'error': str(e)
         })
 
+@app.route('/api/trade_history')
+@login_required
+def api_trade_history():
+    """Get user's completed trades history"""
+    try:
+        completed_trades = Trade.query.filter(
+            Trade.user_id == current_user.id,
+            Trade.status.in_(['won', 'lost', 'cancelled'])
+        ).order_by(Trade.closed_at.desc()).limit(50).all()
+        
+        trades_data = []
+        for trade in completed_trades:
+            trades_data.append({
+                'id': trade.id,
+                'asset': trade.asset,
+                'trade_type': trade.trade_type,
+                'amount': float(trade.amount),
+                'entry_price': float(trade.entry_price),
+                'exit_price': float(trade.exit_price) if trade.exit_price else None,
+                'status': trade.status,
+                'profit_loss': float(trade.profit_loss),
+                'payout_percentage': float(trade.payout_percentage),
+                'created_at': trade.created_at.isoformat(),
+                'closed_at': trade.closed_at.isoformat() if trade.closed_at else None,
+                'is_demo': trade.is_demo
+            })
+        
+        return jsonify({
+            'success': True,
+            'trades': trades_data
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
 def process_expired_trades_for_user(user_id):
     """Process expired trades for a specific user"""
     from market_data import RealMarketData
