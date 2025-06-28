@@ -126,11 +126,20 @@ class TradingViewChart {
                                 </div>
                             </div>
                             
-                            <!-- Expiry Time -->
+                            <!-- Trade Duration -->
                             <div style="margin-bottom: 16px;">
-                                <label style="color: #868993; font-size: 12px; display: block; margin-bottom: 4px;">Expiry Time (HH:MM:SS)</label>
-                                <input id="expiry-input" type="time" value="00:05:00" step="1"
-                                       style="width: 100%; background: #2a2e39; color: #d1d4dc; border: 1px solid #434651; padding: 8px 12px; border-radius: 4px; font-size: 14px;">
+                                <label style="color: #868993; font-size: 12px; display: block; margin-bottom: 4px;">Trade Duration (seconds)</label>
+                                <input id="duration-input" type="number" value="5" min="1" max="86400"
+                                       style="width: 100%; background: #2a2e39; color: #d1d4dc; border: 1px solid #434651; padding: 8px 12px; border-radius: 4px; font-size: 14px;"
+                                       placeholder="Enter duration in seconds">
+                                
+                                <!-- Quick Duration Buttons -->
+                                <div style="display: flex; gap: 4px; margin-top: 8px;">
+                                    <button onclick="setDuration(5)" style="flex: 1; background: #2a2e39; color: #d1d4dc; border: 1px solid #434651; padding: 4px; border-radius: 3px; font-size: 12px; cursor: pointer;">5s</button>
+                                    <button onclick="setDuration(30)" style="flex: 1; background: #2a2e39; color: #d1d4dc; border: 1px solid #434651; padding: 4px; border-radius: 3px; font-size: 12px; cursor: pointer;">30s</button>
+                                    <button onclick="setDuration(60)" style="flex: 1; background: #2a2e39; color: #d1d4dc; border: 1px solid #434651; padding: 4px; border-radius: 3px; font-size: 12px; cursor: pointer;">1m</button>
+                                    <button onclick="setDuration(300)" style="flex: 1; background: #2a2e39; color: #d1d4dc; border: 1px solid #434651; padding: 4px; border-radius: 3px; font-size: 12px; cursor: pointer;">5m</button>
+                                </div>
                             </div>
                             
                             <!-- Potential Profit -->
@@ -250,6 +259,11 @@ class TradingViewChart {
         
         // Amount input
         document.getElementById('amount-input').addEventListener('input', () => {
+            this.updatePotentialProfit();
+        });
+        
+        // Duration input
+        document.getElementById('duration-input').addEventListener('input', () => {
             this.updatePotentialProfit();
         });
 
@@ -524,8 +538,7 @@ class TradingViewChart {
 
     async placeTrade() {
         const amount = parseFloat(document.getElementById('amount-input').value);
-        const timeInput = document.getElementById('expiry-input').value;
-        const expirySeconds = this.convertTimeToSeconds(timeInput);
+        const durationSeconds = parseInt(document.getElementById('duration-input').value);
         
         if (!amount || amount < 1) {
             alert('Please enter a valid investment amount');
@@ -537,8 +550,8 @@ class TradingViewChart {
             return;
         }
         
-        if (!timeInput || expirySeconds < 1) {
-            alert('Please enter a valid expiry time');
+        if (!durationSeconds || durationSeconds < 1) {
+            alert('Please enter a valid trade duration');
             return;
         }
         
@@ -550,7 +563,7 @@ class TradingViewChart {
             asset: asset,
             trade_type: this.selectedDirection,
             amount: amount,
-            expiry_seconds: expirySeconds
+            expiry_seconds: durationSeconds
         });
         
         // Create hidden form
@@ -574,7 +587,7 @@ class TradingViewChart {
             'asset': asset,
             'trade_type': this.selectedDirection,
             'amount': amount,
-            'expiry_seconds': expirySeconds
+            'expiry_seconds': durationSeconds
         };
         
         for (const [name, value] of Object.entries(fields)) {
@@ -963,6 +976,14 @@ class TradingViewChart {
 // Global functions for quick amount selection
 function setAmount(amount) {
     document.getElementById('amount-input').value = amount;
+    if (window.tradingChart) {
+        window.tradingChart.updatePotentialProfit();
+    }
+}
+
+// Global function for quick duration selection
+function setDuration(seconds) {
+    document.getElementById('duration-input').value = seconds;
     if (window.tradingChart) {
         window.tradingChart.updatePotentialProfit();
     }
