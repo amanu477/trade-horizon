@@ -558,7 +558,7 @@ class TradingViewChart {
         // Ensure we have a valid asset
         const asset = this.currentAsset || 'EURUSD';
         
-        // Create and submit a hidden form for reliable session handling
+        // Use AJAX to place trade without page refresh
         console.log('Placing trade:', {
             asset: asset,
             trade_type: this.selectedDirection,
@@ -566,41 +566,79 @@ class TradingViewChart {
             expiry_seconds: durationSeconds
         });
         
-        // Create hidden form
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '/place_trade';
-        form.style.display = 'none';
-        
-        // Add CSRF token
+        // Get CSRF token
         const csrfToken = document.querySelector('meta[name="csrf-token"]');
+        
+        // Prepare form data
+        const formData = new FormData();
+        formData.append('asset', asset);
+        formData.append('trade_type', this.selectedDirection);
+        formData.append('amount', amount);
+        formData.append('expiry_seconds', durationSeconds);
         if (csrfToken) {
-            const csrfInput = document.createElement('input');
-            csrfInput.type = 'hidden';
-            csrfInput.name = 'csrf_token';
-            csrfInput.value = csrfToken.getAttribute('content');
-            form.appendChild(csrfInput);
+            formData.append('csrf_token', csrfToken.getAttribute('content'));
         }
         
-        // Add form fields
-        const fields = {
-            'asset': asset,
-            'trade_type': this.selectedDirection,
-            'amount': amount,
-            'expiry_seconds': durationSeconds
-        };
+        // Send AJAX request
+        fetch('/place_trade', {
+            method: 'POST',
+            body: formData,
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update balance display
+                this.updateBalanceDisplay(data.new_balance);
+                
+                // Refresh active trades list to show new trade
+                this.loadActiveTrades();
+                
+                // Show success message
+                this.showTradeMessage('Trade placed successfully!', 'success');
+            } else {
+                this.showTradeMessage(data.error || 'Failed to place trade', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error placing trade:', error);
+            this.showTradeMessage('Network error. Please try again.', 'error');
+        });
+    }
+    
+    updateBalanceDisplay(newBalance) {
+        // Update balance in the wallet display if it exists
+        const balanceElements = document.querySelectorAll('.balance-display, #wallet-balance');
+        balanceElements.forEach(element => {
+            element.textContent = `$${parseFloat(newBalance).toFixed(2)}`;
+        });
+    }
+    
+    showTradeMessage(message, type) {
+        // Create and show a temporary message overlay
+        const messageDiv = document.createElement('div');
+        messageDiv.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 4px;
+            color: white;
+            font-weight: bold;
+            z-index: 10000;
+            background: ${type === 'success' ? '#26a69a' : '#ef5350'};
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        `;
+        messageDiv.textContent = message;
         
-        for (const [name, value] of Object.entries(fields)) {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = name;
-            input.value = value;
-            form.appendChild(input);
-        }
+        document.body.appendChild(messageDiv);
         
-        // Add to page and submit
-        document.body.appendChild(form);
-        form.submit();
+        // Auto-remove after 3 seconds
+        setTimeout(() => {
+            if (messageDiv.parentNode) {
+                messageDiv.parentNode.removeChild(messageDiv);
+            }
+        }, 3000);
     }
     
     loadActiveTrades() {

@@ -293,6 +293,7 @@ def place_trade():
             'entry_price': entry_price,
             'expiry_time': expiry_time.isoformat(),
             'payout_percentage': payout_percentage,
+            'new_balance': float(wallet.demo_balance if is_demo else wallet.balance),
             'message': f'Trade placed successfully! Entry price: ${entry_price:.5f}'
         }
         
@@ -309,7 +310,11 @@ def place_trade():
         logging.error(f"Full traceback: {error_details}")
         error_message = f'Trade placement failed: {str(e)}'
         
-        return jsonify({'success': False, 'message': error_message}), 500
+        if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'error': error_message}), 500
+        
+        flash(error_message, 'error')
+        return redirect(request.referrer or url_for('demo_trading'))
 
 @app.route('/place_trade_old', methods=['POST'])
 @login_required
