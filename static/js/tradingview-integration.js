@@ -103,11 +103,11 @@ class TradingViewChart {
                             
                             <!-- Trade Direction -->
                             <div style="display: flex; gap: 8px; margin-bottom: 16px;">
-                                <button id="call-btn" class="trade-direction-btn" style="flex: 1; background: #26a69a; color: white; border: none; padding: 12px; border-radius: 4px; font-weight: bold; cursor: pointer; transition: all 0.2s;">
-                                    CALL ↗
+                                <button id="buy-btn" class="trade-direction-btn" style="flex: 1; background: #26a69a; color: white; border: none; padding: 12px; border-radius: 4px; font-weight: bold; cursor: pointer; transition: all 0.2s;">
+                                    BUY ↗
                                 </button>
-                                <button id="put-btn" class="trade-direction-btn" style="flex: 1; background: #ef5350; color: white; border: none; padding: 12px; border-radius: 4px; font-weight: bold; cursor: pointer; transition: all 0.2s;">
-                                    PUT ↘
+                                <button id="sell-btn" class="trade-direction-btn" style="flex: 1; background: #ef5350; color: white; border: none; padding: 12px; border-radius: 4px; font-weight: bold; cursor: pointer; transition: all 0.2s;">
+                                    SELL ↘
                                 </button>
                             </div>
                             
@@ -141,10 +141,7 @@ class TradingViewChart {
                                 </div>
                             </div>
                             
-                            <!-- Trade Button -->
-                            <button id="place-trade-btn" style="width: 100%; background: #2962ff; color: white; border: none; padding: 14px; border-radius: 4px; font-weight: bold; font-size: 16px; cursor: pointer; transition: all 0.2s;">
-                                PLACE TRADE
-                            </button>
+                            <!-- Trade execution happens via Buy/Sell buttons directly -->
                         </div>
                         
                         <!-- Active Trades -->
@@ -238,30 +235,25 @@ class TradingViewChart {
     }
     
     setupEventListeners() {
-        // Trade direction buttons
-        document.getElementById('call-btn').addEventListener('click', () => {
+        // Buy button - execute trade immediately
+        document.getElementById('buy-btn').addEventListener('click', () => {
             this.selectedDirection = 'call';
-            this.updateDirectionButtons();
+            this.placeTrade();
         });
         
-        document.getElementById('put-btn').addEventListener('click', () => {
+        // Sell button - execute trade immediately
+        document.getElementById('sell-btn').addEventListener('click', () => {
             this.selectedDirection = 'put';
-            this.updateDirectionButtons();
+            this.placeTrade();
         });
         
         // Amount input
         document.getElementById('amount-input').addEventListener('input', () => {
             this.updatePotentialProfit();
         });
+
         
-        // Place trade button
-        document.getElementById('place-trade-btn').addEventListener('click', () => {
-            this.placeTrade();
-        });
-        
-        // Set default selection
-        this.selectedDirection = 'call';
-        this.updateDirectionButtons();
+        // No default selection needed - buttons execute trades directly
         this.updatePotentialProfit();
     }
     
@@ -481,22 +473,7 @@ class TradingViewChart {
         }, 2000);
     }
     
-    updateDirectionButtons() {
-        const callBtn = document.getElementById('call-btn');
-        const putBtn = document.getElementById('put-btn');
-        
-        if (this.selectedDirection === 'call') {
-            callBtn.style.background = '#26a69a';
-            callBtn.style.opacity = '1';
-            putBtn.style.background = '#2a2e39';
-            putBtn.style.opacity = '0.6';
-        } else {
-            putBtn.style.background = '#ef5350';
-            putBtn.style.opacity = '1';
-            callBtn.style.background = '#2a2e39';
-            callBtn.style.opacity = '0.6';
-        }
-    }
+    // Function removed - Buy/Sell buttons execute trades directly
     
     updatePotentialProfit() {
         const amount = parseFloat(document.getElementById('amount-input').value) || 0;
