@@ -49,10 +49,8 @@
                                         <span class="h5 text-warning">${{ "%.2f"|format(withdrawal.amount) }}</span>
                                     </td>
                                     <td>
-                                        <span class="badge bg-info">{{ withdrawal.method.title() }}</span>
-                                        {% if withdrawal.wallet_address %}
-                                        <br><small class="text-muted">{{ withdrawal.wallet_address[:20] }}...</small>
-                                        {% endif %}
+                                        <span class="badge bg-info">{{ withdrawal.currency }}</span>
+                                        <br><small class="text-muted">{{ withdrawal.wallet_address[:25] }}...</small>
                                     </td>
                                     <td>
                                         {% if withdrawal.status == 'pending' %}

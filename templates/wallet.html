@@ -140,13 +140,23 @@
                     </div>
                     
                     <div class="mb-3">
-                        {{ withdraw_form.method.label(class="form-label text-light") }}
-                        {{ withdraw_form.method(class="form-select bg-secondary border-warning text-light") }}
+                        {{ withdraw_form.currency.label(class="form-label text-light") }}
+                        {{ withdraw_form.currency(class="form-select bg-secondary border-warning text-light") }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ withdraw_form.wallet_address.label(class="form-label text-light") }}
+                        {{ withdraw_form.wallet_address(class="form-control bg-secondary border-warning text-light", placeholder="Enter your wallet address") }}
+                        {% if withdraw_form.wallet_address.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in withdraw_form.wallet_address.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
                     </div>
                     
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle me-2"></i>
-                        <small>Withdrawals are processed within 24 hours during business days.</small>
+                        <small>Cryptocurrency withdrawals are processed within 24 hours after admin approval.</small>
                     </div>
                     
                     <button type="submit" class="btn btn-warning w-100" {% if wallet.balance < 10 %}disabled{% endif %}>

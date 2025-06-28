@@ -512,18 +512,19 @@ def withdraw():
         if wallet.balance < form.amount.data:
             flash('Insufficient balance', 'error')
         else:
-            # Create withdrawal request instead of immediate processing
+            # Create withdrawal request with cryptocurrency details
             withdrawal_request = WithdrawalRequest(
                 user_id=current_user.id,
                 amount=form.amount.data,
-                method=form.method.data,
+                currency=form.currency.data,
+                wallet_address=form.wallet_address.data,
                 status='pending'
             )
             
             db.session.add(withdrawal_request)
             db.session.commit()
             
-            flash(f'Withdrawal request of ${form.amount.data:.2f} submitted successfully! Admin will review and process your request within 24 hours.', 'success')
+            flash(f'Withdrawal request of ${form.amount.data:.2f} {form.currency.data} submitted successfully! Admin will review and process your request within 24 hours.', 'success')
     else:
         flash('Invalid withdrawal amount', 'error')
     
@@ -1341,12 +1342,21 @@ def admin_process_withdrawal(withdrawal_id):
                 user_id=withdrawal.user_id,
                 transaction_type='withdrawal',
                 amount=-withdrawal.amount,
-                description=f'Withdrawal via {withdrawal.method} - Approved by admin'
+                description=f'Withdrawal {withdrawal.amount} {withdrawal.currency} to {withdrawal.wallet_address[:10]}... - Approved by admin'
             )
             db.session.add(transaction)
             
             withdrawal.status = 'approved'
             flash(f'Withdrawal of ${withdrawal.amount:.2f} approved and processed successfully.', 'success')
+            
+            # Create success notification for user
+            user_transaction = Transaction(
+                user_id=withdrawal.user_id,
+                transaction_type='notification',
+                amount=0,
+                description=f'✅ Your withdrawal request of ${withdrawal.amount:.2f} {withdrawal.currency} has been APPROVED and processed!'
+            )
+            db.session.add(user_transaction)
         else:
             flash(f'Cannot approve withdrawal - user has insufficient balance (${user_wallet.balance:.2f} available).', 'error')
             return redirect(url_for('admin_withdrawals'))
@@ -1354,6 +1364,15 @@ def admin_process_withdrawal(withdrawal_id):
     elif status == 'rejected':
         withdrawal.status = 'rejected'
         flash(f'Withdrawal request of ${withdrawal.amount:.2f} has been rejected.', 'warning')
+        
+        # Create rejection notification for user
+        user_notification = Transaction(
+            user_id=withdrawal.user_id,
+            transaction_type='notification',
+            amount=0,
+            description=f'❌ Your withdrawal request of ${withdrawal.amount:.2f} {withdrawal.currency} has been REJECTED. Reason: {admin_notes or "Not specified"}'
+        )
+        db.session.add(user_notification)
     
     withdrawal.admin_notes = admin_notes
     withdrawal.processed_at = datetime.utcnow()

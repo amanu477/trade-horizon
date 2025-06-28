@@ -85,11 +85,18 @@ class WithdrawForm(FlaskForm):
         NumberRange(min=10, message="Minimum withdrawal is $10")
     ])
     
-    method = SelectField('Withdrawal Method', choices=[
-        ('bank', 'Bank Transfer'),
-        ('paypal', 'PayPal'),
-        ('crypto', 'Cryptocurrency')
+    currency = SelectField('Cryptocurrency', choices=[
+        ('USDT', 'USDT (TRC-20)'),
+        ('BTC', 'Bitcoin'),
+        ('ETH', 'Ethereum')
     ], validators=[DataRequired()])
+    
+    wallet_address = StringField('Wallet Address', validators=[
+        DataRequired(),
+        Length(min=25, max=100, message="Please enter a valid wallet address")
+    ])
+    
+    submit = SubmitField('Request Withdrawal')
 
 class DepositForm(FlaskForm):
     amount = DecimalField('Deposit Amount', validators=[
