@@ -3,51 +3,347 @@
 {% block title %}Dashboard - TradePro{% endblock %}
 
 {% block content %}
-<div class="container py-4">
+<div class="container-fluid py-4">
     <!-- Welcome Section -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="card bg-dark border-success">
-                <div class="card-body text-center py-4">
+                <div class="card-body text-center py-3">
                     <h2 class="text-success mb-2">
-                        <i class="fas fa-user-circle me-2"></i>Welcome back, {{ current_user.username }}!
+                        <i class="fas fa-chart-line me-2"></i>Welcome back, {{ current_user.username }}!
                     </h2>
-                    <p class="text-muted mb-0">Your personal dashboard and profile management</p>
+                    <p class="text-muted mb-0">Your trading dashboard - manage your portfolio and execute trades</p>
                 </div>
             </div>
         </div>
     </div>
-    
-    <!-- User Profile Information -->
+
+    <!-- Wallet Overview Cards -->
     <div class="row mb-4">
-        <div class="col-md-8 mx-auto">
-            <div class="card bg-dark border-primary">
-                <div class="card-header bg-primary text-dark">
+        <div class="col-md-3 mb-3">
+            <div class="card bg-dark border-info h-100">
+                <div class="card-body text-center">
+                    <div class="text-info mb-2">
+                        <i class="fas fa-wallet fa-2x"></i>
+                    </div>
+                    <h5 class="text-light">Demo Balance</h5>
+                    <h3 class="text-success">${{ "{:.2f}".format(wallet.demo_balance) }}</h3>
+                    <a href="{{ url_for('demo_trading') }}" class="btn btn-info btn-sm mt-2">
+                        <i class="fas fa-play me-1"></i>Practice Trading
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card bg-dark border-warning h-100">
+                <div class="card-body text-center">
+                    <div class="text-warning mb-2">
+                        <i class="fas fa-coins fa-2x"></i>
+                    </div>
+                    <h5 class="text-light">Live Balance</h5>
+                    <h3 class="text-warning">${{ "{:.2f}".format(wallet.balance) }}</h3>
+                    <a href="{{ url_for('live_trading') }}" class="btn btn-warning btn-sm mt-2">
+                        <i class="fas fa-rocket me-1"></i>Live Trading
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card bg-dark border-success h-100">
+                <div class="card-body text-center">
+                    <div class="text-success mb-2">
+                        <i class="fas fa-chart-bar fa-2x"></i>
+                    </div>
+                    <h5 class="text-light">Win Rate</h5>
+                    <h3 class="text-success">{{ "{:.1f}".format(win_rate) }}%</h3>
+                    <small class="text-muted">{{ total_trades }} total trades</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card bg-dark border-purple h-100">
+                <div class="card-body text-center">
+                    <div class="text-purple mb-2" style="color: #7b68ee;">
+                        <i class="fas fa-piggy-bank fa-2x"></i>
+                    </div>
+                    <h5 class="text-light">Staking Rewards</h5>
+                    <h3 style="color: #7b68ee;">${{ "{:.2f}".format(total_staking_rewards) }}</h3>
+                    <a href="{{ url_for('staking') }}" class="btn btn-sm mt-2" style="background-color: #7b68ee; color: white;">
+                        <i class="fas fa-plus me-1"></i>Stake Now
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-dark border-secondary">
+                <div class="card-header bg-secondary text-dark">
                     <h5 class="m-0">
-                        <i class="fas fa-user me-2"></i>Your Profile Information
+                        <i class="fas fa-bolt me-2"></i>Quick Actions
                     </h5>
                 </div>
                 <div class="card-body">
-                    <div class="row mb-3">
-                        <div class="col-sm-3">
-                            <strong class="text-light">Username:</strong>
+                    <div class="row">
+                        <div class="col-md-2 col-6 mb-2">
+                            <a href="{{ url_for('demo_trading') }}" class="btn btn-info w-100">
+                                <i class="fas fa-play me-1"></i>Demo Trade
+                            </a>
                         </div>
-                        <div class="col-sm-9">
-                            <span class="text-success">{{ current_user.username }}</span>
+                        <div class="col-md-2 col-6 mb-2">
+                            <a href="{{ url_for('live_trading') }}" class="btn btn-warning w-100">
+                                <i class="fas fa-rocket me-1"></i>Live Trade
+                            </a>
+                        </div>
+                        <div class="col-md-2 col-6 mb-2">
+                            <a href="{{ url_for('wallet') }}" class="btn btn-success w-100">
+                                <i class="fas fa-wallet me-1"></i>Wallet
+                            </a>
+                        </div>
+                        <div class="col-md-2 col-6 mb-2">
+                            <a href="{{ url_for('staking') }}" class="btn btn-purple w-100" style="background-color: #7b68ee; border-color: #7b68ee;">
+                                <i class="fas fa-piggy-bank me-1"></i>Staking
+                            </a>
+                        </div>
+                        <div class="col-md-2 col-6 mb-2">
+                            <a href="{{ url_for('profile') }}" class="btn btn-secondary w-100">
+                                <i class="fas fa-user me-1"></i>Profile
+                            </a>
+                        </div>
+                        <div class="col-md-2 col-6 mb-2">
+                            <a href="{{ url_for('logout') }}" class="btn btn-outline-danger w-100">
+                                <i class="fas fa-sign-out-alt me-1"></i>Logout
+                            </a>
                         </div>
                     </div>
-                    
-                    <div class="row mb-3">
-                        <div class="col-sm-3">
-                            <strong class="text-light">Email:</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <!-- Active Trades -->
+        <div class="col-md-6 mb-4">
+            <div class="card bg-dark border-primary h-100">
+                <div class="card-header bg-primary text-dark">
+                    <h6 class="m-0 font-weight-bold">
+                        <i class="fas fa-chart-line me-2"></i>Active Trades ({{ active_trades|length }})
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if active_trades %}
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Asset</th>
+                                        <th>Type</th>
+                                        <th>Amount</th>
+                                        <th>Entry</th>
+                                        <th>Expires</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for trade in active_trades[:5] %}
+                                    <tr>
+                                        <td><span class="badge bg-info">{{ trade.asset }}</span></td>
+                                        <td>
+                                            {% if trade.trade_type == 'call' %}
+                                                <span class="badge bg-success">BUY</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">SELL</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-warning">${{ "{:.2f}".format(trade.amount) }}</td>
+                                        <td class="text-info">${{ "{:.5f}".format(trade.entry_price) }}</td>
+                                        <td class="text-muted" data-expiry="{{ trade.expiry_time.isoformat() }}">
+                                            {{ trade.expiry_time.strftime('%H:%M:%S') }}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         </div>
-                        <div class="col-sm-9">
-                            <span class="text-info">{{ current_user.email }}</span>
+                        {% if active_trades|length > 5 %}
+                            <div class="text-center mt-2">
+                                <small class="text-muted">Showing 5 of {{ active_trades|length }} active trades</small>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center text-muted py-3">
+                            <i class="fas fa-chart-line fa-2x mb-2"></i>
+                            <p>No active trades</p>
+                            <a href="{{ url_for('demo_trading') }}" class="btn btn-info btn-sm">Start Trading</a>
                         </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Trades History -->
+        <div class="col-md-6 mb-4">
+            <div class="card bg-dark border-secondary h-100">
+                <div class="card-header bg-secondary text-dark">
+                    <h6 class="m-0 font-weight-bold">
+                        <i class="fas fa-history me-2"></i>Recent Trades
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if recent_trades %}
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Asset</th>
+                                        <th>Type</th>
+                                        <th>Amount</th>
+                                        <th>Result</th>
+                                        <th>P&L</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for trade in recent_trades %}
+                                    <tr>
+                                        <td><span class="badge bg-info">{{ trade.asset }}</span></td>
+                                        <td>
+                                            {% if trade.trade_type == 'call' %}
+                                                <span class="badge bg-success">BUY</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">SELL</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-warning">${{ "{:.2f}".format(trade.amount) }}</td>
+                                        <td>
+                                            {% if trade.status == 'won' %}
+                                                <span class="badge bg-success">PROFIT</span>
+                                            {% elif trade.status == 'lost' %}
+                                                <span class="badge bg-danger">LOSE</span>
+                                            {% else %}
+                                                <span class="badge bg-warning">{{ trade.status.upper() }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if trade.profit_loss > 0 %}
+                                                <span class="text-success">+${{ "{:.2f}".format(trade.profit_loss) }}</span>
+                                            {% elif trade.profit_loss < 0 %}
+                                                <span class="text-danger">${{ "{:.2f}".format(trade.profit_loss) }}</span>
+                                            {% else %}
+                                                <span class="text-muted">$0.00</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center text-muted py-3">
+                            <i class="fas fa-history fa-2x mb-2"></i>
+                            <p>No trade history yet</p>
+                            <a href="{{ url_for('demo_trading') }}" class="btn btn-info btn-sm">Place Your First Trade</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Staking Positions -->
+    {% if active_staking %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-dark border-purple" style="border-color: #7b68ee;">
+                <div class="card-header text-dark" style="background-color: #7b68ee;">
+                    <h6 class="m-0 font-weight-bold">
+                        <i class="fas fa-piggy-bank me-2"></i>Active Staking Positions ({{ active_staking|length }})
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Amount</th>
+                                    <th>APY</th>
+                                    <th>Duration</th>
+                                    <th>Start Date</th>
+                                    <th>End Date</th>
+                                    <th>Current Rewards</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for position in active_staking %}
+                                <tr>
+                                    <td class="text-warning">${{ "{:.2f}".format(position.amount) }}</td>
+                                    <td class="text-success">{{ "{:.1f}".format(position.apy) }}%</td>
+                                    <td class="text-info">{{ position.duration_days }} days</td>
+                                    <td class="text-muted">{{ position.start_date.strftime('%m/%d/%Y') }}</td>
+                                    <td class="text-muted">{{ position.end_date.strftime('%m/%d/%Y') }}</td>
+                                    <td style="color: #7b68ee;">${{ "{:.2f}".format(position.calculate_rewards()) }}</td>
+                                    <td>
+                                        {% if position.is_completed() %}
+                                            <span class="badge bg-success">Completed</span>
+                                        {% else %}
+                                            <span class="badge" style="background-color: #7b68ee;">Active</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
-                    
-                    <div class="row mb-3">
-                        <div class="col-sm-3">
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+// Update countdown timers for active trades
+function updateCountdowns() {
+    const cells = document.querySelectorAll('[data-expiry]');
+    cells.forEach(cell => {
+        const expiryTime = new Date(cell.dataset.expiry);
+        const now = new Date();
+        const timeLeft = expiryTime - now;
+        
+        if (timeLeft > 0) {
+            const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+            
+            if (hours > 0) {
+                cell.textContent = `${hours}h ${minutes}m ${seconds}s`;
+            } else if (minutes > 0) {
+                cell.textContent = `${minutes}m ${seconds}s`;
+            } else {
+                cell.textContent = `${seconds}s`;
+            }
+            
+            if (timeLeft < 60000) { // Less than 1 minute
+                cell.className = 'text-danger';
+            } else if (timeLeft < 300000) { // Less than 5 minutes
+                cell.className = 'text-warning';
+            }
+        } else {
+            cell.textContent = 'Expired';
+            cell.className = 'text-danger';
+        }
+    });
+}
+
+// Update countdowns every second
+setInterval(updateCountdowns, 1000);
+updateCountdowns(); // Initial call
+</script>
+{% endblock %}
                             <strong class="text-light">Full Name:</strong>
                         </div>
                         <div class="col-sm-9">
