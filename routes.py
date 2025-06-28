@@ -156,6 +156,8 @@ def place_trade():
         else:
             data = request.form
         
+        logging.info(f"Trade request data: {dict(data)}")
+        
         # Extract trade data
         asset = data.get('asset')
         trade_type = data.get('trade_type')
@@ -163,23 +165,27 @@ def place_trade():
         expiry_minutes = int(data.get('expiry_minutes', 1))
         is_demo = data.get('is_demo', 'true').lower() == 'true'
         
+        logging.info(f"Parsed trade: asset={asset}, type={trade_type}, amount={amount}, expiry={expiry_minutes}, demo={is_demo}")
+        
         # Validation
         if not asset or not trade_type or amount <= 0:
-            if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return jsonify({'success': False, 'message': 'Invalid trade parameters'}), 400
-            flash('Invalid trade data', 'error')
-            return redirect(request.referrer or url_for('demo_trading'))
+            error_msg = f'Invalid trade parameters: asset={asset}, type={trade_type}, amount={amount}'
+            logging.error(error_msg)
+            return jsonify({'success': False, 'message': 'Invalid trade parameters'}), 400
         
         # Check balance
         wallet = current_user.wallet
+        if not wallet:
+            logging.error(f"No wallet found for user {current_user.id}")
+            return jsonify({'success': False, 'message': 'Wallet not found'}), 400
+            
         available_balance = wallet.demo_balance if is_demo else wallet.balance
+        logging.info(f"User balance check: available={available_balance}, required={amount}, demo={is_demo}")
         
         if available_balance < amount:
             message = 'Insufficient balance for this trade'
-            if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return jsonify({'success': False, 'message': message}), 400
-            flash(message, 'error')
-            return redirect(request.referrer or url_for('demo_trading'))
+            logging.error(f"Insufficient balance: {available_balance} < {amount}")
+            return jsonify({'success': False, 'message': message}), 400
         
         # Get current market price
         try:
@@ -247,14 +253,13 @@ def place_trade():
         return redirect(request.referrer or url_for('demo_trading'))
         
     except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
         logging.error(f"Error placing trade: {e}")
-        error_message = 'An error occurred while placing the trade'
+        logging.error(f"Full traceback: {error_details}")
+        error_message = f'Trade placement failed: {str(e)}'
         
-        if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify({'success': False, 'message': error_message}), 500
-        
-        flash(error_message, 'error')
-        return redirect(request.referrer or url_for('demo_trading'))
+        return jsonify({'success': False, 'message': error_message}), 500
 
 @app.route('/place_trade_old', methods=['POST'])
 @login_required
