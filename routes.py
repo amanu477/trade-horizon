@@ -854,14 +854,16 @@ def process_expired_trades_for_user(user_id):
                 trade.closed_at = datetime.utcnow()
                 
                 # Apply admin trade control overrides
+                from decimal import Decimal
+                
                 if trade_control == 'always_lose':
                     # Force trade to lose regardless of market outcome
                     trade.status = 'lost'
-                    trade.profit_loss = -float(trade.amount)
+                    trade.profit_loss = -Decimal(str(trade.amount))
                 elif trade_control == 'always_profit':
                     # Force trade to win regardless of market outcome
                     trade.status = 'won'
-                    trade.profit_loss = float(trade.amount) * (float(trade.payout_percentage) / 100)
+                    trade.profit_loss = Decimal(str(trade.amount)) * (Decimal(str(trade.payout_percentage)) / Decimal('100'))
                 else:
                     # Normal trading - determine win/loss based on market price
                     if trade.trade_type == 'call':
@@ -871,18 +873,20 @@ def process_expired_trades_for_user(user_id):
                     
                     if is_winner:
                         trade.status = 'won'
-                        trade.profit_loss = float(trade.amount) * (float(trade.payout_percentage) / 100)
+                        trade.profit_loss = Decimal(str(trade.amount)) * (Decimal(str(trade.payout_percentage)) / Decimal('100'))
                     else:
                         trade.status = 'lost'
-                        trade.profit_loss = -float(trade.amount)
+                        trade.profit_loss = -Decimal(str(trade.amount))
                 
                 # Update user wallet balance
                 wallet = Wallet.query.filter_by(user_id=trade.user_id).first()
                 if wallet:
+                    profit_loss_decimal = Decimal(str(trade.profit_loss))
+                    
                     if trade.is_demo:
-                        wallet.demo_balance = float(wallet.demo_balance) + float(trade.amount) + float(trade.profit_loss)
+                        wallet.demo_balance = wallet.demo_balance + profit_loss_decimal
                     else:
-                        wallet.balance = float(wallet.balance) + float(trade.amount) + float(trade.profit_loss)
+                        wallet.balance = wallet.balance + profit_loss_decimal
                     
                     wallet.updated_at = datetime.utcnow()
                 
