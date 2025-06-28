@@ -88,10 +88,10 @@ class Trade(db.Model):
             won = current_price < self.entry_price
         
         if won:
-            self.status = 'won'
+            self.status = 'profit'
             self.profit_loss = float(self.amount) * (float(self.payout_percentage) / 100)
         else:
-            self.status = 'lost'
+            self.status = 'lose'
             self.profit_loss = -float(self.amount)
 
 class StakingPosition(db.Model):

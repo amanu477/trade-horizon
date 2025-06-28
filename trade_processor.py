@@ -14,7 +14,8 @@ def process_expired_trades():
         # Get all active trades that have expired
         now = datetime.utcnow()
         expired_trades = Trade.query.filter(
-            Trade.status == 'active',
+            Trade.status == 'active'
+        ).filter(
             Trade.expiry_time <= now
         ).all()
         
@@ -30,45 +31,52 @@ def process_expired_trades():
                 # Apply admin trade control overrides
                 if trade_control == 'always_lose':
                     # Force trade to lose regardless of market price
-                    trade.status = 'lost'
+                    trade.status = 'lose'
                     trade.exit_price = current_price
                     trade.profit_loss = -trade.amount
                 elif trade_control == 'always_profit':
                     # Force trade to win regardless of market price
-                    trade.status = 'won'
+                    trade.status = 'profit'
                     trade.exit_price = current_price
                     trade.profit_loss = trade.amount * (trade.payout_percentage / 100)
                 else:
                     # Normal trading - calculate result based on market price
                     trade.calculate_result(current_price)
                 
-                # Update user wallet if trade won
-                if trade.status == 'won':
-                    user = User.query.get(trade.user_id)
+                # Update user wallet based on trade result
+                user = User.query.get(trade.user_id)
+                if user and user.wallet:
                     wallet = user.wallet
                     
-                    # Calculate profit (amount + payout)
-                    profit = trade.amount * (1 + trade.payout_percentage / 100)
-                    
-                    if trade.is_demo:
-                        wallet.demo_balance += profit
-                    else:
-                        wallet.balance += profit
-                    
-                    # Create profit transaction
-                    transaction = Transaction(
-                        user_id=user.id,
-                        transaction_type='trade_profit',
-                        amount=profit,
-                        description=f'Won {trade.trade_type.upper()} {trade.asset} trade - Profit: ${profit - trade.amount:.2f}'
-                    )
-                    db.session.add(transaction)
-                
-                # Update trade profit/loss
-                if trade.status == 'won':
-                    trade.profit_loss = trade.amount * (trade.payout_percentage / 100)
-                else:
-                    trade.profit_loss = -trade.amount
+                    if trade.status == 'profit':
+                        # Calculate total return (original amount + profit)
+                        profit_amount = trade.amount * (trade.payout_percentage / 100)
+                        total_return = trade.amount + profit_amount
+                        
+                        if trade.is_demo:
+                            wallet.demo_balance += total_return
+                        else:
+                            wallet.balance += total_return
+                        
+                        # Create profit transaction
+                        transaction = Transaction()
+                        transaction.user_id = user.id
+                        transaction.transaction_type = 'trade_profit'
+                        transaction.amount = total_return
+                        transaction.description = f'Profit: {trade.trade_type.upper()} {trade.asset} trade - Won ${profit_amount:.2f}'
+                        db.session.add(transaction)
+                        trade.profit_loss = profit_amount
+                        
+                    elif trade.status == 'lose':
+                        # For losing trades, the amount was already deducted when trade was placed
+                        # Just record the loss transaction
+                        transaction = Transaction()
+                        transaction.user_id = user.id
+                        transaction.transaction_type = 'trade_loss'
+                        transaction.amount = -trade.amount
+                        transaction.description = f'Loss: {trade.trade_type.upper()} {trade.asset} trade - Lost ${trade.amount:.2f}'
+                        db.session.add(transaction)
+                        trade.profit_loss = -trade.amount
                 
                 trade.closed_at = now
                 
