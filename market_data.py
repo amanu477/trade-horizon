@@ -73,13 +73,15 @@ class RealMarketData:
             current_price = info.get('regularMarketPrice') or info.get('currentPrice') or info.get('previousClose')
             
             if current_price:
-                return float(current_price)
+                return {'price': float(current_price)}
             else:
-                return self._get_fallback_price(symbol)
+                fallback_price = self._get_fallback_price(symbol)
+                return {'price': fallback_price}
                 
         except Exception as e:
             print(f"Error fetching price for {symbol}: {e}")
-            return self._get_fallback_price(symbol)
+            fallback_price = self._get_fallback_price(symbol)
+            return fallback_price
 
     def get_historical_data(self, symbol, period='1d', interval='1m'):
         """Get historical data for charts"""
@@ -228,7 +230,8 @@ class RealMarketData:
         base_price = fallback_prices.get(symbol, 1.00000)
         # Add small random variation
         variation = (random.random() - 0.5) * base_price * 0.001
-        return base_price + variation
+        price = base_price + variation
+        return price
 
     def _generate_fallback_data(self, symbol):
         """Generate realistic fallback data when real data is unavailable"""

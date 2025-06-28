@@ -814,8 +814,16 @@ def process_expired_trades_for_user(user_id):
             try:
                 # Get current price for the asset
                 current_price_data = market_data.get_real_price(trade.asset)
-                if current_price_data and 'price' in current_price_data:
-                    current_price = float(current_price_data['price'])
+                
+                # Handle different return formats from market data
+                if current_price_data:
+                    if isinstance(current_price_data, dict) and 'price' in current_price_data:
+                        current_price = float(current_price_data['price'])
+                    elif isinstance(current_price_data, (int, float)):
+                        current_price = float(current_price_data)
+                    else:
+                        # Use fallback price if format is unexpected
+                        current_price = float(trade.entry_price) * (1 + random.uniform(-0.005, 0.005))
                 else:
                     # Use fallback price if real data unavailable
                     current_price = float(trade.entry_price) * (1 + random.uniform(-0.005, 0.005))

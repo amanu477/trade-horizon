@@ -36,7 +36,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 # Initialize extensions
 db.init_app(app)
 login_manager.init_app(app)
-# Temporarily disable CSRF for debugging
+# CSRF disabled for testing
 # csrf.init_app(app)
 
 # Login manager configuration

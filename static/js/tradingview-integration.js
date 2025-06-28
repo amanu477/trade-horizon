@@ -704,7 +704,12 @@ class TradingViewChart {
                 .then(response => response.json())
                 .then(data => {
                     const balanceDisplay = document.getElementById('balance-display');
-                    balanceDisplay.textContent = `$${data.balance.toFixed(2)}`;
+                    // Check if we're on demo or live page
+                    const isDemo = window.location.pathname.includes('demo');
+                    const balance = isDemo ? data.demo_balance : data.balance;
+                    if (balanceDisplay) {
+                        balanceDisplay.textContent = `$${balance.toFixed(2)}`;
+                    }
                 })
                 .catch(error => console.error('Error updating balance:', error));
         }, 500);
