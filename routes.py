@@ -183,7 +183,11 @@ def place_trade():
         
         # Get current market price
         try:
-            entry_price = market_data.get_real_price(asset)
+            market_info = market_data.get_real_price(asset)
+            if isinstance(market_info, dict) and 'price' in market_info:
+                entry_price = market_info['price']
+            else:
+                entry_price = market_info
         except:
             entry_price = get_asset_price(asset)
         

@@ -255,7 +255,7 @@ class TradingViewChart {
             width: '100%',
             height: '100%',
             symbol: symbol,
-            interval: '1D',
+            interval: '1m',
             timezone: 'Etc/UTC',
             theme: 'dark',
             style: '1',
@@ -456,6 +456,89 @@ class TradingViewChart {
             putBtn.style.opacity = '1';
             callBtn.style.opacity = '0.6';
         });
+        
+        // Handle trade submission
+        modal.querySelector('#confirm-trade').addEventListener('click', async () => {
+            const amount = modal.querySelector('#modal-amount').value;
+            const expiry = modal.querySelector('#modal-expiry').value;
+            
+            try {
+                const response = await fetch('/place_trade', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': this.getCSRFToken()
+                    },
+                    body: JSON.stringify({
+                        asset: this.currentAsset,
+                        trade_type: selectedDirection,
+                        amount: parseFloat(amount),
+                        expiry_minutes: parseInt(expiry)
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.body.removeChild(modal);
+                    this.showNotification('Trade placed successfully!', 'success');
+                } else {
+                    this.showNotification(result.error || 'Failed to place trade', 'error');
+                }
+            } catch (error) {
+                console.error('Error placing trade:', error);
+                this.showNotification('Network error occurred', 'error');
+            }
+        });
+    }
+    
+    getCSRFToken() {
+        const token = document.querySelector('meta[name="csrf-token"]');
+        return token ? token.getAttribute('content') : '';
+    }
+    
+    showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            border-radius: 4px;
+            color: white;
+            font-weight: 500;
+            z-index: 10001;
+            background: ${type === 'success' ? '#4CAF50' : '#f44336'};
+        `;
+        notification.textContent = message;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            if (document.body.contains(notification)) {
+                document.body.removeChild(notification);
+            }
+        }, 3000);
+    }
+    
+    startPriceUpdates() {
+        // Update price every 2 seconds
+        setInterval(async () => {
+            try {
+                const response = await fetch(`/api/market-data/${this.currentAsset}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const priceDisplay = document.getElementById('price-display');
+                    if (priceDisplay) {
+                        priceDisplay.textContent = data.price.toFixed(5);
+                        priceDisplay.style.color = data.change >= 0 ? '#4CAF50' : '#f44336';
+                    }
+                }
+            } catch (error) {
+                console.error('Error updating price:', error);
+            }
+        }, 2000);
     }
     
     updateDirectionButtons() {
