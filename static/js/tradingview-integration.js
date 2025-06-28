@@ -255,12 +255,12 @@ class TradingViewChart {
             width: '100%',
             height: '100%',
             symbol: symbol,
-            interval: '1',
+            interval: '1D',
             timezone: 'Etc/UTC',
             theme: 'dark',
             style: '1',
             locale: 'en',
-            toolbar_bg: '#2a2e39',
+            toolbar_bg: '#1e222d',
             enable_publishing: false,
             allow_symbol_change: true,
             hide_top_toolbar: false,
@@ -287,9 +287,7 @@ class TradingViewChart {
                 'volume.volume.color.1': '#26a69a55'
             },
             disabled_features: [
-                'use_localstorage_for_settings',
-                'header_symbol_search',
-                'symbol_search_hot_key'
+                'use_localstorage_for_settings'
             ],
             enabled_features: [
                 'study_templates',
@@ -299,11 +297,17 @@ class TradingViewChart {
                 'header_intervals',
                 'header_chart_type',
                 'header_resolutions',
-                'header_settings'
+                'header_settings',
+                'header_symbol_search',
+                'symbol_search_hot_key',
+                'header_screenshot',
+                'header_indicators',
+                'create_volume_indicator_by_default',
+                'study_dialog_search_control',
+                'side_toolbar_in_fullscreen_mode'
             ],
             fullscreen: false,
-            autosize: true,
-            custom_css_url: '/static/css/tradingview-custom.css'
+            autosize: true
         });
         
         // Wait for widget to be ready before setting up interactions

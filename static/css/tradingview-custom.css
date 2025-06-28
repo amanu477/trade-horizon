@@ -1,65 +1,107 @@
 /* TradingView Custom Styles */
 
-/* Ensure the top toolbar is visible with brown theme */
+/* Ensure the top toolbar is visible and styled */
 .tv-header {
-    background-color: #8B4513 !important;
-    border-bottom: 1px solid #A0522D !important;
+    background-color: #1e222d !important;
+    border-bottom: 1px solid #2a2e39 !important;
+    height: auto !important;
+    min-height: 50px !important;
 }
 
 /* Style the timeframe buttons */
 .tv-header__inner {
-    background-color: #8B4513 !important;
+    background-color: #1e222d !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
 }
 
 /* Make sure symbol search and timeframes are visible */
 .tv-header__content {
     display: flex !important;
     visibility: visible !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+}
+
+/* Symbol info area */
+.tv-header__symbol-info {
+    background-color: transparent !important;
+    color: #d1d4dc !important;
 }
 
 /* Timeframe selector styling */
 .tv-header__timeframe {
-    background-color: #8B4513 !important;
-    color: #fff !important;
-}
-
-/* Symbol search styling */
-.tv-header__symbol-search {
-    background-color: #8B4513 !important;
-    color: #fff !important;
+    background-color: transparent !important;
+    color: #d1d4dc !important;
+    display: flex !important;
+    gap: 4px !important;
 }
 
 /* Interval buttons styling */
 .tv-header__timeframe-button {
-    background-color: #8B4513 !important;
-    color: #fff !important;
-    border: 1px solid #A0522D !important;
+    background-color: #2a2e39 !important;
+    color: #d1d4dc !important;
+    border: 1px solid #434651 !important;
+    border-radius: 4px !important;
+    padding: 4px 8px !important;
+    font-size: 12px !important;
 }
 
 .tv-header__timeframe-button:hover {
-    background-color: #A0522D !important;
+    background-color: #434651 !important;
 }
 
 .tv-header__timeframe-button--active {
-    background-color: #D2691E !important;
+    background-color: #26a69a !important;
     color: #fff !important;
+    border-color: #26a69a !important;
 }
 
-/* Chart type selector */
-.tv-header__chart-type {
-    background-color: #8B4513 !important;
-    color: #fff !important;
+/* Chart type and indicators */
+.tv-header__chart-type,
+.tv-header__indicators {
+    background-color: #2a2e39 !important;
+    color: #d1d4dc !important;
+    border: 1px solid #434651 !important;
+    border-radius: 4px !important;
+    padding: 6px 12px !important;
 }
 
-/* Symbol info styling */
-.tv-symbol-info {
-    background-color: #8B4513 !important;
-    color: #fff !important;
+.tv-header__chart-type:hover,
+.tv-header__indicators:hover {
+    background-color: #434651 !important;
 }
 
-/* Controls styling */
-.tv-header__controls {
-    background-color: #8B4513 !important;
+/* Symbol search input */
+.tv-header__symbol-search input {
+    background-color: #2a2e39 !important;
+    color: #d1d4dc !important;
+    border: 1px solid #434651 !important;
+    border-radius: 4px !important;
+    padding: 6px 12px !important;
+}
+
+/* Make all header elements visible */
+.tv-header__symbol-search,
+.tv-header__timeframe,
+.tv-header__chart-type,
+.tv-header__indicators,
+.tv-header__settings {
+    display: block !important;
+    visibility: visible !important;
+}
+
+/* Ensure indicators button is visible */
+.tv-header__indicators-button {
+    background-color: #2a2e39 !important;
+    color: #d1d4dc !important;
+    border: 1px solid #434651 !important;
+    border-radius: 4px !important;
+    padding: 6px 12px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
 }
 
 /* Drawing tools toolbar */
