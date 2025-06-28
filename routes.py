@@ -714,3 +714,127 @@ def process_expired_trades():
     
     db.session.commit()
     return jsonify({'processed': len(expired_trades)})
+
+@app.route('/api/active_trades')
+@login_required
+def api_active_trades():
+    """Get user's active trades"""
+    try:
+        # First, process any expired trades
+        process_expired_trades_for_user(current_user.id)
+        
+        active_trades = Trade.query.filter_by(
+            user_id=current_user.id,
+            status='active'
+        ).order_by(Trade.created_at.desc()).all()
+        
+        trades_data = []
+        for trade in active_trades:
+            # Calculate remaining time
+            remaining_seconds = (trade.expiry_time - datetime.utcnow()).total_seconds()
+            
+            trades_data.append({
+                'id': trade.id,
+                'asset': trade.asset,
+                'trade_type': trade.trade_type,
+                'amount': float(trade.amount),
+                'entry_price': float(trade.entry_price),
+                'expiry_time': trade.expiry_time.isoformat(),
+                'remaining_seconds': max(0, int(remaining_seconds)),
+                'payout_percentage': float(trade.payout_percentage),
+                'created_at': trade.created_at.isoformat(),
+                'is_demo': trade.is_demo
+            })
+        
+        return jsonify({
+            'success': True,
+            'trades': trades_data
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+def process_expired_trades_for_user(user_id):
+    """Process expired trades for a specific user"""
+    from market_data import RealMarketData
+    
+    try:
+        # Get expired trades for this user
+        expired_trades = Trade.query.filter(
+            Trade.user_id == user_id,
+            Trade.status == 'active',
+            Trade.expiry_time <= datetime.utcnow()
+        ).all()
+        
+        if not expired_trades:
+            return
+        
+        market_data = RealMarketData()
+        
+        for trade in expired_trades:
+            try:
+                # Get current price for the asset
+                current_price_data = market_data.get_real_price(trade.asset)
+                if current_price_data and 'price' in current_price_data:
+                    current_price = float(current_price_data['price'])
+                else:
+                    # Use fallback price if real data unavailable
+                    current_price = float(trade.entry_price) * (1 + random.uniform(-0.005, 0.005))
+                
+                # Calculate trade result
+                trade.exit_price = current_price
+                trade.closed_at = datetime.utcnow()
+                
+                # Determine win/loss
+                if trade.trade_type == 'call':
+                    is_winner = current_price > float(trade.entry_price)
+                else:  # put
+                    is_winner = current_price < float(trade.entry_price)
+                
+                # Update trade status and profit/loss
+                if is_winner:
+                    trade.status = 'won'
+                    trade.profit_loss = float(trade.amount) * (float(trade.payout_percentage) / 100)
+                else:
+                    trade.status = 'lost'
+                    trade.profit_loss = -float(trade.amount)
+                
+                # Update user wallet balance
+                wallet = Wallet.query.filter_by(user_id=trade.user_id).first()
+                if wallet:
+                    if trade.is_demo:
+                        wallet.demo_balance = float(wallet.demo_balance) + float(trade.amount) + float(trade.profit_loss)
+                    else:
+                        wallet.balance = float(wallet.balance) + float(trade.amount) + float(trade.profit_loss)
+                    
+                    wallet.updated_at = datetime.utcnow()
+                
+                # Create transaction record
+                if trade.profit_loss > 0:
+                    transaction = Transaction(
+                        user_id=trade.user_id,
+                        transaction_type='trade_win',
+                        amount=trade.profit_loss,
+                        description=f'Won trade: {trade.asset} {trade.trade_type}'
+                    )
+                else:
+                    transaction = Transaction(
+                        user_id=trade.user_id,
+                        transaction_type='trade_loss',
+                        amount=abs(trade.profit_loss),
+                        description=f'Lost trade: {trade.asset} {trade.trade_type}'
+                    )
+                db.session.add(transaction)
+                
+            except Exception as e:
+                print(f"Error processing trade {trade.id}: {e}")
+                continue
+        
+        db.session.commit()
+        print(f"Processed {len(expired_trades)} expired trades for user {user_id}")
+        
+    except Exception as e:
+        print(f"Error processing expired trades for user {user_id}: {e}")
+        db.session.rollback()

@@ -28,6 +28,18 @@
         mode: 'demo'
     });
     
+    // Initialize active trades monitoring after chart is ready
+    setTimeout(() => {
+        if (window.tradingChart && window.tradingChart.loadActiveTrades) {
+            window.tradingChart.loadActiveTrades();
+            
+            // Set up automatic refresh every 30 seconds
+            setInterval(() => {
+                window.tradingChart.loadActiveTrades();
+            }, 30000);
+        }
+    }, 2000);
+    
     console.log('TradingView demo trading interface loaded successfully');
 })();
 </script>

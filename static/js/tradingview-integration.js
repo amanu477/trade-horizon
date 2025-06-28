@@ -565,29 +565,131 @@ class TradingViewChart {
         form.submit();
     }
     
-    addTradeToList(trade) {
+    loadActiveTrades() {
+        fetch('/api/active_trades')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    this.displayActiveTrades(data.trades);
+                    this.startTradeTimers(data.trades);
+                }
+            })
+            .catch(error => console.error('Error loading active trades:', error));
+    }
+    
+    displayActiveTrades(trades) {
         const tradesList = document.getElementById('trades-list');
+        if (!tradesList) return;
         
-        if (tradesList.textContent === 'No active trades') {
-            tradesList.innerHTML = '';
+        if (trades.length === 0) {
+            tradesList.innerHTML = '<div style="color: #868993; text-align: center; padding: 20px;">No active trades</div>';
+            return;
         }
         
-        const tradeElement = document.createElement('div');
-        tradeElement.style.cssText = 'background: #2a2e39; padding: 12px; border-radius: 4px; margin-bottom: 8px;';
-        tradeElement.innerHTML = `
-            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                <span style="color: #d1d4dc; font-weight: bold;">${trade.asset}</span>
-                <span style="color: ${trade.trade_type === 'call' ? '#26a69a' : '#ef5350'}; font-weight: bold;">
-                    ${trade.trade_type.toUpperCase()}
-                </span>
-            </div>
-            <div style="display: flex; justify-content: space-between; font-size: 12px; color: #868993;">
-                <span>$${trade.amount}</span>
-                <span id="timer-${trade.id}">--:--</span>
-            </div>
-        `;
+        tradesList.innerHTML = '';
         
-        tradesList.appendChild(tradeElement);
+        trades.forEach(trade => {
+            const tradeElement = document.createElement('div');
+            tradeElement.id = `trade-${trade.id}`;
+            tradeElement.style.cssText = 'background: #2a2e39; padding: 12px; border-radius: 4px; margin-bottom: 8px; border-left: 3px solid ' + (trade.trade_type === 'call' ? '#26a69a' : '#ef5350') + ';';
+            
+            const remainingTime = this.formatTime(trade.remaining_seconds);
+            const potentialProfit = (trade.amount * trade.payout_percentage / 100).toFixed(2);
+            
+            tradeElement.innerHTML = `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: #d1d4dc; font-weight: bold;">${trade.asset}</span>
+                    <span style="color: ${trade.trade_type === 'call' ? '#26a69a' : '#ef5350'}; font-weight: bold; text-transform: uppercase;">
+                        ${trade.trade_type === 'call' ? 'BUY' : 'SELL'}
+                    </span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 12px;">
+                    <span style="color: #868993;">Investment:</span>
+                    <span style="color: #d1d4dc;">$${trade.amount}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 12px;">
+                    <span style="color: #868993;">Potential Profit:</span>
+                    <span style="color: #26a69a;">$${potentialProfit}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 12px;">
+                    <span style="color: #868993;">Entry Price:</span>
+                    <span style="color: #d1d4dc;">$${trade.entry_price}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 14px;">
+                    <span style="color: #868993;">Time Left:</span>
+                    <span id="timer-${trade.id}" style="color: #f39c12; font-weight: bold;">${remainingTime}</span>
+                </div>
+            `;
+            
+            tradesList.appendChild(tradeElement);
+        });
+    }
+    
+    startTradeTimers(trades) {
+        // Clear existing timers
+        if (this.tradeTimers) {
+            this.tradeTimers.forEach(timer => clearInterval(timer));
+        }
+        this.tradeTimers = [];
+        
+        trades.forEach(trade => {
+            if (trade.remaining_seconds > 0) {
+                const timer = setInterval(() => {
+                    this.updateTradeTimer(trade.id, trade.expiry_time);
+                }, 1000);
+                this.tradeTimers.push(timer);
+            }
+        });
+    }
+    
+    updateTradeTimer(tradeId, expiryTime) {
+        const timerElement = document.getElementById(`timer-${tradeId}`);
+        if (!timerElement) return;
+        
+        const now = new Date();
+        const expiry = new Date(expiryTime);
+        const remainingSeconds = Math.max(0, Math.floor((expiry - now) / 1000));
+        
+        if (remainingSeconds <= 0) {
+            timerElement.textContent = 'EXPIRED';
+            timerElement.style.color = '#e74c3c';
+            
+            // Remove expired trade after a delay
+            setTimeout(() => {
+                const tradeElement = document.getElementById(`trade-${tradeId}`);
+                if (tradeElement) {
+                    tradeElement.style.transition = 'opacity 0.5s';
+                    tradeElement.style.opacity = '0.5';
+                    setTimeout(() => {
+                        tradeElement.remove();
+                        this.loadActiveTrades(); // Refresh the list
+                        this.updateBalance(); // Update balance after trade closure
+                    }, 1000);
+                }
+            }, 2000);
+        } else {
+            timerElement.textContent = this.formatTime(remainingSeconds);
+            
+            // Change color when time is running out
+            if (remainingSeconds <= 30) {
+                timerElement.style.color = '#e74c3c';
+            } else if (remainingSeconds <= 60) {
+                timerElement.style.color = '#f39c12';
+            }
+        }
+    }
+    
+    formatTime(seconds) {
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = seconds % 60;
+        return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+    }
+    
+    addTradeToList(trade) {
+        // Refresh active trades list instead of adding individual trades
+        setTimeout(() => {
+            this.loadActiveTrades();
+        }, 500);
     }
     
     updateBalance() {
