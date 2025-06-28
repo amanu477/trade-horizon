@@ -27,7 +27,10 @@ logging.basicConfig(level=logging.DEBUG)
 @app.route('/')
 def index():
     if current_user.is_authenticated:
-        return redirect(url_for('dashboard'))
+        if current_user.is_admin:
+            return redirect(url_for('admin_dashboard'))
+        else:
+            return redirect(url_for('dashboard'))
     return render_template('index.html')
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -54,7 +57,12 @@ def login():
                 db.session.commit()
                 
                 next_page = request.args.get('next')
-                return redirect(next_page) if next_page else redirect(url_for('dashboard'))
+                if next_page:
+                    return redirect(next_page)
+                elif user.is_admin:
+                    return redirect(url_for('admin_dashboard'))
+                else:
+                    return redirect(url_for('dashboard'))
             else:
                 flash('Invalid email or password', 'error')
         else:
@@ -985,14 +993,6 @@ def admin_dashboard():
                          recent_activity=recent_activity,
                          admin_list=admin_list,
                          daily_registrations=daily_registrations)
-
-@app.route('/admin/test')
-@login_required
-def admin_test():
-    """Simple admin test route"""
-    if not current_user.is_admin:
-        return f"User: {current_user.username}, Admin: {current_user.is_admin}, Authenticated: {current_user.is_authenticated}"
-    return f"Admin access working! User: {current_user.username}"
 
 @app.route('/admin/users')
 @login_required

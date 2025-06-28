@@ -29,31 +29,29 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 {% if current_user.is_authenticated %}
                 <ul class="navbar-nav me-auto">
+                    {% if current_user.is_admin %}
+                    <li class="nav-item">
+                        <a class="nav-link text-warning" href="{{ url_for('admin_dashboard') }}">
+                            <i class="fas fa-tachometer-alt me-1"></i>Admin Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-warning" href="{{ url_for('admin_users') }}">
+                            <i class="fas fa-users me-1"></i>Manage Users
+                        </a>
+                    </li>
+                    {% else %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('dashboard') }}">
                             <i class="fas fa-tachometer-alt me-1"></i>Dashboard
                         </a>
                     </li>
+                    {% endif %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('profile') }}">
                             <i class="fas fa-user me-1"></i>Profile
                         </a>
                     </li>
-                    {% if current_user.is_admin %}
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle text-warning" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-cog me-1"></i>Admin
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url_for('admin_dashboard') }}">
-                                <i class="fas fa-tachometer-alt me-1"></i>Dashboard
-                            </a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('admin_users') }}">
-                                <i class="fas fa-users me-1"></i>Manage Users
-                            </a></li>
-                        </ul>
-                    </li>
-                    {% endif %}
                 </ul>
                 
                 <ul class="navbar-nav ms-auto">
