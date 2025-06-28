@@ -255,28 +255,37 @@ class TradingViewChart {
         });
         
         // Listen for symbol changes from TradingView
-        if (this.widget.onChartReady) {
-            this.widget.onChartReady(() => {
+        this.widget.onChartReady(() => {
+            try {
                 this.widget.chart().onSymbolChanged().subscribe(null, (symbolInfo) => {
-                    this.syncDropdownFromChart(symbolInfo.name);
+                    console.log('TradingView symbol changed to:', symbolInfo);
+                    this.syncDropdownFromChart(symbolInfo.name || symbolInfo);
                 });
-            });
-        }
+            } catch (error) {
+                console.log('Symbol change listener setup failed:', error);
+                // Alternative method - poll for symbol changes
+                this.setupSymbolPolling();
+            }
+        });
         
         // Wait for widget to be ready before setting up interactions
-        if (this.widget.onChartReady) {
-            this.widget.onChartReady(() => {
-                console.log('TradingView chart is ready');
-                // Start price updates after chart is ready
-                this.startPriceUpdates();
-            });
-        } else {
-            // Fallback for older TradingView versions
-            setTimeout(() => {
-                console.log('TradingView chart initialized successfully');
-                this.startPriceUpdates();
-            }, 3000);
-        }
+        this.widget.onChartReady(() => {
+            console.log('TradingView chart is ready');
+            // Initialize current symbol tracking
+            try {
+                this.widget.chart().symbol().then((currentSymbol) => {
+                    this.lastPolledSymbol = currentSymbol;
+                    console.log('Initial TradingView symbol:', currentSymbol);
+                }).catch(error => {
+                    console.log('Could not get initial symbol:', error);
+                });
+            } catch (error) {
+                console.log('Symbol initialization error:', error);
+            }
+            
+            // Start price updates after chart is ready
+            this.startPriceUpdates();
+        });
     }
     
     setupEventListeners() {
@@ -705,6 +714,27 @@ class TradingViewChart {
             .catch(error => {
                 console.log('Price update error:', error);
             });
+    }
+    
+    setupSymbolPolling() {
+        // Fallback method - poll for symbol changes every 2 seconds
+        this.symbolPollingInterval = setInterval(() => {
+            try {
+                if (this.widget && this.widget.chart) {
+                    this.widget.chart().symbol().then((currentSymbol) => {
+                        if (currentSymbol && currentSymbol !== this.lastPolledSymbol) {
+                            console.log('Polling detected symbol change:', currentSymbol);
+                            this.lastPolledSymbol = currentSymbol;
+                            this.syncDropdownFromChart(currentSymbol);
+                        }
+                    }).catch(error => {
+                        console.log('Symbol polling error:', error);
+                    });
+                }
+            } catch (error) {
+                console.log('Symbol polling setup error:', error);
+            }
+        }, 2000);
     }
 }
 
