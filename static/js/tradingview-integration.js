@@ -254,6 +254,15 @@ class TradingViewChart {
             autosize: true
         });
         
+        // Listen for symbol changes from TradingView
+        if (this.widget.onChartReady) {
+            this.widget.onChartReady(() => {
+                this.widget.chart().onSymbolChanged().subscribe(null, (symbolInfo) => {
+                    this.syncDropdownFromChart(symbolInfo.name);
+                });
+            });
+        }
+        
         // Wait for widget to be ready before setting up interactions
         if (this.widget.onChartReady) {
             this.widget.onChartReady(() => {
@@ -651,6 +660,51 @@ class TradingViewChart {
     getCSRFToken() {
         const meta = document.querySelector('meta[name="csrf-token"]');
         return meta ? meta.getAttribute('content') : '';
+    }
+    
+    syncDropdownFromChart(tradingViewSymbol) {
+        // Create reverse mapping from TradingView symbols to our asset codes
+        const reverseSymbolMap = {};
+        Object.keys(this.symbolMap).forEach(asset => {
+            reverseSymbolMap[this.symbolMap[asset]] = asset;
+        });
+        
+        // Find matching asset for the TradingView symbol
+        const matchedAsset = reverseSymbolMap[tradingViewSymbol];
+        
+        if (matchedAsset && matchedAsset !== this.currentAsset) {
+            console.log(`Syncing dropdown: TradingView changed to ${tradingViewSymbol}, setting dropdown to ${matchedAsset}`);
+            
+            // Update internal state
+            this.currentAsset = matchedAsset;
+            
+            // Update dropdown selection
+            const assetSelector = document.getElementById('asset-selector');
+            if (assetSelector) {
+                assetSelector.value = matchedAsset;
+            }
+            
+            // Update price display for new asset
+            this.updatePriceForAsset(matchedAsset);
+        }
+    }
+    
+    updatePriceForAsset(asset) {
+        // Update price display immediately for the new asset
+        fetch(`/api/market-data-new/${asset}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.price) {
+                    const priceDisplay = document.getElementById('price-display');
+                    if (priceDisplay) {
+                        priceDisplay.textContent = data.price.toFixed(5);
+                        priceDisplay.style.color = data.change >= 0 ? '#4CAF50' : '#f44336';
+                    }
+                }
+            })
+            .catch(error => {
+                console.log('Price update error:', error);
+            });
     }
 }
 
