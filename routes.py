@@ -427,42 +427,54 @@ def crypto_deposit():
 @app.route('/deposit/submit', methods=['POST'])
 @login_required
 def submit_deposit():
-    form = CryptoDepositForm()
-    if form.validate_on_submit():
+    try:
+        # Get form data from hidden fields and file upload
+        amount = request.form.get('amount')
+        currency = request.form.get('currency')
+        transaction_hash = request.form.get('transaction_hash')
+        
+        # Validate required fields
+        if not amount or not currency:
+            flash('Missing deposit information. Please try again.', 'error')
+            return redirect(url_for('wallet'))
+        
         # Handle file upload for proof of payment
         proof_filename = None
-        if form.proof_document.data:
-            import os
-            from werkzeug.utils import secure_filename
-            
-            # Create uploads directory if it doesn't exist
-            upload_dir = os.path.join('static', 'uploads', 'deposits')
-            os.makedirs(upload_dir, exist_ok=True)
-            
-            # Generate secure filename
-            filename = secure_filename(form.proof_document.data.filename)
-            timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
-            proof_filename = f"{current_user.id}_{timestamp}_{filename}"
-            
-            # Save file
-            form.proof_document.data.save(os.path.join(upload_dir, proof_filename))
+        if 'proof_document' in request.files:
+            file = request.files['proof_document']
+            if file and file.filename:
+                import os
+                from werkzeug.utils import secure_filename
+                
+                # Create uploads directory if it doesn't exist
+                upload_dir = os.path.join('static', 'uploads', 'deposits')
+                os.makedirs(upload_dir, exist_ok=True)
+                
+                # Generate secure filename
+                filename = secure_filename(file.filename)
+                timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+                proof_filename = f"{current_user.id}_{timestamp}_{filename}"
+                
+                # Save file
+                file.save(os.path.join(upload_dir, proof_filename))
         
         # Create deposit request
         deposit_request = DepositRequest(
             user_id=current_user.id,
-            amount=form.amount.data,
-            currency=form.currency.data,
-            transaction_hash=form.transaction_hash.data if form.transaction_hash.data else None,
+            amount=float(amount),
+            currency=currency,
+            transaction_hash=transaction_hash if transaction_hash else None,
             proof_document=proof_filename
         )
         
         db.session.add(deposit_request)
         db.session.commit()
         
-        flash(f'Deposit request submitted successfully! Amount: ${form.amount.data} {form.currency.data}. Admin will review and approve your deposit.', 'success')
+        flash(f'Deposit request submitted successfully! Amount: ${amount} {currency}. Admin will review and approve your deposit within 1-30 minutes.', 'success')
         return redirect(url_for('deposit_status'))
-    else:
-        flash('Please check your deposit information', 'error')
+        
+    except Exception as e:
+        flash('Error submitting deposit request. Please try again.', 'error')
         return redirect(url_for('wallet'))
 
 @app.route('/deposit/status')

@@ -44,12 +44,14 @@
                             </span>
                         </div>
                     </div>
+                    {% if deposit.transaction_hash %}
                     <div class="row mb-2">
                         <div class="col-sm-4"><strong>Transaction:</strong></div>
                         <div class="col-sm-8">
                             <code class="text-info" style="font-size: 0.8rem;">{{ deposit.transaction_hash[:20] }}...</code>
                         </div>
                     </div>
+                    {% endif %}
                     <div class="row mb-2">
                         <div class="col-sm-4"><strong>Submitted:</strong></div>
                         <div class="col-sm-8">
