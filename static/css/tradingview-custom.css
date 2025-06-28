@@ -1,4 +1,4 @@
-/* TradingView Custom Styles */
+/* TradingView Custom Styles - Force all elements to be visible */
 
 /* Ensure the top toolbar is visible and styled */
 .tv-header {
@@ -6,9 +6,16 @@
     border-bottom: 1px solid #2a2e39 !important;
     height: auto !important;
     min-height: 50px !important;
-    display: flex !important;
+    display: block !important;
     visibility: visible !important;
     z-index: 1000 !important;
+}
+
+/* Force all child elements to be visible */
+.tv-header * {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 
 /* Style the timeframe buttons */
