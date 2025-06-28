@@ -127,6 +127,9 @@ TradePro is a Flask-based binary options trading platform that provides both dem
 - Secure session management
 
 ## Changelog
+- June 28, 2025: **Local Installation Support** - Fixed database setup issues in run_local.py and added complete dependency list to local_requirements.txt for clean local PC installation without Replit references
+- June 28, 2025: **User Withdrawal Tracking Page** - Added comprehensive withdrawal requests page where users can view all their withdrawal requests, status updates, admin notes, and processing history with navigation menu integration
+- June 28, 2025: **Automatic Withdrawal Redirect** - Users now automatically redirect to withdrawal requests page after submitting withdrawal requests to immediately see their request status
 - June 28, 2025: **Cryptocurrency Withdrawal System** - Redesigned withdrawal system to match crypto deposit workflow with USDT/BTC/ETH support, wallet address entry, admin approval process, and automatic user notifications for approved/rejected requests
 - June 28, 2025: **Enhanced Loss Message Display** - Updated trade loss notifications to clearly show "Trade LOSS! You lost $X.XX" instead of just showing negative amounts, providing clearer feedback to users about their losses
 - June 28, 2025: **Improved Balance Validation Messages** - Changed insufficient balance notifications from red error messages to orange warning messages for better user experience and removed profile/logout buttons from admin quick actions
