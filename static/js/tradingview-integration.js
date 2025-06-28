@@ -575,6 +575,7 @@ class TradingViewChart {
         formData.append('trade_type', this.selectedDirection);
         formData.append('amount', amount);
         formData.append('expiry_seconds', durationSeconds);
+        formData.append('is_demo', this.mode === 'demo' ? 'true' : 'false');
         if (csrfToken) {
             formData.append('csrf_token', csrfToken.getAttribute('content'));
         }

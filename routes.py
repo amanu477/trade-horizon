@@ -210,8 +210,13 @@ def place_trade():
         except (ValueError, TypeError):
             expiry_seconds = 300
             
-        # Default to demo mode for now
-        is_demo = True
+        # Determine if this is demo or live trading based on the referrer URL
+        referrer = request.referrer or ''
+        is_demo = '/demo' in referrer or 'demo' in referrer.lower()
+        
+        # If no referrer, check for explicit is_demo parameter
+        if 'is_demo' in data:
+            is_demo = str(data.get('is_demo', 'true')).lower() == 'true'
         
         logging.info(f"Parsed trade: asset={asset}, type={trade_type}, amount={amount}, expiry={expiry_seconds}s, demo={is_demo}")
         
