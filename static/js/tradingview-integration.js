@@ -266,6 +266,8 @@ class TradingViewChart {
             hide_top_toolbar: false,
             hide_legend: false,
             hide_side_toolbar: false,
+            withdateranges: false,
+            hide_volume: false,
             save_image: false,
             hide_volume: false,
             studies: [
@@ -282,7 +284,8 @@ class TradingViewChart {
             },
             studies_overrides: {},
             disabled_features: [
-                'use_localstorage_for_settings'
+                'use_localstorage_for_settings',
+                'go_to_date'
             ],
             enabled_features: [
                 'study_templates',
@@ -293,12 +296,24 @@ class TradingViewChart {
                 'header_settings',
                 'header_compare',
                 'header_undo_redo',
+                'header_saveload',
+                'header_screenshot',
                 'left_toolbar',
                 'control_bar',
-                'timeframes_toolbar'
+                'timeframes_toolbar',
+                'symbol_search_hot_key',
+                'compare_symbol',
+                'border_around_the_chart',
+                'header_widget',
+                'header_widget_dom_node',
+                'charting_library_debug_mode',
+                'show_chart_property_page',
+                'display_market_status',
+                'remove_library_container_border'
             ],
             fullscreen: false,
-            autosize: true
+            autosize: true,
+            debug: false
         });
         
         // Wait for widget to be ready before setting up interactions
@@ -312,14 +327,6 @@ class TradingViewChart {
             // Fallback for older TradingView versions
             setTimeout(() => {
                 console.log('TradingView chart initialized successfully');
-            
-            // Wait for widget to be ready
-            this.widget.onChartReady(() => {
-                console.log('TradingView chart is ready');
-                
-                // Start real-time updates
-                this.startRealTimeUpdates();
-            });
                 this.startPriceUpdates();
             }, 3000);
         }
