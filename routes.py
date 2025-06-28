@@ -895,34 +895,92 @@ def admin_required(f):
 @login_required
 @admin_required
 def admin_dashboard():
-    """Comprehensive admin dashboard with detailed user management"""
-    # User statistics
+    """Advanced admin dashboard with comprehensive user reporting and analytics"""
+    from datetime import datetime, timedelta
+    
+    # Core user statistics
     total_users = User.query.count()
     active_users = User.query.filter_by(is_active=True).count()
     inactive_users = User.query.filter_by(is_active=False).count()
     admin_users = User.query.filter_by(is_admin=True).count()
     
-    # Recent activity
-    recent_users = User.query.order_by(User.created_at.desc()).limit(8).all()
-    recent_logins = User.query.filter(User.last_login.isnot(None)).order_by(User.last_login.desc()).limit(5).all()
+    # Time-based analytics
+    now = datetime.utcnow()
+    today = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    week_ago = now - timedelta(days=7)
+    month_ago = now - timedelta(days=30)
     
-    # User registration trends (last 7 days)
-    from datetime import datetime, timedelta
-    week_ago = datetime.utcnow() - timedelta(days=7)
-    new_users_week = User.query.filter(User.created_at >= week_ago).count()
+    # Registration trends
+    users_today = User.query.filter(User.created_at >= today).count()
+    users_this_week = User.query.filter(User.created_at >= week_ago).count()
+    users_this_month = User.query.filter(User.created_at >= month_ago).count()
     
-    # Admin activity stats
+    # Login activity analysis
+    logged_in_today = User.query.filter(User.last_login >= today).count()
+    logged_in_week = User.query.filter(User.last_login >= week_ago).count()
+    never_logged_in = User.query.filter(User.last_login.is_(None)).count()
+    
+    # User engagement metrics
+    total_trades = Trade.query.count()
+    active_traders = User.query.join(Trade).distinct().count()
+    demo_users = User.query.join(Wallet).filter(Wallet.demo_balance > 0).count()
+    live_users = User.query.join(Wallet).filter(Wallet.balance > 0).count()
+    
+    # Recent registrations with details
+    recent_registrations = User.query.order_by(User.created_at.desc()).limit(10).all()
+    
+    # User status breakdown
+    user_status_data = {
+        'active_regular': User.query.filter_by(is_active=True, is_admin=False).count(),
+        'active_admin': User.query.filter_by(is_active=True, is_admin=True).count(),
+        'inactive_total': inactive_users,
+        'never_logged': never_logged_in
+    }
+    
+    # Recent activity summary
+    recent_activity = {
+        'new_users_24h': users_today,
+        'logins_24h': logged_in_today,
+        'total_engagement': (logged_in_week / total_users * 100) if total_users > 0 else 0
+    }
+    
+    # Admin user list with last activity
     admin_list = User.query.filter_by(is_admin=True, is_active=True).all()
+    
+    # User growth trend (last 30 days)
+    daily_registrations = []
+    for i in range(30):
+        day_start = today - timedelta(days=i)
+        day_end = day_start + timedelta(days=1)
+        day_count = User.query.filter(
+            User.created_at >= day_start,
+            User.created_at < day_end
+        ).count()
+        daily_registrations.append({
+            'date': day_start.strftime('%Y-%m-%d'),
+            'count': day_count
+        })
     
     return render_template('admin/dashboard.html', 
                          total_users=total_users,
                          active_users=active_users,
                          inactive_users=inactive_users,
                          admin_users=admin_users,
-                         recent_users=recent_users,
-                         recent_logins=recent_logins,
-                         new_users_week=new_users_week,
-                         admin_list=admin_list)
+                         users_today=users_today,
+                         users_this_week=users_this_week,
+                         users_this_month=users_this_month,
+                         logged_in_today=logged_in_today,
+                         logged_in_week=logged_in_week,
+                         never_logged_in=never_logged_in,
+                         total_trades=total_trades,
+                         active_traders=active_traders,
+                         demo_users=demo_users,
+                         live_users=live_users,
+                         recent_registrations=recent_registrations,
+                         user_status_data=user_status_data,
+                         recent_activity=recent_activity,
+                         admin_list=admin_list,
+                         daily_registrations=daily_registrations)
 
 @app.route('/admin/users')
 @login_required

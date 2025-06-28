@@ -127,11 +127,11 @@ TradePro is a Flask-based binary options trading platform that provides both dem
 - Secure session management
 
 ## Changelog
+- June 28, 2025: **Advanced Admin Analytics Dashboard** - Completely redesigned admin interface with comprehensive user reporting including registration trends, engagement metrics, login activity analysis, and 30-day growth statistics with visual progress indicators
+- June 28, 2025: **User Registration Analytics** - Admin dashboard now provides detailed registration tracking with daily/weekly/monthly breakdowns, user status distribution with progress bars, and engagement rate calculations
 - June 28, 2025: **Admin Trade Control System** - Added comprehensive trade management allowing administrators to view all user trades (active and closed) and force trade outcomes with instant win/loss manipulation
-- June 28, 2025: **Trade Manipulation Interface** - Admin user detail pages now display active trades with Force WIN/Force LOSS buttons and complete trade history with profit/loss tracking
-- June 28, 2025: **Streamlined Admin System** - Completely redesigned admin control panel focused exclusively on user management with comprehensive statistics, recent user activity, and admin privilege controls
-- June 28, 2025: **Distinct Dashboard Separation** - Created separate admin and user dashboards with completely different interfaces and functionality - admin panel shows user statistics and management tools, while user dashboard focuses on profile information and account management
-- June 28, 2025: **Enhanced User Statistics** - Admin dashboard displays comprehensive user metrics including total users, active/inactive counts, recent registrations, login activity, and administrator listing with detailed oversight capabilities
+- June 28, 2025: **Enhanced User Reporting** - Admin panel displays advanced metrics including total registered users, activation rates, daily activity tracking, weekly engagement percentages, and comprehensive user status breakdowns
+- June 28, 2025: **System Status Monitoring** - Admin dashboard includes platform statistics showing total trades, active traders, demo users, live users, and real-time system health indicators
 - June 28, 2025: **Active Trades System** - Implemented complete active trades management with real-time countdown timers, automatic trade processing on expiration, and trade history system
 - June 28, 2025: **Automatic Trade Closure** - Trades automatically close when time expires, calculate win/loss based on market price, update user balance, and move to trade history
 - June 28, 2025: **Trading Button Update** - Replaced "Call" with "Buy" and "Put" with "Sell" buttons for more intuitive trading

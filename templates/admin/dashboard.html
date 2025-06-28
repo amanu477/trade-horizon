@@ -1,38 +1,39 @@
 {% extends "base.html" %}
 
-{% block title %}Admin Control Panel - TradePro{% endblock %}
+{% block title %}Admin Dashboard - User Analytics & Reports{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
-    <!-- Admin Header -->
+    <!-- Header Section -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card bg-gradient-dark border-warning">
+            <div class="card bg-gradient-primary border-0">
                 <div class="card-body text-center py-4">
-                    <h1 class="display-4 text-warning mb-2">
-                        <i class="fas fa-shield-alt me-3"></i>Admin Control Panel
+                    <h1 class="display-5 text-white mb-2">
+                        <i class="fas fa-chart-bar me-3"></i>User Analytics Dashboard
                     </h1>
-                    <p class="lead text-light mb-0">Comprehensive User Management Dashboard</p>
-                    <small class="text-muted">Welcome back, {{ current_user.username }}</small>
+                    <p class="lead text-white-50 mb-0">Comprehensive User Reporting & Management System</p>
+                    <small class="text-white-50">Last updated: {{ moment().format('LLLL') if moment else 'Just now' }}</small>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Key Statistics -->
+    <!-- Key Metrics Row -->
     <div class="row mb-4">
+        <!-- Total Users -->
         <div class="col-xl-3 col-md-6 mb-3">
             <div class="card bg-dark border-primary h-100">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col">
                             <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                Total Users
+                                Total Registered Users
                             </div>
-                            <div class="h4 mb-0 font-weight-bold text-light">{{ total_users }}</div>
+                            <div class="h3 mb-0 font-weight-bold text-light">{{ total_users }}</div>
                             <div class="mt-2 mb-0 text-muted text-xs">
-                                <span class="text-success mr-2">{{ new_users_week }}</span>
-                                <span>new this week</span>
+                                <span class="text-success mr-2">+{{ users_this_month }}</span>
+                                <span>this month</span>
                             </div>
                         </div>
                         <div class="col-auto">
@@ -43,6 +44,7 @@
             </div>
         </div>
 
+        <!-- Active Users -->
         <div class="col-xl-3 col-md-6 mb-3">
             <div class="card bg-dark border-success h-100">
                 <div class="card-body">
@@ -51,10 +53,10 @@
                             <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
                                 Active Users
                             </div>
-                            <div class="h4 mb-0 font-weight-bold text-light">{{ active_users }}</div>
+                            <div class="h3 mb-0 font-weight-bold text-light">{{ active_users }}</div>
                             <div class="mt-2 mb-0 text-muted text-xs">
                                 <span class="text-success mr-2">{{ "%.1f"|format((active_users / total_users * 100) if total_users > 0 else 0) }}%</span>
-                                <span>of total users</span>
+                                <span>activation rate</span>
                             </div>
                         </div>
                         <div class="col-auto">
@@ -65,44 +67,46 @@
             </div>
         </div>
 
-        <div class="col-xl-3 col-md-6 mb-3">
-            <div class="card bg-dark border-warning h-100">
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                Inactive Users
-                            </div>
-                            <div class="h4 mb-0 font-weight-bold text-light">{{ inactive_users }}</div>
-                            <div class="mt-2 mb-0 text-muted text-xs">
-                                <span class="text-warning mr-2">{{ "%.1f"|format((inactive_users / total_users * 100) if total_users > 0 else 0) }}%</span>
-                                <span>need attention</span>
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-user-slash fa-2x text-warning"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
+        <!-- Daily Activity -->
         <div class="col-xl-3 col-md-6 mb-3">
             <div class="card bg-dark border-info h-100">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col">
                             <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                Admin Users
+                                Today's Activity
                             </div>
-                            <div class="h4 mb-0 font-weight-bold text-light">{{ admin_users }}</div>
+                            <div class="h3 mb-0 font-weight-bold text-light">{{ logged_in_today }}</div>
                             <div class="mt-2 mb-0 text-muted text-xs">
-                                <span class="text-info mr-2">{{ admin_list|length }}</span>
-                                <span>currently active</span>
+                                <span class="text-info mr-2">{{ users_today }}</span>
+                                <span>new registrations</span>
                             </div>
                         </div>
                         <div class="col-auto">
-                            <i class="fas fa-user-shield fa-2x text-info"></i>
+                            <i class="fas fa-chart-line fa-2x text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Engagement Rate -->
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card bg-dark border-warning h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Weekly Engagement
+                            </div>
+                            <div class="h3 mb-0 font-weight-bold text-light">{{ "%.1f"|format(recent_activity.total_engagement) }}%</div>
+                            <div class="mt-2 mb-0 text-muted text-xs">
+                                <span class="text-warning mr-2">{{ logged_in_week }}</span>
+                                <span>users active</span>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-fire fa-2x text-warning"></i>
                         </div>
                     </div>
                 </div>
@@ -110,21 +114,124 @@
         </div>
     </div>
 
-    <!-- Main Content Sections -->
-    <div class="row">
-        <!-- Recent Users -->
+    <!-- Registration Analytics -->
+    <div class="row mb-4">
         <div class="col-lg-8 mb-4">
-            <div class="card bg-dark border-success">
-                <div class="card-header bg-success text-dark d-flex justify-content-between align-items-center">
+            <div class="card bg-dark border-primary">
+                <div class="card-header bg-primary text-dark">
+                    <h6 class="m-0 font-weight-bold">
+                        <i class="fas fa-chart-area me-2"></i>User Registration Trends
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4 text-center">
+                            <div class="border-right">
+                                <div class="h4 text-primary">{{ users_today }}</div>
+                                <small class="text-muted">Today</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="border-right">
+                                <div class="h4 text-success">{{ users_this_week }}</div>
+                                <small class="text-muted">This Week</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="h4 text-info">{{ users_this_month }}</div>
+                            <small class="text-muted">This Month</small>
+                        </div>
+                    </div>
+                    
+                    <!-- Registration Growth Chart Area -->
+                    <div class="chart-container" style="height: 200px;">
+                        <canvas id="registrationChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Status Breakdown -->
+        <div class="col-lg-4">
+            <div class="card bg-dark border-success h-100">
+                <div class="card-header bg-success text-dark">
+                    <h6 class="m-0 font-weight-bold">
+                        <i class="fas fa-pie-chart me-2"></i>User Status Breakdown
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-light">Active Regular Users</span>
+                            <span class="badge bg-success">{{ user_status_data.active_regular }}</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-success" style="width: {{ (user_status_data.active_regular / total_users * 100) if total_users > 0 else 0 }}%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-light">Admin Users</span>
+                            <span class="badge bg-warning text-dark">{{ user_status_data.active_admin }}</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-warning" style="width: {{ (user_status_data.active_admin / total_users * 100) if total_users > 0 else 0 }}%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-light">Inactive Users</span>
+                            <span class="badge bg-danger">{{ user_status_data.inactive_total }}</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-danger" style="width: {{ (user_status_data.inactive_total / total_users * 100) if total_users > 0 else 0 }}%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-light">Never Logged In</span>
+                            <span class="badge bg-secondary">{{ user_status_data.never_logged }}</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-secondary" style="width: {{ (user_status_data.never_logged / total_users * 100) if total_users > 0 else 0 }}%"></div>
+                        </div>
+                    </div>
+
+                    <!-- User Engagement Metrics -->
+                    <hr class="border-secondary">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="h6 text-info">{{ active_traders }}</div>
+                            <small class="text-muted">Active Traders</small>
+                        </div>
+                        <div class="col-6">
+                            <div class="h6 text-warning">{{ demo_users }}</div>
+                            <small class="text-muted">Demo Users</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Registrations & Admin Activity -->
+    <div class="row mb-4">
+        <!-- Recent User Registrations -->
+        <div class="col-lg-8 mb-4">
+            <div class="card bg-dark border-info">
+                <div class="card-header bg-info text-dark d-flex justify-content-between align-items-center">
                     <h6 class="m-0 font-weight-bold">
                         <i class="fas fa-user-plus me-2"></i>Recent User Registrations
                     </h6>
                     <a href="{{ url_for('admin_users') }}" class="btn btn-dark btn-sm">
-                        <i class="fas fa-list me-1"></i>View All
+                        <i class="fas fa-list me-1"></i>View All Users
                     </a>
                 </div>
                 <div class="card-body">
-                    {% if recent_users %}
+                    {% if recent_registrations %}
                         <div class="table-responsive">
                             <table class="table table-dark table-hover mb-0">
                                 <thead>
@@ -132,27 +239,22 @@
                                         <th>User</th>
                                         <th>Email</th>
                                         <th>Status</th>
-                                        <th>Role</th>
-                                        <th>Joined</th>
+                                        <th>Registered</th>
+                                        <th>Last Login</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% for user in recent_users %}
+                                    {% for user in recent_registrations %}
                                     <tr>
                                         <td>
                                             <div class="d-flex align-items-center">
-                                                <div class="avatar avatar-sm me-3">
-                                                    <span class="avatar-initial rounded-circle bg-label-primary">
+                                                <div class="avatar avatar-sm me-2">
+                                                    <span class="avatar-initial rounded-circle bg-primary">
                                                         {{ user.username[0].upper() }}
                                                     </span>
                                                 </div>
-                                                <div>
-                                                    <strong>{{ user.username }}</strong>
-                                                    {% if user.get_full_name() %}
-                                                        <br><small class="text-muted">{{ user.get_full_name() }}</small>
-                                                    {% endif %}
-                                                </div>
+                                                <strong>{{ user.username }}</strong>
                                             </div>
                                         </td>
                                         <td>{{ user.email }}</td>
@@ -162,23 +264,24 @@
                                             {% else %}
                                                 <span class="badge bg-danger">Inactive</span>
                                             {% endif %}
-                                        </td>
-                                        <td>
                                             {% if user.is_admin %}
-                                                <span class="badge bg-warning text-dark">
-                                                    <i class="fas fa-crown me-1"></i>Admin
-                                                </span>
-                                            {% else %}
-                                                <span class="badge bg-secondary">User</span>
+                                                <span class="badge bg-warning text-dark ms-1">Admin</span>
                                             {% endif %}
                                         </td>
                                         <td>
-                                            <small>{{ user.created_at.strftime('%m/%d/%Y') }}</small>
+                                            <small>{{ user.created_at.strftime('%m/%d/%Y %I:%M %p') }}</small>
+                                        </td>
+                                        <td>
+                                            {% if user.last_login %}
+                                                <small class="text-success">{{ user.last_login.strftime('%m/%d %I:%M %p') }}</small>
+                                            {% else %}
+                                                <small class="text-warning">Never</small>
+                                            {% endif %}
                                         </td>
                                         <td>
                                             <a href="{{ url_for('admin_user_detail', user_id=user.id) }}" 
                                                class="btn btn-sm btn-outline-primary">
-                                                <i class="fas fa-edit"></i>
+                                                <i class="fas fa-cog"></i>
                                             </a>
                                         </td>
                                     </tr>
@@ -189,154 +292,116 @@
                     {% else %}
                         <div class="text-center py-4">
                             <i class="fas fa-users fa-3x text-muted mb-3"></i>
-                            <p class="text-muted">No users registered yet</p>
+                            <p class="text-muted">No recent registrations</p>
                         </div>
                     {% endif %}
                 </div>
             </div>
         </div>
 
-        <!-- Admin Activity & Quick Actions -->
+        <!-- System Administrators -->
         <div class="col-lg-4">
-            <!-- Active Admins -->
-            <div class="card bg-dark border-info mb-4">
-                <div class="card-header bg-info text-dark">
+            <div class="card bg-dark border-warning h-100">
+                <div class="card-header bg-warning text-dark">
                     <h6 class="m-0 font-weight-bold">
-                        <i class="fas fa-shield-alt me-2"></i>Active Administrators
+                        <i class="fas fa-shield-alt me-2"></i>System Administrators
                     </h6>
                 </div>
                 <div class="card-body">
                     {% if admin_list %}
                         {% for admin in admin_list %}
-                        <div class="d-flex align-items-center mb-3">
+                        <div class="d-flex align-items-center mb-3 p-2 rounded" style="background-color: rgba(255,193,7,0.1);">
                             <div class="avatar avatar-sm me-3">
-                                <span class="avatar-initial rounded-circle bg-label-warning">
+                                <span class="avatar-initial rounded-circle bg-warning text-dark">
                                     {{ admin.username[0].upper() }}
                                 </span>
                             </div>
                             <div class="flex-grow-1">
-                                <strong class="text-light">{{ admin.username }}</strong>
-                                <br><small class="text-muted">{{ admin.email }}</small>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <strong class="text-light">{{ admin.username }}</strong>
+                                    {% if admin.id == current_user.id %}
+                                        <span class="badge bg-info">You</span>
+                                    {% endif %}
+                                </div>
+                                <small class="text-muted">{{ admin.email }}</small>
                                 {% if admin.last_login %}
                                     <br><small class="text-success">
-                                        Last seen: {{ admin.last_login.strftime('%m/%d %I:%M %p') }}
+                                        Last active: {{ admin.last_login.strftime('%m/%d %I:%M %p') }}
                                     </small>
+                                {% else %}
+                                    <br><small class="text-warning">Never logged in</small>
                                 {% endif %}
                             </div>
                             {% if admin.id != current_user.id %}
                             <a href="{{ url_for('admin_user_detail', user_id=admin.id) }}" 
-                               class="btn btn-sm btn-outline-info">
+                               class="btn btn-sm btn-outline-warning">
                                 <i class="fas fa-cog"></i>
                             </a>
                             {% endif %}
                         </div>
                         {% endfor %}
                     {% else %}
-                        <p class="text-muted">No active administrators</p>
+                        <div class="text-center py-4">
+                            <i class="fas fa-user-shield fa-2x text-muted mb-3"></i>
+                            <p class="text-muted">No administrators found</p>
+                        </div>
                     {% endif %}
-                </div>
-            </div>
 
-            <!-- Quick Actions -->
-            <div class="card bg-dark border-warning">
-                <div class="card-header bg-warning text-dark">
-                    <h6 class="m-0 font-weight-bold">
-                        <i class="fas fa-bolt me-2"></i>Quick Actions
-                    </h6>
-                </div>
-                <div class="card-body">
+                    <!-- Quick Admin Actions -->
+                    <hr class="border-secondary">
                     <div class="d-grid gap-2">
-                        <a href="{{ url_for('admin_users') }}" class="btn btn-outline-success">
-                            <i class="fas fa-users me-2"></i>Manage All Users
+                        <a href="{{ url_for('admin_users') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-users me-1"></i>Manage All Users
                         </a>
-                        <a href="{{ url_for('register') }}" class="btn btn-outline-info">
-                            <i class="fas fa-user-plus me-2"></i>Add New User
+                        <a href="{{ url_for('register') }}" class="btn btn-outline-success btn-sm">
+                            <i class="fas fa-user-plus me-1"></i>Create New User
                         </a>
-                        <hr class="border-secondary">
-                        <div class="row">
-                            <div class="col-6">
-                                <div class="text-center">
-                                    <div class="h6 text-success mb-1">{{ active_users }}</div>
-                                    <small class="text-muted">Active</small>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="text-center">
-                                    <div class="h6 text-warning mb-1">{{ inactive_users }}</div>
-                                    <small class="text-muted">Inactive</small>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Recent Login Activity -->
-    {% if recent_logins %}
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card bg-dark border-primary">
-                <div class="card-header bg-primary text-dark">
-                    <h6 class="m-0 font-weight-bold">
-                        <i class="fas fa-history me-2"></i>Recent Login Activity
-                    </h6>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        {% for user in recent_logins %}
-                        <div class="col-md-2-4 col-sm-4 col-6 mb-3">
-                            <div class="text-center">
-                                <div class="avatar avatar-lg mx-auto mb-2">
-                                    <span class="avatar-initial rounded-circle bg-label-success">
-                                        {{ user.username[0].upper() }}
-                                    </span>
-                                </div>
-                                <h6 class="mb-1 text-light">{{ user.username }}</h6>
-                                <small class="text-muted">
-                                    {{ user.last_login.strftime('%m/%d %I:%M %p') if user.last_login }}
-                                </small>
-                                <br>
-                                <a href="{{ url_for('admin_user_detail', user_id=user.id) }}" 
-                                   class="btn btn-sm btn-outline-primary mt-1">
-                                    View
-                                </a>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- System Status -->
-    <div class="row mt-4">
+    <!-- System Status & Statistics -->
+    <div class="row">
         <div class="col-12">
             <div class="card bg-dark border-secondary">
+                <div class="card-header bg-secondary text-dark">
+                    <h6 class="m-0 font-weight-bold">
+                        <i class="fas fa-server me-2"></i>System Status & Platform Statistics
+                    </h6>
+                </div>
                 <div class="card-body">
                     <div class="row text-center">
-                        <div class="col-md-3">
-                            <i class="fas fa-server fa-2x text-success mb-2"></i>
+                        <div class="col-md-2 mb-3">
+                            <i class="fas fa-database fa-2x text-primary mb-2"></i>
+                            <h6 class="text-light">Database</h6>
+                            <span class="badge bg-success">Connected</span>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <i class="fas fa-chart-line fa-2x text-success mb-2"></i>
+                            <h6 class="text-light">Total Trades</h6>
+                            <span class="badge bg-info">{{ total_trades }}</span>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <i class="fas fa-coins fa-2x text-warning mb-2"></i>
+                            <h6 class="text-light">Live Traders</h6>
+                            <span class="badge bg-warning text-dark">{{ live_users }}</span>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <i class="fas fa-play fa-2x text-info mb-2"></i>
+                            <h6 class="text-light">Demo Users</h6>
+                            <span class="badge bg-secondary">{{ demo_users }}</span>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <i class="fas fa-users-cog fa-2x text-danger mb-2"></i>
+                            <h6 class="text-light">Inactive Users</h6>
+                            <span class="badge bg-danger">{{ inactive_users }}</span>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <i class="fas fa-clock fa-2x text-muted mb-2"></i>
                             <h6 class="text-light">System Status</h6>
                             <span class="badge bg-success">Online</span>
-                        </div>
-                        <div class="col-md-3">
-                            <i class="fas fa-database fa-2x text-info mb-2"></i>
-                            <h6 class="text-light">Database</h6>
-                            <span class="badge bg-info">Connected</span>
-                        </div>
-                        <div class="col-md-3">
-                            <i class="fas fa-users-cog fa-2x text-warning mb-2"></i>
-                            <h6 class="text-light">User Management</h6>
-                            <span class="badge bg-warning text-dark">Active</span>
-                        </div>
-                        <div class="col-md-3">
-                            <i class="fas fa-clock fa-2x text-secondary mb-2"></i>
-                            <h6 class="text-light">Last Updated</h6>
-                            <small class="text-muted">Just now</small>
                         </div>
                     </div>
                 </div>
@@ -351,19 +416,13 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    vertical-align: middle;
-    width: 2.375rem;
-    height: 2.375rem;
+    width: 2rem;
+    height: 2rem;
 }
 
 .avatar-sm {
-    width: 1.875rem;
-    height: 1.875rem;
-}
-
-.avatar-lg {
-    width: 3.5rem;
-    height: 3.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
 }
 
 .avatar-initial {
@@ -374,38 +433,61 @@
     justify-content: center;
 }
 
-.bg-label-primary {
-    background-color: rgba(105, 108, 255, 0.16) !important;
-    color: #696cff !important;
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-.bg-label-success {
-    background-color: rgba(113, 221, 55, 0.16) !important;
-    color: #71dd37 !important;
+.border-right {
+    border-right: 1px solid #444 !important;
 }
 
-.bg-label-warning {
-    background-color: rgba(255, 171, 0, 0.16) !important;
-    color: #ffab00 !important;
-}
-
-.bg-gradient-dark {
-    background: linear-gradient(135deg, #2d3436 0%, #636e72 100%);
+.chart-container {
+    position: relative;
+    background: rgba(0,0,0,0.2);
+    border-radius: 0.375rem;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 </style>
 
 <script>
-// Auto-refresh dashboard every 60 seconds
-setTimeout(function() {
-    location.reload();
-}, 60000);
-
-// Initialize tooltips if using Bootstrap
+// Registration trend chart
 document.addEventListener('DOMContentLoaded', function() {
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl)
-    });
+    const ctx = document.getElementById('registrationChart');
+    if (ctx) {
+        const chartData = {{ daily_registrations|tojson }};
+        
+        // Create a simple text-based chart visualization
+        const chartContainer = ctx.parentElement;
+        chartContainer.innerHTML = `
+            <div class="text-center">
+                <i class="fas fa-chart-area fa-3x text-primary mb-3"></i>
+                <h6 class="text-light">30-Day Registration Trend</h6>
+                <p class="text-muted">Visual chart integration ready for Chart.js</p>
+                <div class="row">
+                    <div class="col-4">
+                        <div class="text-success">${chartData.slice(-7).reduce((sum, day) => sum + day.count, 0)}</div>
+                        <small class="text-muted">Last 7 Days</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-info">${chartData.slice(-14, -7).reduce((sum, day) => sum + day.count, 0)}</div>
+                        <small class="text-muted">Previous Week</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-warning">${chartData.reduce((sum, day) => sum + day.count, 0)}</div>
+                        <small class="text-muted">Total 30 Days</small>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Auto-refresh dashboard every 5 minutes
+    setTimeout(function() {
+        location.reload();
+    }, 300000);
 });
 </script>
 {% endblock %}
