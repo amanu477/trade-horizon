@@ -47,8 +47,8 @@ class TradeForm(FlaskForm):
     ], validators=[DataRequired()])
     
     trade_type = SelectField('Direction', choices=[
-        ('call', 'Call (Higher)'),
-        ('put', 'Put (Lower)')
+        ('call', 'Buy (Higher)'),
+        ('put', 'Sell (Lower)')
     ], validators=[DataRequired()])
     
     amount = DecimalField('Investment Amount', validators=[
