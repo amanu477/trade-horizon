@@ -246,17 +246,20 @@
                                             <div class="btn-group-vertical" role="group">
                                                 <form method="POST" action="{{ url_for('admin_manipulate_trade', trade_id=trade.id) }}" style="display: inline;">
                                                     <input type="hidden" name="force_result" value="win">
-                                                    <input type="hidden" name="admin_notes" value="Admin forced WIN for user {{ user.username }}">
+                                                    <input type="hidden" name="admin_notes" value="Admin forced PROFIT for user {{ user.username }}">
                                                     <button type="submit" class="btn btn-success btn-sm mb-1" 
-                                                            onclick="return confirm('Force this trade to WIN?')">
-                                                        <i class="fas fa-thumbs-up me-1"></i>Force WIN
+                                                            onclick="return confirm('Force this trade to PROFIT?')">
+                                                        <i class="fas fa-thumbs-up me-1"></i>Force PROFIT
                                                     </button>
                                                 </form>
                                                 <form method="POST" action="{{ url_for('admin_manipulate_trade', trade_id=trade.id) }}" style="display: inline;">
                                                     <input type="hidden" name="force_result" value="lose">
-                                                    <input type="hidden" name="admin_notes" value="Admin forced LOSS for user {{ user.username }}">
+                                                    <input type="hidden" name="admin_notes" value="Admin forced LOSE for user {{ user.username }}">
                                                     <button type="submit" class="btn btn-danger btn-sm" 
                                                             onclick="return confirm('Force this trade to LOSE?')">
+                                                        <i class="fas fa-thumbs-down me-1"></i>Force LOSE
+                                                    </button>
+                                                </form>SE?')">
                                                         <i class="fas fa-thumbs-down me-1"></i>Force LOSS
                                                     </button>
                                                 </form>
@@ -323,9 +326,11 @@
                                         </td>
                                         <td>
                                             {% if trade.status == 'won' %}
-                                                <span class="badge bg-success">WON</span>
+                                                <span class="badge bg-success">PROFIT</span>
+                                            {% elif trade.status == 'lost' %}
+                                                <span class="badge bg-danger">LOSE</span>
                                             {% else %}
-                                                <span class="badge bg-danger">LOST</span>
+                                                <span class="badge bg-warning">{{ trade.status.upper() }}</span>
                                             {% endif %}
                                         </td>
                                         <td>

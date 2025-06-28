@@ -114,11 +114,11 @@
                         <span class="text-light">{{ current_user.trades.count() }}</span>
                     </div>
                     <div class="d-flex justify-content-between py-2 border-bottom border-secondary">
-                        <span class="text-muted">Won Trades:</span>
+                        <span class="text-muted">Profit Trades:</span>
                         <span class="text-success">{{ current_user.trades.filter_by(status='won').count() }}</span>
                     </div>
                     <div class="d-flex justify-content-between py-2 border-bottom border-secondary">
-                        <span class="text-muted">Lost Trades:</span>
+                        <span class="text-muted">Lose Trades:</span>
                         <span class="text-danger">{{ current_user.trades.filter_by(status='lost').count() }}</span>
                     </div>
                     <div class="d-flex justify-content-between py-2 border-bottom border-secondary">

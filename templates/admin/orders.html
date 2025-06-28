@@ -61,9 +61,9 @@
                                 <td>{{ "%.5f"|format(trade.entry_price) }}</td>
                                 <td>
                                     {% if trade.status == 'won' %}
-                                    <span class="badge bg-success">WON</span>
+                                    <span class="badge bg-success">PROFIT</span>
                                     {% elif trade.status == 'lost' %}
-                                    <span class="badge bg-danger">LOST</span>
+                                    <span class="badge bg-danger">LOSE</span>
                                     {% elif trade.status == 'active' %}
                                     <span class="badge bg-warning">ACTIVE</span>
                                     {% elif trade.status == 'cancelled' %}
@@ -96,8 +96,8 @@
                                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                                     <input type="hidden" name="action" value="force_win">
                                                     <button type="submit" class="dropdown-item text-success" 
-                                                            onclick="return confirm('Force this trade to WIN?')">
-                                                        <i class="fas fa-check me-1"></i>Force Win
+                                                            onclick="return confirm('Force this trade to PROFIT?')">
+                                                        <i class="fas fa-check me-1"></i>Force Profit
                                                     </button>
                                                 </form>
                                             </li>
