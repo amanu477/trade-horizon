@@ -452,7 +452,7 @@ def submit_deposit():
             user_id=current_user.id,
             amount=form.amount.data,
             currency=form.currency.data,
-            transaction_hash=form.transaction_hash.data,
+            transaction_hash=form.transaction_hash.data if form.transaction_hash.data else None,
             proof_document=proof_filename
         )
         

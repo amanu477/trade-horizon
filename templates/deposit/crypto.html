@@ -25,7 +25,7 @@
                         </div>
                         <div class="col-md-4">
                             <h6 class="text-muted">Processing Time</h6>
-                            <h3 class="text-info">1-24 Hours</h3>
+                            <h3 class="text-info">1-30 Minutes</h3>
                         </div>
                     </div>
                 </div>
@@ -88,12 +88,7 @@
                                 <input type="hidden" name="amount" value="{{ amount }}">
                                 <input type="hidden" name="currency" value="{{ currency }}">
 
-                                <div class="mb-4">
-                                    <label class="form-label text-light">Transaction Hash</label>
-                                    <input type="text" name="transaction_hash" class="form-control bg-secondary border-info text-light" 
-                                           placeholder="Enter transaction hash from your wallet" required>
-                                    <div class="form-text text-muted">Copy the transaction ID from your wallet after sending</div>
-                                </div>
+
 
                                 <div class="mb-4">
                                     <label class="form-label text-light">Proof of Payment</label>
@@ -106,7 +101,7 @@
                                     <h6><i class="fas fa-info-circle me-2"></i>What happens next:</h6>
                                     <ol class="mb-0">
                                         <li>Admin reviews your transaction on the blockchain</li>
-                                        <li>Verification typically takes 1-24 hours</li>
+                                        <li>Verification typically takes 1-30 minutes</li>
                                         <li>Funds are added to your live trading balance</li>
                                         <li>You'll receive notification of approval/rejection</li>
                                     </ol>
@@ -132,9 +127,8 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script>
-// Generate QR code for the deposit address
+// Generate QR code for the deposit address using Google Charts API
 document.addEventListener('DOMContentLoaded', function() {
     const address = '{{ address }}';
     const currency = '{{ currency }}';
@@ -148,18 +142,12 @@ document.addEventListener('DOMContentLoaded', function() {
         qrData = `ethereum:${address}?value=${amount*1000000000000000000}`; // Convert to Wei
     }
     
-    QRCode.toCanvas(document.getElementById('qrcode'), qrData, {
-        width: 150,
-        margin: 2,
-        color: {
-            dark: '#ffffff',
-            light: '#343a40'
-        }
-    }, function (error) {
-        if (error) {
-            document.getElementById('qrcode').innerHTML = '<i class="fas fa-qrcode fa-3x text-muted"></i>';
-        }
-    });
+    // Use Google Charts API to generate QR code
+    const qrCodeUrl = `https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl=${encodeURIComponent(qrData)}`;
+    
+    document.getElementById('qrcode').innerHTML = `
+        <img src="${qrCodeUrl}" alt="QR Code" class="img-fluid" style="max-width: 150px;">
+    `;
 });
 
 // Copy address to clipboard

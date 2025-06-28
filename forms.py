@@ -124,8 +124,7 @@ class CryptoDepositForm(FlaskForm):
         ('ETH', 'Ethereum')
     ], validators=[DataRequired()])
     transaction_hash = StringField('Transaction Hash', validators=[
-        DataRequired(),
-        Length(min=10, max=100, message="Transaction hash must be valid")
+        Length(max=100, message="Transaction hash too long")
     ])
     proof_document = FileField('Proof of Payment')
 
