@@ -126,21 +126,7 @@ class TradingViewChart {
                             </optgroup>
                         </select>
                         
-                        <!-- Timeframe Selector -->
-                        <div style="display: flex; gap: 8px; align-items: center;">
-                            <span style="color: #fff; font-size: 14px; font-weight: 500;">Timeframe:</span>
-                            <select id="timeframe-selector" style="background: #8B4513; color: #fff; border: 1px solid #A0522D; padding: 6px 10px; border-radius: 4px; font-size: 13px;">
-                                <option value="1">1m</option>
-                                <option value="5">5m</option>
-                                <option value="15">15m</option>
-                                <option value="30">30m</option>
-                                <option value="60" selected>1h</option>
-                                <option value="240">4h</option>
-                                <option value="1D">1D</option>
-                                <option value="1W">1W</option>
-                            </select>
-                        </div>
-                        
+
                         <!-- Current Price Display -->
                         <div id="price-display" style="color: #2962ff; font-weight: bold; font-size: 16px;">
                             Loading...
