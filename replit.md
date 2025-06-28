@@ -127,6 +127,9 @@ TradePro is a Flask-based binary options trading platform that provides both dem
 - Secure session management
 
 ## Changelog
+- June 28, 2025: **Interface Simplification** - Removed symbol selector, price display, and payout percentage from brown header bar for cleaner design
+- June 28, 2025: Cleaned up JavaScript code removing references to deleted UI elements and event listeners
+- June 28, 2025: Updated TradingView integration to work without external dropdown synchronization
 - June 28, 2025: **Major Update** - Replaced custom chart with full TradingView professional widget integration
 - June 28, 2025: Implemented complete TradingView charting solution with advanced technical analysis tools
 - June 28, 2025: Created professional trading interface layout matching industry standards

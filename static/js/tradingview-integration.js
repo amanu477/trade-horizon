@@ -76,66 +76,7 @@ class TradingViewChart {
                 <!-- Top Trading Bar -->
                 <div style="background: #1e222d; padding: 8px 16px; border-bottom: 1px solid #2a2e39; display: flex; justify-content: space-between; align-items: center; z-index: 1000;">
                     <div style="display: flex; align-items: center; gap: 16px;">
-                        <!-- Asset Selector -->
-                        <select id="asset-selector" style="background: #8B4513; color: #fff; border: 1px solid #A0522D; padding: 8px 12px; border-radius: 4px; font-size: 14px; font-weight: 500;">
-                            <optgroup label="Major Forex">
-                                <option value="EURUSD">EUR/USD</option>
-                                <option value="GBPUSD">GBP/USD</option>
-                                <option value="USDJPY">USD/JPY</option>
-                                <option value="USDCHF">USD/CHF</option>
-                                <option value="AUDUSD">AUD/USD</option>
-                                <option value="NZDUSD">NZD/USD</option>
-                                <option value="USDCAD">USD/CAD</option>
-                                <option value="EURGBP">EUR/GBP</option>
-                                <option value="EURJPY">EUR/JPY</option>
-                                <option value="GBPJPY">GBP/JPY</option>
-                            </optgroup>
-                            <optgroup label="Cryptocurrencies">
-                                <option value="BTCUSD">Bitcoin</option>
-                                <option value="ETHUSD">Ethereum</option>
-                                <option value="LTCUSD">Litecoin</option>
-                                <option value="ADAUSD">Cardano</option>
-                                <option value="DOTUSD">Polkadot</option>
-                                <option value="LINKUSD">Chainlink</option>
-                                <option value="BNBUSD">Binance Coin</option>
-                                <option value="SOLUSD">Solana</option>
-                            </optgroup>
-                            <optgroup label="Commodities">
-                                <option value="XAUUSD">Gold</option>
-                                <option value="XAGUSD">Silver</option>
-                                <option value="CRUDE">Crude Oil</option>
-                                <option value="NATGAS">Natural Gas</option>
-                                <option value="COPPER">Copper</option>
-                            </optgroup>
-                            <optgroup label="Indices">
-                                <option value="SPX500">S&P 500</option>
-                                <option value="NASDAQ">NASDAQ</option>
-                                <option value="DJI">Dow Jones</option>
-                                <option value="FTSE100">FTSE 100</option>
-                                <option value="DAX30">DAX 30</option>
-                                <option value="NIKKEI">Nikkei 225</option>
-                            </optgroup>
-                            <optgroup label="Stocks">
-                                <option value="AAPL">Apple</option>
-                                <option value="GOOGL">Google</option>
-                                <option value="MSFT">Microsoft</option>
-                                <option value="AMZN">Amazon</option>
-                                <option value="TSLA">Tesla</option>
-                                <option value="META">Meta</option>
-                                <option value="NVDA">NVIDIA</option>
-                            </optgroup>
-                        </select>
-                        
-
-                        <!-- Current Price Display -->
-                        <div id="price-display" style="color: #2962ff; font-weight: bold; font-size: 16px;">
-                            Loading...
-                        </div>
-                        
-                        <!-- Payout Info -->
-                        <div id="payout-info" style="color: #4caf50; font-size: 14px;">
-                            Payout: 85%
-                        </div>
+                        <!-- Empty space for clean header -->
                     </div>
                     
                     <!-- Account Info -->
@@ -255,38 +196,48 @@ class TradingViewChart {
         });
         
         // Set up symbol synchronization using iframe monitoring
-        this.widget.onChartReady(() => {
-            console.log('TradingView chart ready, setting up symbol synchronization...');
-            this.setupSymbolSynchronization();
-        });
+        if (this.widget.onChartReady) {
+            this.widget.onChartReady(() => {
+                console.log('TradingView chart ready, setting up symbol synchronization...');
+                this.setupSymbolSynchronization();
+            });
+        } else {
+            // Fallback for widgets without onChartReady
+            setTimeout(() => {
+                console.log('TradingView chart initialized, setting up monitoring...');
+                this.setupSymbolSynchronization();
+            }, 3000);
+        }
         
         // Wait for widget to be ready before setting up interactions
-        this.widget.onChartReady(() => {
-            console.log('TradingView chart is ready');
-            // Initialize current symbol tracking
-            try {
-                this.widget.chart().symbol().then((currentSymbol) => {
-                    this.lastPolledSymbol = currentSymbol;
-                    console.log('Initial TradingView symbol:', currentSymbol);
-                }).catch(error => {
-                    console.log('Could not get initial symbol:', error);
-                });
-            } catch (error) {
-                console.log('Symbol initialization error:', error);
-            }
-            
-            // Start price updates after chart is ready
-            this.startPriceUpdates();
-        });
+        if (this.widget.onChartReady) {
+            this.widget.onChartReady(() => {
+                console.log('TradingView chart is ready');
+                // Initialize current symbol tracking
+                try {
+                    this.widget.chart().symbol().then((currentSymbol) => {
+                        this.lastPolledSymbol = currentSymbol;
+                        console.log('Initial TradingView symbol:', currentSymbol);
+                    }).catch(error => {
+                        console.log('Could not get initial symbol:', error);
+                    });
+                } catch (error) {
+                    console.log('Symbol initialization error:', error);
+                }
+                
+                // Start price updates after chart is ready
+                this.startPriceUpdates();
+            });
+        } else {
+            // Fallback initialization
+            setTimeout(() => {
+                console.log('TradingView chart initialized (fallback)');
+                this.startPriceUpdates();
+            }, 3000);
+        }
     }
     
     setupEventListeners() {
-        // Asset selector
-        document.getElementById('asset-selector').addEventListener('change', (e) => {
-            this.currentAsset = e.target.value;
-            this.updateChart();
-        });
-        
         // Trade direction buttons
         document.getElementById('call-btn').addEventListener('click', () => {
             this.selectedDirection = 'call';
@@ -689,39 +640,16 @@ class TradingViewChart {
             // Update internal state
             this.currentAsset = matchedAsset;
             
-            // Update dropdown selection
-            const assetSelector = document.getElementById('asset-selector');
-            if (assetSelector) {
-                assetSelector.value = matchedAsset;
-                // Trigger change event to update any listeners
-                assetSelector.dispatchEvent(new Event('change'));
-            }
+            // Update internal asset tracking only (no dropdown to update)
             
-            // Update price display for new asset
-            this.updatePriceForAsset(matchedAsset);
+            // Asset updated internally
             
             // Show success notification
             this.showNotification(`Symbol synced: ${matchedAsset}`, 'success');
         }
     }
     
-    updatePriceForAsset(asset) {
-        // Update price display immediately for the new asset
-        fetch(`/api/market-data-new/${asset}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success && data.price) {
-                    const priceDisplay = document.getElementById('price-display');
-                    if (priceDisplay) {
-                        priceDisplay.textContent = data.price.toFixed(5);
-                        priceDisplay.style.color = data.change >= 0 ? '#4CAF50' : '#f44336';
-                    }
-                }
-            })
-            .catch(error => {
-                console.log('Price update error:', error);
-            });
-    }
+    // Price display removed from header - function no longer needed
     
     setupSymbolSynchronization() {
         // Add a manual sync button for user convenience
