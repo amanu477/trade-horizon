@@ -287,7 +287,8 @@ class TradingViewChart {
                 'volume.volume.color.1': '#26a69a55'
             },
             disabled_features: [
-                'use_localstorage_for_settings'
+                'use_localstorage_for_settings',
+                'volume_force_overlay'
             ],
             enabled_features: [
                 'study_templates',
@@ -295,19 +296,40 @@ class TradingViewChart {
                 'header_in_fullscreen_mode',
                 'remove_library_container_border',
                 'header_intervals',
-                'header_chart_type',
+                'header_chart_type', 
                 'header_resolutions',
                 'header_settings',
                 'header_symbol_search',
                 'symbol_search_hot_key',
                 'header_screenshot',
                 'header_indicators',
-                'create_volume_indicator_by_default',
+                'header_compare',
+                'header_undo_redo',
+                'header_fullscreen_button',
+                'use_localstorage_for_settings',
                 'study_dialog_search_control',
-                'side_toolbar_in_fullscreen_mode'
+                'side_toolbar_in_fullscreen_mode',
+                'drawing_templates',
+                'left_toolbar',
+                'control_bar',
+                'timeframes_toolbar',
+                'edit_buttons_in_legend',
+                'context_menus',
+                'border_around_the_chart',
+                'main_series_scale_menu'
             ],
             fullscreen: false,
-            autosize: true
+            autosize: true,
+            withdateranges: false,
+            hide_legend: false,
+            hide_side_toolbar: false,
+            allow_symbol_change: true,
+            details: true,
+            hotlist: true,
+            calendar: true,
+            show_popup_button: true,
+            popup_width: "1000",
+            popup_height: "650"
         });
         
         // Wait for widget to be ready before setting up interactions

@@ -104,6 +104,41 @@
     gap: 4px !important;
 }
 
+/* Drawing toolbar visibility */
+.tv-left-toolbar {
+    display: block !important;
+    visibility: visible !important;
+    background-color: #1e222d !important;
+}
+
+/* Control bar visibility */
+.tv-control-bar {
+    display: flex !important;
+    visibility: visible !important;
+    background-color: #1e222d !important;
+}
+
+/* Timeframes toolbar */
+.tv-timeframes-toolbar {
+    display: flex !important;
+    visibility: visible !important;
+}
+
+/* Symbol and interval selectors */
+.tv-symbol-header,
+.tv-interval-dialog {
+    display: block !important;
+    visibility: visible !important;
+}
+
+/* Make sure all toolbar elements are visible */
+.tv-header__toolbar,
+.tv-header__toolbar-button,
+.tv-header__dropdown-button {
+    display: inline-flex !important;
+    visibility: visible !important;
+}
+
 /* Drawing tools toolbar */
 .tv-side-toolbar {
     background-color: #1e222d !important;
