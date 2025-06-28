@@ -189,5 +189,176 @@
             </div>
         </div>
     </div>
+
+    <!-- User Trades Section -->
+    <div class="row mt-4">
+        <!-- Active Trades -->
+        <div class="col-12 mb-4">
+            <div class="card bg-dark border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="m-0 font-weight-bold">
+                        <i class="fas fa-chart-line me-2"></i>Active Trades ({{ active_trades|length }})
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if active_trades %}
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Asset</th>
+                                        <th>Type</th>
+                                        <th>Amount</th>
+                                        <th>Entry Price</th>
+                                        <th>Expires</th>
+                                        <th>Payout</th>
+                                        <th>Account</th>
+                                        <th>Admin Controls</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for trade in active_trades %}
+                                    <tr>
+                                        <td>#{{ trade.id }}</td>
+                                        <td><strong>{{ trade.asset }}</strong></td>
+                                        <td>
+                                            {% if trade.trade_type == 'call' %}
+                                                <span class="badge bg-success">CALL</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">PUT</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>${{ "%.2f"|format(trade.amount) }}</td>
+                                        <td>{{ "%.5f"|format(trade.entry_price) }}</td>
+                                        <td>
+                                            <small>{{ trade.expiry_time.strftime('%m/%d %I:%M %p') }}</small>
+                                        </td>
+                                        <td>{{ trade.payout_percentage }}%</td>
+                                        <td>
+                                            {% if trade.is_demo %}
+                                                <span class="badge bg-info">Demo</span>
+                                            {% else %}
+                                                <span class="badge bg-success">Live</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group-vertical" role="group">
+                                                <form method="POST" action="{{ url_for('admin_manipulate_trade', trade_id=trade.id) }}" style="display: inline;">
+                                                    <input type="hidden" name="force_result" value="win">
+                                                    <input type="hidden" name="admin_notes" value="Admin forced WIN for user {{ user.username }}">
+                                                    <button type="submit" class="btn btn-success btn-sm mb-1" 
+                                                            onclick="return confirm('Force this trade to WIN?')">
+                                                        <i class="fas fa-thumbs-up me-1"></i>Force WIN
+                                                    </button>
+                                                </form>
+                                                <form method="POST" action="{{ url_for('admin_manipulate_trade', trade_id=trade.id) }}" style="display: inline;">
+                                                    <input type="hidden" name="force_result" value="lose">
+                                                    <input type="hidden" name="admin_notes" value="Admin forced LOSS for user {{ user.username }}">
+                                                    <button type="submit" class="btn btn-danger btn-sm" 
+                                                            onclick="return confirm('Force this trade to LOSE?')">
+                                                        <i class="fas fa-thumbs-down me-1"></i>Force LOSS
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No active trades</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Closed Trades -->
+        <div class="col-12">
+            <div class="card bg-dark border-secondary">
+                <div class="card-header bg-secondary text-dark">
+                    <h6 class="m-0 font-weight-bold">
+                        <i class="fas fa-history me-2"></i>Recent Closed Trades (Last 20)
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if closed_trades %}
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Asset</th>
+                                        <th>Type</th>
+                                        <th>Amount</th>
+                                        <th>Entry/Exit</th>
+                                        <th>Result</th>
+                                        <th>Profit/Loss</th>
+                                        <th>Closed</th>
+                                        <th>Account</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for trade in closed_trades %}
+                                    <tr>
+                                        <td>#{{ trade.id }}</td>
+                                        <td><strong>{{ trade.asset }}</strong></td>
+                                        <td>
+                                            {% if trade.trade_type == 'call' %}
+                                                <span class="badge bg-success">CALL</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">PUT</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>${{ "%.2f"|format(trade.amount) }}</td>
+                                        <td>
+                                            <small>
+                                                Entry: {{ "%.5f"|format(trade.entry_price) }}<br>
+                                                Exit: {{ "%.5f"|format(trade.exit_price) if trade.exit_price else 'N/A' }}
+                                            </small>
+                                        </td>
+                                        <td>
+                                            {% if trade.status == 'won' %}
+                                                <span class="badge bg-success">WON</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">LOST</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if trade.profit_loss > 0 %}
+                                                <span class="text-success">+${{ "%.2f"|format(trade.profit_loss) }}</span>
+                                            {% else %}
+                                                <span class="text-danger">${{ "%.2f"|format(trade.profit_loss) }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <small>{{ trade.closed_at.strftime('%m/%d %I:%M %p') if trade.closed_at else 'N/A' }}</small>
+                                        </td>
+                                        <td>
+                                            {% if trade.is_demo %}
+                                                <span class="badge bg-info">Demo</span>
+                                            {% else %}
+                                                <span class="badge bg-success">Live</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No trade history</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
