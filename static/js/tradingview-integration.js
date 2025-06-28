@@ -263,6 +263,55 @@ class TradingViewChart {
             toolbar_bg: '#131722',
             enable_publishing: false,
             allow_symbol_change: true,
+            hide_side_toolbar: false,
+            hide_top_toolbar: false,
+            disabled_features: [
+                'use_localstorage_for_settings'
+            ],
+            enabled_features: [
+                'left_toolbar',
+                'header_widget',
+                'timeframes_toolbar',
+                'control_bar',
+                'drawing_toolbar'
+            ],
+            drawings_access: {
+                type: 'black',
+                tools: [
+                    { name: 'Regression Trend' },
+                    { name: 'Trend Line' },
+                    { name: 'Trend Angle' },
+                    { name: 'Horizontal Line' },
+                    { name: 'Vertical Line' },
+                    { name: 'Cross Line' },
+                    { name: 'Trend Channel' },
+                    { name: 'Parallel Channel' },
+                    { name: 'Disjoint Channel' },
+                    { name: 'Fibonacci Retracement' },
+                    { name: 'Fibonacci Extension' },
+                    { name: 'Fibonacci Fan' },
+                    { name: 'Gann Box' },
+                    { name: 'Gann Square' },
+                    { name: 'Gann Fan' },
+                    { name: 'Rectangle' },
+                    { name: 'Rotated Rectangle' },
+                    { name: 'Ellipse' },
+                    { name: 'Triangle' },
+                    { name: 'Polyline' },
+                    { name: 'Path' },
+                    { name: 'Curved Line' },
+                    { name: 'Arrow' },
+                    { name: 'Price Label' },
+                    { name: 'Price Note' },
+                    { name: 'Arrow Marker' },
+                    { name: 'Flag' },
+                    { name: 'Pitchfork' },
+                    { name: 'Schiff Pitchfork' },
+                    { name: 'Modified Schiff Pitchfork' },
+                    { name: 'Brush' },
+                    { name: 'Highlighter' }
+                ]
+            },
             autosize: true
         });
         
