@@ -520,38 +520,49 @@ class TradingViewChart {
         // Ensure we have a valid asset
         const asset = this.currentAsset || 'EURUSD';
         
-        try {
-            const formData = new FormData();
-            formData.append('asset', asset);
-            formData.append('trade_type', this.selectedDirection);
-            formData.append('amount', amount);
-            formData.append('expiry_minutes', expiry);
-            
-            console.log('Placing trade:', {
-                asset: asset,
-                trade_type: this.selectedDirection,
-                amount: amount,
-                expiry_minutes: expiry
-            });
-            
-            const response = await fetch('/place_trade', {
-                method: 'POST',
-                body: formData
-            });
-            
-            if (response.ok) {
-                const result = await response.json();
-                this.addTradeToList(result);
-                this.updateBalance();
-                alert('Trade placed successfully!');
-            } else {
-                const error = await response.json();
-                alert(`Error: ${error.message || 'Failed to place trade'}`);
-            }
-        } catch (error) {
-            console.error('Error placing trade:', error);
-            alert('Failed to place trade. Please try again.');
+        // Create and submit a hidden form for reliable session handling
+        console.log('Placing trade:', {
+            asset: asset,
+            trade_type: this.selectedDirection,
+            amount: amount,
+            expiry_minutes: expiry
+        });
+        
+        // Create hidden form
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/place_trade';
+        form.style.display = 'none';
+        
+        // Add CSRF token
+        const csrfToken = document.querySelector('meta[name="csrf-token"]');
+        if (csrfToken) {
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrf_token';
+            csrfInput.value = csrfToken.getAttribute('content');
+            form.appendChild(csrfInput);
         }
+        
+        // Add form fields
+        const fields = {
+            'asset': asset,
+            'trade_type': this.selectedDirection,
+            'amount': amount,
+            'expiry_minutes': expiry
+        };
+        
+        for (const [name, value] of Object.entries(fields)) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = name;
+            input.value = value;
+            form.appendChild(input);
+        }
+        
+        // Add to page and submit
+        document.body.appendChild(form);
+        form.submit();
     }
     
     addTradeToList(trade) {

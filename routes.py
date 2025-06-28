@@ -147,6 +147,12 @@ def live_trading():
     form = TradeForm()
     return render_template('trading/live.html', form=form, is_demo=False)
 
+@app.route('/test_trade', methods=['GET', 'POST'])
+@login_required
+def test_trade():
+    print(f"[TEST] Test route hit - method: {request.method}")
+    return jsonify({'success': True, 'message': 'Test route working'})
+
 @app.route('/place_trade', methods=['POST'])
 @login_required
 def place_trade():
