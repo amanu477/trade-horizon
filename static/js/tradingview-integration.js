@@ -11,15 +11,53 @@ class TradingViewChart {
         this.widget = null;
         this.trades = [];
         
-        // Asset symbol mapping for TradingView
+        // Comprehensive asset symbol mapping for TradingView
         this.symbolMap = {
+            // Major Forex Pairs
             'EURUSD': 'FX:EURUSD',
             'GBPUSD': 'FX:GBPUSD', 
             'USDJPY': 'FX:USDJPY',
-            'BTCUSD': 'CRYPTOCAP:BTC',
-            'ETHUSD': 'CRYPTOCAP:ETH',
+            'USDCHF': 'FX:USDCHF',
+            'AUDUSD': 'FX:AUDUSD',
+            'NZDUSD': 'FX:NZDUSD',
+            'USDCAD': 'FX:USDCAD',
+            'EURGBP': 'FX:EURGBP',
+            'EURJPY': 'FX:EURJPY',
+            'GBPJPY': 'FX:GBPJPY',
+            
+            // Cryptocurrencies
+            'BTCUSD': 'BINANCE:BTCUSDT',
+            'ETHUSD': 'BINANCE:ETHUSDT',
+            'LTCUSD': 'BINANCE:LTCUSDT',
+            'ADAUSD': 'BINANCE:ADAUSDT',
+            'DOTUSD': 'BINANCE:DOTUSDT',
+            'LINKUSD': 'BINANCE:LINKUSDT',
+            'BNBUSD': 'BINANCE:BNBUSDT',
+            'SOLUSD': 'BINANCE:SOLUSDT',
+            
+            // Commodities
             'XAUUSD': 'TVC:GOLD',
-            'CRUDE': 'TVC:USOIL'
+            'XAGUSD': 'TVC:SILVER',
+            'CRUDE': 'TVC:USOIL',
+            'NATGAS': 'TVC:NATURALGAS',
+            'COPPER': 'COMEX:HG1!',
+            
+            // Indices
+            'SPX500': 'TVC:SPX',
+            'NASDAQ': 'TVC:NDX',
+            'DJI': 'TVC:DJI',
+            'FTSE100': 'TVC:UKX',
+            'DAX30': 'TVC:DAX',
+            'NIKKEI': 'TVC:NI225',
+            
+            // Individual Stocks
+            'AAPL': 'NASDAQ:AAPL',
+            'GOOGL': 'NASDAQ:GOOGL',
+            'MSFT': 'NASDAQ:MSFT',
+            'AMZN': 'NASDAQ:AMZN',
+            'TSLA': 'NASDAQ:TSLA',
+            'META': 'NASDAQ:META',
+            'NVDA': 'NASDAQ:NVDA'
         };
         
         this.init();
@@ -40,13 +78,52 @@ class TradingViewChart {
                     <div style="display: flex; align-items: center; gap: 16px;">
                         <!-- Asset Selector -->
                         <select id="asset-selector" style="background: #2a2e39; color: #d1d4dc; border: 1px solid #434651; padding: 6px 12px; border-radius: 4px; font-size: 14px;">
-                            <option value="EURUSD">EUR/USD</option>
-                            <option value="GBPUSD">GBP/USD</option>
-                            <option value="USDJPY">USD/JPY</option>
-                            <option value="BTCUSD">BTC/USD</option>
-                            <option value="ETHUSD">ETH/USD</option>
-                            <option value="XAUUSD">Gold/USD</option>
-                            <option value="CRUDE">Crude Oil</option>
+                            <optgroup label="Major Forex">
+                                <option value="EURUSD">EUR/USD</option>
+                                <option value="GBPUSD">GBP/USD</option>
+                                <option value="USDJPY">USD/JPY</option>
+                                <option value="USDCHF">USD/CHF</option>
+                                <option value="AUDUSD">AUD/USD</option>
+                                <option value="NZDUSD">NZD/USD</option>
+                                <option value="USDCAD">USD/CAD</option>
+                                <option value="EURGBP">EUR/GBP</option>
+                                <option value="EURJPY">EUR/JPY</option>
+                                <option value="GBPJPY">GBP/JPY</option>
+                            </optgroup>
+                            <optgroup label="Cryptocurrencies">
+                                <option value="BTCUSD">Bitcoin</option>
+                                <option value="ETHUSD">Ethereum</option>
+                                <option value="LTCUSD">Litecoin</option>
+                                <option value="ADAUSD">Cardano</option>
+                                <option value="DOTUSD">Polkadot</option>
+                                <option value="LINKUSD">Chainlink</option>
+                                <option value="BNBUSD">Binance Coin</option>
+                                <option value="SOLUSD">Solana</option>
+                            </optgroup>
+                            <optgroup label="Commodities">
+                                <option value="XAUUSD">Gold</option>
+                                <option value="XAGUSD">Silver</option>
+                                <option value="CRUDE">Crude Oil</option>
+                                <option value="NATGAS">Natural Gas</option>
+                                <option value="COPPER">Copper</option>
+                            </optgroup>
+                            <optgroup label="Indices">
+                                <option value="SPX500">S&P 500</option>
+                                <option value="NASDAQ">NASDAQ</option>
+                                <option value="DJI">Dow Jones</option>
+                                <option value="FTSE100">FTSE 100</option>
+                                <option value="DAX30">DAX 30</option>
+                                <option value="NIKKEI">Nikkei 225</option>
+                            </optgroup>
+                            <optgroup label="Stocks">
+                                <option value="AAPL">Apple</option>
+                                <option value="GOOGL">Google</option>
+                                <option value="MSFT">Microsoft</option>
+                                <option value="AMZN">Amazon</option>
+                                <option value="TSLA">Tesla</option>
+                                <option value="META">Meta</option>
+                                <option value="NVDA">NVIDIA</option>
+                            </optgroup>
                         </select>
                         
                         <!-- Current Price Display -->
@@ -170,13 +247,17 @@ class TradingViewChart {
             locale: 'en',
             toolbar_bg: '#131722',
             enable_publishing: false,
+            allow_symbol_change: true,
             hide_top_toolbar: false,
             hide_legend: false,
-            save_image: false,
+            hide_side_toolbar: false,
+            save_image: true,
             hide_volume: false,
             studies: [
                 'MASimple@tv-basicstudies',
-                'RSI@tv-basicstudies'
+                'RSI@tv-basicstudies',
+                'MACD@tv-basicstudies',
+                'BB@tv-basicstudies'
             ],
             overrides: {
                 'paneProperties.background': '#131722',
@@ -191,17 +272,24 @@ class TradingViewChart {
                 'volume.volume.color.1': '#26a69a55'
             },
             disabled_features: [
-                'use_localstorage_for_settings',
-                'volume_force_overlay',
-                'create_volume_indicator_by_default'
+                'use_localstorage_for_settings'
             ],
             enabled_features: [
-                'study_templates'
-            ]
+                'study_templates',
+                'side_toolbar_in_fullscreen_mode',
+                'header_in_fullscreen_mode',
+                'remove_library_container_border'
+            ],
+            fullscreen: false,
+            autosize: true
         });
         
-        // Start price updates
-        this.startPriceUpdates();
+        // Wait for widget to be ready before setting up interactions
+        this.widget.onChartReady(() => {
+            console.log('TradingView chart is ready');
+            // Start price updates after chart is ready
+            this.startPriceUpdates();
+        });
     }
     
     setupEventListeners() {
@@ -239,9 +327,20 @@ class TradingViewChart {
     }
     
     updateChart() {
-        if (this.widget) {
+        if (this.widget && this.widget.chart) {
             const symbol = this.symbolMap[this.currentAsset] || 'FX:EURUSD';
-            this.widget.chart().setSymbol(symbol);
+            try {
+                this.widget.chart().setSymbol(symbol);
+                console.log(`Switched to symbol: ${symbol}`);
+            } catch (error) {
+                console.log('Chart not ready yet, will retry...');
+                // Retry after a delay if chart is not ready
+                setTimeout(() => {
+                    if (this.widget && this.widget.chart) {
+                        this.widget.chart().setSymbol(symbol);
+                    }
+                }, 2000);
+            }
         }
     }
     
