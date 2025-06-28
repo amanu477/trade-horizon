@@ -704,6 +704,18 @@ def process_expired_trades():
     db.session.commit()
     return jsonify({'processed': len(expired_trades)})
 
+@app.route('/api/wallet_balance')
+@login_required
+def api_wallet_balance():
+    """Get user's current wallet balance"""
+    wallet = Wallet.query.filter_by(user_id=current_user.id).first()
+    if wallet:
+        return jsonify({
+            'balance': float(wallet.balance),
+            'demo_balance': float(wallet.demo_balance)
+        })
+    return jsonify({'balance': 0.00, 'demo_balance': 10000.00})
+
 @app.route('/api/active_trades')
 @login_required
 def api_active_trades():

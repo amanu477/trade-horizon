@@ -82,7 +82,7 @@ class TradingViewChart {
                     <!-- Account Info -->
                     <div style="display: flex; align-items: center; gap: 16px;">
                         <div style="color: #d1d4dc; font-size: 14px;">
-                            Balance: <span id="balance-display" style="color: #4caf50; font-weight: bold;">$${this.mode === 'demo' ? '10,000.00' : '1,000.00'}</span>
+                            Balance: <span id="balance-display" style="color: #4caf50; font-weight: bold;">Loading...</span>
                         </div>
                         <div style="background: ${this.mode === 'demo' ? '#ff9800' : '#4caf50'}; color: white; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; text-transform: uppercase;">
                             ${this.mode} Mode
@@ -128,8 +128,8 @@ class TradingViewChart {
                             
                             <!-- Expiry Time -->
                             <div style="margin-bottom: 16px;">
-                                <label style="color: #868993; font-size: 12px; display: block; margin-bottom: 4px;">Expiry Time (minutes)</label>
-                                <input id="expiry-input" type="number" value="5" min="1" max="1440"
+                                <label style="color: #868993; font-size: 12px; display: block; margin-bottom: 4px;">Expiry Time (HH:MM:SS)</label>
+                                <input id="expiry-input" type="time" value="00:05:00" step="1"
                                        style="width: 100%; background: #2a2e39; color: #d1d4dc; border: 1px solid #434651; padding: 8px 12px; border-radius: 4px; font-size: 14px;">
                             </div>
                             
@@ -157,6 +157,7 @@ class TradingViewChart {
         `;
         
         this.setupEventListeners();
+        this.loadWalletBalance();
     }
     
     loadTradingView() {
@@ -503,9 +504,28 @@ class TradingViewChart {
         }, 2000);
     }
     
+    async loadWalletBalance() {
+        try {
+            const response = await fetch('/api/wallet_balance');
+            if (response.ok) {
+                const data = await response.json();
+                const balance = this.mode === 'demo' ? data.demo_balance : data.balance;
+                document.getElementById('balance-display').textContent = `$${parseFloat(balance).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            }
+        } catch (error) {
+            console.error('Error loading wallet balance:', error);
+        }
+    }
+
+    convertTimeToMinutes(timeString) {
+        const [hours, minutes, seconds] = timeString.split(':').map(Number);
+        return (hours * 60) + minutes + (seconds / 60);
+    }
+
     async placeTrade() {
         const amount = parseFloat(document.getElementById('amount-input').value);
-        const expiry = parseInt(document.getElementById('expiry-input').value);
+        const timeInput = document.getElementById('expiry-input').value;
+        const expiryMinutes = this.convertTimeToMinutes(timeInput);
         
         if (!amount || amount < 1) {
             alert('Please enter a valid investment amount');
@@ -517,6 +537,11 @@ class TradingViewChart {
             return;
         }
         
+        if (!timeInput || expiryMinutes < 1) {
+            alert('Please enter a valid expiry time');
+            return;
+        }
+        
         // Ensure we have a valid asset
         const asset = this.currentAsset || 'EURUSD';
         
@@ -525,7 +550,7 @@ class TradingViewChart {
             asset: asset,
             trade_type: this.selectedDirection,
             amount: amount,
-            expiry_minutes: expiry
+            expiry_minutes: expiryMinutes
         });
         
         // Create hidden form
@@ -549,7 +574,7 @@ class TradingViewChart {
             'asset': asset,
             'trade_type': this.selectedDirection,
             'amount': amount,
-            'expiry_minutes': expiry
+            'expiry_minutes': expiryMinutes
         };
         
         for (const [name, value] of Object.entries(fields)) {
@@ -747,7 +772,7 @@ class TradingViewChart {
                             tradeElement.style.opacity = '0';
                             setTimeout(() => {
                                 tradeElement.remove();
-                                this.updateBalance();
+                                this.loadWalletBalance(); // Refresh balance
                                 this.showNotification(`Trade ${result.trade_result}! Balance updated.`, 
                                     result.trade_result === 'won' ? 'success' : 'info');
                             }, 500);
