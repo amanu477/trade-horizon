@@ -10,6 +10,7 @@ class SimpleTradingInterface {
     
     init() {
         this.createTradingInterface();
+        this.initializeTradingViewChart();
         this.loadActiveTrades();
         
         // Refresh active trades every 5 seconds
@@ -28,11 +29,15 @@ class SimpleTradingInterface {
                 <div style="flex: 1; background: #222; border-right: 1px solid #333;">
                     <div style="padding: 20px; text-align: center;">
                         <h2 style="color: #26a69a; margin-bottom: 20px;">TradingView Chart</h2>
-                        <div id="tradingview_chart" style="height: 500px; background: #333; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-                            <div style="text-align: center;">
-                                <h3 style="color: #26a69a;">EUR/USD</h3>
-                                <div id="price-display" style="font-size: 32px; font-weight: bold; color: #26a69a; margin: 20px 0;">1.0850</div>
-                                <div style="color: #95a5a6;">Live Market Data</div>
+                        <div id="tradingview_chart" style="height: 500px; background: #333; border-radius: 8px; position: relative;">
+                            <!-- TradingView Widget -->
+                            <div id="tradingview_widget" style="height: 100%; width: 100%;"></div>
+                            
+                            <!-- Price Display Overlay -->
+                            <div style="position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.8); padding: 10px; border-radius: 5px;">
+                                <div style="color: #95a5a6; font-size: 12px;">EUR/USD</div>
+                                <div id="price-display" style="font-size: 18px; font-weight: bold; color: #26a69a;">1.0850</div>
+                                <div style="color: #95a5a6; font-size: 10px;">Live</div>
                             </div>
                         </div>
                     </div>
@@ -88,6 +93,52 @@ class SimpleTradingInterface {
         `;
         
         this.loadWalletBalance();
+    }
+    
+    initializeTradingViewChart() {
+        // Initialize TradingView widget
+        setTimeout(() => {
+            try {
+                new TradingView.widget({
+                    "width": "100%",
+                    "height": "100%",
+                    "symbol": "FX:EURUSD",
+                    "interval": "1",
+                    "timezone": "Etc/UTC",
+                    "theme": "dark",
+                    "style": "1",
+                    "locale": "en",
+                    "toolbar_bg": "#f1f3f6",
+                    "enable_publishing": false,
+                    "hide_top_toolbar": false,
+                    "hide_legend": true,
+                    "save_image": false,
+                    "container_id": "tradingview_widget",
+                    "studies": [],
+                    "show_popup_button": false,
+                    "popup_width": "1000",
+                    "popup_height": "650"
+                });
+            } catch (error) {
+                // If TradingView fails, show a simple chart placeholder
+                const widget = document.getElementById('tradingview_widget');
+                if (widget) {
+                    widget.innerHTML = `
+                        <div style="display: flex; align-items: center; justify-content: center; height: 100%; flex-direction: column;">
+                            <div style="text-align: center;">
+                                <h3 style="color: #26a69a; margin-bottom: 20px;">EUR/USD Chart</h3>
+                                <div style="width: 80%; height: 300px; background: linear-gradient(45deg, #1a1a1a 25%, transparent 25%), linear-gradient(-45deg, #1a1a1a 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #1a1a1a 75%), linear-gradient(-45deg, transparent 75%, #1a1a1a 75%); background-size: 20px 20px; background-position: 0 0, 0 10px, 10px -10px, -10px 0px; border: 2px solid #26a69a; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+                                    <div style="text-align: center;">
+                                        <div style="font-size: 24px; color: #26a69a; margin-bottom: 10px;">📈</div>
+                                        <div style="color: #95a5a6;">Chart Loading...</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+        }, 1000);
     }
     
     async placeTrade(direction) {
