@@ -394,6 +394,93 @@ class TradingViewChart {
         }
     }
     
+    showTradeModal() {
+        // Create modal overlay
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        `;
+        
+        modal.innerHTML = `
+            <div style="background: #1e222d; padding: 30px; border-radius: 8px; width: 400px; max-width: 90vw;">
+                <h3 style="color: #d1d4dc; margin: 0 0 20px 0; text-align: center;">Place Trade</h3>
+                
+                <!-- Direction Buttons -->
+                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <button id="modal-call-btn" style="flex: 1; background: #26a69a; color: white; border: none; padding: 15px; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer;">
+                        ▲ CALL
+                    </button>
+                    <button id="modal-put-btn" style="flex: 1; background: #ef5350; color: white; border: none; padding: 15px; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer;">
+                        ▼ PUT
+                    </button>
+                </div>
+                
+                <!-- Amount Input -->
+                <div style="margin-bottom: 20px;">
+                    <label style="color: #d1d4dc; display: block; margin-bottom: 8px;">Investment Amount</label>
+                    <input type="number" id="modal-amount" value="10" min="1" max="10000" style="width: 100%; background: #2a2e39; color: #d1d4dc; border: 1px solid #434651; padding: 12px; border-radius: 4px; font-size: 16px;">
+                </div>
+                
+                <!-- Expiry Time -->
+                <div style="margin-bottom: 20px;">
+                    <label style="color: #d1d4dc; display: block; margin-bottom: 8px;">Expiry Time</label>
+                    <select id="modal-expiry" style="width: 100%; background: #2a2e39; color: #d1d4dc; border: 1px solid #434651; padding: 12px; border-radius: 4px;">
+                        <option value="1">1 Minute</option>
+                        <option value="5" selected>5 Minutes</option>
+                        <option value="15">15 Minutes</option>
+                        <option value="30">30 Minutes</option>
+                        <option value="60">1 Hour</option>
+                    </select>
+                </div>
+                
+                <!-- Buttons -->
+                <div style="display: flex; gap: 10px; justify-content: center;">
+                    <button id="cancel-trade" style="background: #434651; color: #d1d4dc; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer;">Cancel</button>
+                    <button id="confirm-trade" style="background: #26a69a; color: white; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer;">Place Trade</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Add event listeners
+        modal.querySelector('#cancel-trade').addEventListener('click', () => {
+            document.body.removeChild(modal);
+        });
+        
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                document.body.removeChild(modal);
+            }
+        });
+        
+        // Direction selection
+        let selectedDirection = 'call';
+        const callBtn = modal.querySelector('#modal-call-btn');
+        const putBtn = modal.querySelector('#modal-put-btn');
+        
+        callBtn.addEventListener('click', () => {
+            selectedDirection = 'call';
+            callBtn.style.opacity = '1';
+            putBtn.style.opacity = '0.6';
+        });
+        
+        putBtn.addEventListener('click', () => {
+            selectedDirection = 'put';
+            putBtn.style.opacity = '1';
+            callBtn.style.opacity = '0.6';
+        });
+    }
+    
     updateDirectionButtons() {
         const callBtn = document.getElementById('call-btn');
         const putBtn = document.getElementById('put-btn');
