@@ -254,18 +254,10 @@ class TradingViewChart {
             autosize: true
         });
         
-        // Listen for symbol changes from TradingView
+        // Set up symbol synchronization using iframe monitoring
         this.widget.onChartReady(() => {
-            try {
-                this.widget.chart().onSymbolChanged().subscribe(null, (symbolInfo) => {
-                    console.log('TradingView symbol changed to:', symbolInfo);
-                    this.syncDropdownFromChart(symbolInfo.name || symbolInfo);
-                });
-            } catch (error) {
-                console.log('Symbol change listener setup failed:', error);
-                // Alternative method - poll for symbol changes
-                this.setupSymbolPolling();
-            }
+            console.log('TradingView chart ready, setting up symbol synchronization...');
+            this.setupSymbolSynchronization();
         });
         
         // Wait for widget to be ready before setting up interactions
@@ -678,8 +670,18 @@ class TradingViewChart {
             reverseSymbolMap[this.symbolMap[asset]] = asset;
         });
         
-        // Find matching asset for the TradingView symbol
-        const matchedAsset = reverseSymbolMap[tradingViewSymbol];
+        // Also try partial matching for common symbols
+        let matchedAsset = reverseSymbolMap[tradingViewSymbol];
+        
+        if (!matchedAsset) {
+            // Try to find partial matches
+            for (const [asset, tvSymbol] of Object.entries(this.symbolMap)) {
+                if (tvSymbol.includes(tradingViewSymbol) || tradingViewSymbol.includes(asset)) {
+                    matchedAsset = asset;
+                    break;
+                }
+            }
+        }
         
         if (matchedAsset && matchedAsset !== this.currentAsset) {
             console.log(`Syncing dropdown: TradingView changed to ${tradingViewSymbol}, setting dropdown to ${matchedAsset}`);
@@ -691,10 +693,15 @@ class TradingViewChart {
             const assetSelector = document.getElementById('asset-selector');
             if (assetSelector) {
                 assetSelector.value = matchedAsset;
+                // Trigger change event to update any listeners
+                assetSelector.dispatchEvent(new Event('change'));
             }
             
             // Update price display for new asset
             this.updatePriceForAsset(matchedAsset);
+            
+            // Show success notification
+            this.showNotification(`Symbol synced: ${matchedAsset}`, 'success');
         }
     }
     
@@ -716,25 +723,134 @@ class TradingViewChart {
             });
     }
     
-    setupSymbolPolling() {
-        // Fallback method - poll for symbol changes every 2 seconds
-        this.symbolPollingInterval = setInterval(() => {
-            try {
-                if (this.widget && this.widget.chart) {
-                    this.widget.chart().symbol().then((currentSymbol) => {
-                        if (currentSymbol && currentSymbol !== this.lastPolledSymbol) {
-                            console.log('Polling detected symbol change:', currentSymbol);
-                            this.lastPolledSymbol = currentSymbol;
-                            this.syncDropdownFromChart(currentSymbol);
-                        }
-                    }).catch(error => {
-                        console.log('Symbol polling error:', error);
-                    });
+    setupSymbolSynchronization() {
+        // Add a manual sync button for user convenience
+        this.addManualSyncButton();
+        
+        // Set up automated monitoring with multiple detection methods
+        const iframe = document.querySelector('#tradingview-widget iframe');
+        if (iframe) {
+            console.log('Found TradingView iframe, setting up symbol monitoring...');
+            
+            // Method 1: URL monitoring
+            this.symbolPollingInterval = setInterval(() => {
+                try {
+                    const iframeSrc = iframe.src;
+                    if (iframeSrc && iframeSrc !== this.lastIframeSrc) {
+                        this.lastIframeSrc = iframeSrc;
+                        this.extractSymbolFromUrl(iframeSrc);
+                    }
+                    
+                    // Method 2: DOM observation
+                    this.monitorTradingViewHeader();
+                    
+                    // Method 3: Title monitoring 
+                    this.monitorDocumentTitle();
+                } catch (error) {
+                    console.log('Symbol monitoring error:', error);
                 }
-            } catch (error) {
-                console.log('Symbol polling setup error:', error);
+            }, 1500);
+        } else {
+            console.log('TradingView iframe not found, retrying...');
+            setTimeout(() => this.setupSymbolSynchronization(), 2000);
+        }
+    }
+    
+    addManualSyncButton() {
+        // Add a sync button to the trading panel for manual synchronization
+        const tradingPanel = document.querySelector('#place-trade-btn').parentElement;
+        if (tradingPanel && !document.getElementById('sync-symbol-btn')) {
+            const syncButton = document.createElement('button');
+            syncButton.id = 'sync-symbol-btn';
+            syncButton.innerHTML = '🔄 Sync Symbol';
+            syncButton.style.cssText = `
+                background: #2196f3; color: white; border: none; 
+                padding: 8px 12px; border-radius: 4px; font-size: 12px; 
+                cursor: pointer; margin-top: 8px; width: 100%;
+            `;
+            syncButton.onclick = () => this.manualSymbolSync();
+            tradingPanel.appendChild(syncButton);
+        }
+    }
+    
+    manualSymbolSync() {
+        // Manual synchronization triggered by user
+        try {
+            // Try to detect current TradingView symbol from various sources
+            const iframe = document.querySelector('#tradingview-widget iframe');
+            if (iframe && iframe.contentWindow) {
+                // Try to communicate with iframe
+                this.requestSymbolFromTradingView();
             }
-        }, 2000);
+            
+            // Show user feedback
+            this.showNotification('Attempting to sync symbol...', 'info');
+            
+            // Force check all detection methods
+            this.extractSymbolFromUrl(iframe ? iframe.src : '');
+            this.monitorTradingViewHeader();
+            this.monitorDocumentTitle();
+            
+        } catch (error) {
+            console.log('Manual sync error:', error);
+            this.showNotification('Symbol sync failed - try changing symbol in TradingView', 'error');
+        }
+    }
+    
+    requestSymbolFromTradingView() {
+        // Attempt to communicate with TradingView iframe
+        const iframe = document.querySelector('#tradingview-widget iframe');
+        if (iframe && iframe.contentWindow) {
+            try {
+                iframe.contentWindow.postMessage({action: 'getSymbol'}, '*');
+            } catch (error) {
+                console.log('PostMessage communication failed:', error);
+            }
+        }
+    }
+    
+    monitorDocumentTitle() {
+        // Monitor document title changes for symbol information
+        const title = document.title;
+        if (title && title !== this.lastDocumentTitle) {
+            this.lastDocumentTitle = title;
+            // Extract symbol from title if it contains trading information
+            const symbolMatch = title.match(/([A-Z]{3,6})\s*[\-\/]\s*([A-Z]{3,6})/);
+            if (symbolMatch) {
+                const detectedSymbol = symbolMatch[0];
+                this.syncDropdownFromChart(detectedSymbol);
+            }
+        }
+    }
+    
+    extractSymbolFromUrl(url) {
+        // Extract symbol information from TradingView URL
+        const symbolMatch = url.match(/symbol=([^&]+)/);
+        if (symbolMatch) {
+            const urlSymbol = decodeURIComponent(symbolMatch[1]);
+            if (urlSymbol !== this.lastDetectedSymbol) {
+                console.log('URL symbol change detected:', urlSymbol);
+                this.lastDetectedSymbol = urlSymbol;
+                this.syncDropdownFromChart(urlSymbol);
+            }
+        }
+    }
+    
+    monitorTradingViewHeader() {
+        // Look for symbol display in TradingView widget DOM
+        const widgetContainer = document.querySelector('#tradingview-widget');
+        if (widgetContainer) {
+            // Find elements that might contain symbol information
+            const symbolElements = widgetContainer.querySelectorAll('[data-symbol], .symbol, .tv-symbol');
+            symbolElements.forEach(element => {
+                const symbolText = element.textContent || element.getAttribute('data-symbol');
+                if (symbolText && symbolText !== this.lastDetectedSymbol) {
+                    console.log('DOM symbol change detected:', symbolText);
+                    this.lastDetectedSymbol = symbolText;
+                    this.syncDropdownFromChart(symbolText);
+                }
+            });
+        }
     }
 }
 
