@@ -5,10 +5,13 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 import random
 import json
+from functools import wraps
 
 from app import app, db
-from models import User, Wallet, Trade, StakingPosition, Transaction, MarketData
-from forms import LoginForm, RegisterForm, TradeForm, StakingForm, WithdrawForm, DepositForm, AdminUserForm
+from models import User, Wallet, Trade, StakingPosition, Transaction, MarketData, DepositRequest, AdminSettings
+from forms import (LoginForm, RegisterForm, TradeForm, StakingForm, WithdrawForm, 
+                  DepositForm, AdminUserForm, CryptoDepositForm, AdminDepositForm, 
+                  AdminSettingsForm, TradeManipulationForm)
 from utils import generate_market_price, get_asset_price
 from market_data import market_data
 from payout_manager import payout_manager
@@ -476,118 +479,7 @@ def stake():
 def profile():
     return render_template('profile.html')
 
-# Admin Routes
-@app.route('/admin')
-@login_required
-def admin_dashboard():
-    if not current_user.is_admin:
-        flash('Access denied', 'error')
-        return redirect(url_for('dashboard'))
-    
-    total_users = User.query.count()
-    active_users = User.query.filter_by(is_active=True).count()
-    total_trades = Trade.query.count()
-    active_trades = Trade.query.filter_by(status='active').count()
-    
-    return render_template('admin/dashboard.html',
-                         total_users=total_users,
-                         active_users=active_users,
-                         total_trades=total_trades,
-                         active_trades=active_trades)
-
-@app.route('/admin/users')
-@login_required
-def admin_users():
-    if not current_user.is_admin:
-        flash('Access denied', 'error')
-        return redirect(url_for('dashboard'))
-    
-    users = User.query.order_by(User.created_at.desc()).all()
-    return render_template('admin/users.html', users=users)
-
-@app.route('/admin/users/<int:user_id>/edit', methods=['POST'])
-@login_required
-def admin_edit_user(user_id):
-    if not current_user.is_admin:
-        flash('Access denied', 'error')
-        return redirect(url_for('dashboard'))
-    
-    user = User.query.get_or_404(user_id)
-    form = AdminUserForm()
-    
-    if form.validate_on_submit():
-        user.is_active = form.is_active.data
-        user.is_admin = form.is_admin.data
-        
-        if form.balance_adjustment.data != 0:
-            wallet = user.wallet
-            if wallet:
-                wallet.balance += form.balance_adjustment.data
-                
-                transaction = Transaction(
-                    user_id=user.id,
-                    transaction_type='adjustment',
-                    amount=form.balance_adjustment.data,
-                    description=f'Admin balance adjustment by {current_user.username}'
-                )
-                db.session.add(transaction)
-        
-        db.session.commit()
-        flash(f'User {user.username} updated successfully', 'success')
-    
-    return redirect(url_for('admin_users'))
-
-@app.route('/admin/orders')
-@login_required
-def admin_orders():
-    if not current_user.is_admin:
-        flash('Access denied', 'error')
-        return redirect(url_for('dashboard'))
-    
-    trades = Trade.query.order_by(Trade.created_at.desc()).limit(100).all()
-    return render_template('admin/orders.html', trades=trades)
-
-@app.route('/admin/orders/<int:trade_id>/manipulate', methods=['POST'])
-@login_required
-def admin_manipulate_trade(trade_id):
-    if not current_user.is_admin:
-        flash('Access denied', 'error')
-        return redirect(url_for('dashboard'))
-    
-    trade = Trade.query.get_or_404(trade_id)
-    action = request.form.get('action')
-    
-    if action == 'force_win':
-        trade.status = 'won'
-        trade.profit_loss = float(trade.amount) * (float(trade.payout_percentage) / 100)
-        trade.closed_at = datetime.utcnow()
-        
-        # Credit user wallet
-        wallet = trade.user.wallet
-        if trade.is_demo:
-            wallet.demo_balance += trade.amount + trade.profit_loss
-        else:
-            wallet.balance += trade.amount + trade.profit_loss
-            
-    elif action == 'force_lose':
-        trade.status = 'lost'
-        trade.profit_loss = -float(trade.amount)
-        trade.closed_at = datetime.utcnow()
-    
-    elif action == 'cancel':
-        trade.status = 'cancelled'
-        trade.closed_at = datetime.utcnow()
-        
-        # Refund user
-        wallet = trade.user.wallet
-        if trade.is_demo:
-            wallet.demo_balance += trade.amount
-        else:
-            wallet.balance += trade.amount
-    
-    db.session.commit()
-    flash(f'Trade {trade_id} {action} successfully', 'success')
-    return redirect(url_for('admin_orders'))
+# Removed duplicate admin routes - using the comprehensive admin system below
 
 # Legacy API Route (keeping for compatibility)
 @app.route('/api/market_data/<symbol>')
@@ -976,3 +868,299 @@ def api_process_expired_trade(trade_id):
             'success': False,
             'error': str(e)
         })
+
+# ===============================
+# ADMIN ROUTES AND FUNCTIONALITY
+# ===============================
+
+def admin_required(f):
+    """Decorator to require admin privileges"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or not current_user.is_admin:
+            flash('Admin privileges required.', 'error')
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+@app.route('/admin')
+@login_required
+@admin_required
+def admin_dashboard():
+    """Admin dashboard with overview statistics"""
+    # Get statistics
+    total_users = User.query.count()
+    active_users = User.query.filter_by(is_active=True).count()
+    total_trades = Trade.query.count()
+    active_trades = Trade.query.filter_by(status='active').count()
+    pending_deposits = DepositRequest.query.filter_by(status='pending').count()
+    
+    # Recent activity
+    recent_trades = Trade.query.order_by(Trade.created_at.desc()).limit(10).all()
+    recent_deposits = DepositRequest.query.order_by(DepositRequest.created_at.desc()).limit(5).all()
+    
+    return render_template('admin/dashboard.html', 
+                         total_users=total_users,
+                         active_users=active_users,
+                         total_trades=total_trades,
+                         active_trades=active_trades,
+                         pending_deposits=pending_deposits,
+                         recent_trades=recent_trades,
+                         recent_deposits=recent_deposits)
+
+@app.route('/admin/users')
+@login_required
+@admin_required
+def admin_users():
+    """Manage all users"""
+    page = request.args.get('page', 1, type=int)
+    users = User.query.paginate(
+        page=page, per_page=20, error_out=False
+    )
+    return render_template('admin/users.html', users=users)
+
+@app.route('/admin/user/<int:user_id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def admin_user_detail(user_id):
+    """View and edit specific user"""
+    user = User.query.get_or_404(user_id)
+    form = AdminUserForm()
+    
+    if form.validate_on_submit():
+        user.is_active = form.is_active.data
+        user.is_admin = form.is_admin.data
+        
+        # Update balances if provided
+        if form.real_balance.data is not None:
+            user.wallet.balance = form.real_balance.data
+        if form.demo_balance.data is not None:
+            user.wallet.demo_balance = form.demo_balance.data
+            
+        # Balance adjustment
+        if form.balance_adjustment.data:
+            adjustment = form.balance_adjustment.data
+            user.wallet.balance += adjustment
+            
+            # Create transaction record
+            transaction = Transaction()
+            transaction.user_id = user.id
+            transaction.transaction_type = 'admin_adjustment'
+            transaction.amount = adjustment
+            transaction.description = f"Admin balance adjustment by {current_user.username}"
+            db.session.add(transaction)
+        
+        db.session.commit()
+        flash(f'User {user.username} updated successfully.', 'success')
+        return redirect(url_for('admin_user_detail', user_id=user_id))
+    
+    # Pre-populate form
+    form.is_active.data = user.is_active
+    form.is_admin.data = user.is_admin
+    form.real_balance.data = user.wallet.balance
+    form.demo_balance.data = user.wallet.demo_balance
+    
+    # Get user's trades and transactions
+    trades = Trade.query.filter_by(user_id=user.id).order_by(Trade.created_at.desc()).limit(20).all()
+    transactions = Transaction.query.filter_by(user_id=user.id).order_by(Transaction.created_at.desc()).limit(10).all()
+    
+    return render_template('admin/user_detail.html', 
+                         user=user, form=form, trades=trades, transactions=transactions)
+
+@app.route('/admin/trade/<int:trade_id>/manipulate', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def admin_manipulate_trade(trade_id):
+    """Admin can force trade outcome"""
+    trade = Trade.query.get_or_404(trade_id)
+    form = TradeManipulationForm()
+    
+    if form.validate_on_submit():
+        if form.force_result.data:
+            # Force trade result
+            current_price = market_data.get_real_price(trade.asset)
+            
+            if form.force_result.data == 'win':
+                trade.status = 'won'
+                payout = trade.amount * (trade.payout_percentage / 100)
+                trade.profit_loss = payout
+            else:  # lose
+                trade.status = 'lost'
+                trade.profit_loss = -trade.amount
+            
+            trade.exit_price = current_price
+            trade.closed_at = datetime.utcnow()
+            
+            # Update user balance
+            wallet = trade.user.wallet
+            if trade.is_demo:
+                wallet.demo_balance += trade.profit_loss
+            else:
+                wallet.balance += trade.profit_loss
+            
+            # Create transaction record
+            transaction = Transaction()
+            transaction.user_id = trade.user_id
+            transaction.transaction_type = 'trade'
+            transaction.amount = trade.profit_loss
+            transaction.description = f"Trade {trade.asset} - Admin forced {form.force_result.data} by {current_user.username}"
+            db.session.add(transaction)
+            db.session.commit()
+            
+            flash(f'Trade forced to {form.force_result.data}. User balance updated.', 'success')
+        
+        return redirect(url_for('admin_user_detail', user_id=trade.user_id))
+    
+    return render_template('admin/manipulate_trade.html', trade=trade, form=form)
+
+@app.route('/admin/deposits')
+@login_required
+@admin_required
+def admin_deposits():
+    """Manage crypto deposit requests"""
+    pending_deposits = DepositRequest.query.filter_by(status='pending').order_by(DepositRequest.created_at.desc()).all()
+    processed_deposits = DepositRequest.query.filter(DepositRequest.status.in_(['approved', 'rejected'])).order_by(DepositRequest.processed_at.desc()).limit(20).all()
+    
+    return render_template('admin/deposits.html', 
+                         pending_deposits=pending_deposits,
+                         processed_deposits=processed_deposits)
+
+@app.route('/admin/deposit/<int:deposit_id>/process', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def admin_process_deposit(deposit_id):
+    """Process a crypto deposit request"""
+    deposit = DepositRequest.query.get_or_404(deposit_id)
+    form = AdminDepositForm()
+    
+    if form.validate_on_submit():
+        deposit.status = form.status.data
+        deposit.admin_notes = form.admin_notes.data
+        deposit.processed_at = datetime.utcnow()
+        deposit.processed_by = current_user.id
+        
+        if form.status.data == 'approved':
+            # Add balance to user
+            amount_to_add = form.balance_amount.data or deposit.amount
+            deposit.user.wallet.balance += amount_to_add
+            
+            # Create transaction record
+            transaction = Transaction()
+            transaction.user_id = deposit.user_id
+            transaction.transaction_type = 'deposit'
+            transaction.amount = amount_to_add
+            transaction.description = f"Crypto deposit approved - {deposit.currency} - {deposit.transaction_hash[:10]}..."
+            db.session.add(transaction)
+            
+            flash(f'Deposit approved. ${amount_to_add} added to {deposit.user.username}\'s balance.', 'success')
+        else:
+            flash(f'Deposit rejected for {deposit.user.username}.', 'info')
+        
+        db.session.commit()
+        return redirect(url_for('admin_deposits'))
+    
+    # Pre-populate form
+    form.balance_amount.data = deposit.amount
+    
+    return render_template('admin/process_deposit.html', deposit=deposit, form=form)
+
+@app.route('/admin/settings', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def admin_settings():
+    """Manage admin settings including crypto addresses"""
+    form = AdminSettingsForm()
+    
+    if form.validate_on_submit():
+        # Update or create settings
+        settings = {
+            'usdt_address': form.usdt_address.data,
+            'btc_address': form.btc_address.data,
+            'eth_address': form.eth_address.data
+        }
+        
+        for key, value in settings.items():
+            setting = AdminSettings.query.filter_by(setting_key=key).first()
+            if setting:
+                setting.setting_value = value
+                setting.updated_by = current_user.id
+            else:
+                setting = AdminSettings()
+                setting.setting_key = key
+                setting.setting_value = value
+                setting.updated_by = current_user.id
+                setting.description = f"{key.upper()} deposit address"
+                db.session.add(setting)
+        
+        db.session.commit()
+        flash('Settings updated successfully.', 'success')
+        return redirect(url_for('admin_settings'))
+    
+    # Load current settings
+    usdt_setting = AdminSettings.query.filter_by(setting_key='usdt_address').first()
+    btc_setting = AdminSettings.query.filter_by(setting_key='btc_address').first()
+    eth_setting = AdminSettings.query.filter_by(setting_key='eth_address').first()
+    
+    if usdt_setting:
+        form.usdt_address.data = usdt_setting.setting_value
+    if btc_setting:
+        form.btc_address.data = btc_setting.setting_value
+    if eth_setting:
+        form.eth_address.data = eth_setting.setting_value
+    
+    return render_template('admin/settings.html', form=form)
+
+# ===============================
+# CRYPTO DEPOSIT ROUTES
+# ===============================
+
+@app.route('/deposit/crypto', methods=['GET', 'POST'])
+@login_required
+def crypto_deposit():
+    """Crypto deposit page"""
+    form = CryptoDepositForm()
+    
+    # Get deposit addresses from admin settings
+    usdt_address = AdminSettings.query.filter_by(setting_key='usdt_address').first()
+    btc_address = AdminSettings.query.filter_by(setting_key='btc_address').first()
+    eth_address = AdminSettings.query.filter_by(setting_key='eth_address').first()
+    
+    addresses = {
+        'USDT': usdt_address.setting_value if usdt_address else 'Not configured',
+        'BTC': btc_address.setting_value if btc_address else 'Not configured',
+        'ETH': eth_address.setting_value if eth_address else 'Not configured'
+    }
+    
+    if form.validate_on_submit():
+        # Handle file upload
+        proof_file = form.proof_document.data
+        filename = None
+        if proof_file:
+            import os
+            os.makedirs('static/uploads/deposits', exist_ok=True)
+            filename = f"{current_user.id}_{int(datetime.utcnow().timestamp())}_{proof_file.filename}"
+            proof_file.save(f"static/uploads/deposits/{filename}")
+        
+        # Create deposit request
+        deposit_request = DepositRequest()
+        deposit_request.user_id = current_user.id
+        deposit_request.amount = form.amount.data
+        deposit_request.currency = form.currency.data
+        deposit_request.transaction_hash = form.transaction_hash.data
+        deposit_request.proof_document = filename
+        deposit_request.status = 'pending'
+        
+        db.session.add(deposit_request)
+        db.session.commit()
+        
+        flash('Deposit request submitted successfully. Please wait for admin approval.', 'success')
+        return redirect(url_for('deposit_status'))
+    
+    return render_template('deposit/crypto.html', form=form, addresses=addresses)
+
+@app.route('/deposit/status')
+@login_required
+def deposit_status():
+    """Show user's deposit requests status"""
+    deposits = DepositRequest.query.filter_by(user_id=current_user.id).order_by(DepositRequest.created_at.desc()).all()
+    return render_template('deposit/status.html', deposits=deposits)

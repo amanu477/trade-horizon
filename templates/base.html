@@ -47,10 +47,28 @@
                             </a></li>
                         </ul>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('wallet') }}">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-wallet me-1"></i>Wallet
                         </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('wallet') }}">
+                                <i class="fas fa-eye me-1"></i>View Balance
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('crypto_deposit') }}">
+                                <i class="fas fa-plus me-1"></i>Crypto Deposit
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('deposit_status') }}">
+                                <i class="fas fa-history me-1"></i>Deposit Status
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('deposit') }}">
+                                <i class="fas fa-credit-card me-1"></i>Other Deposits
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('withdraw') }}">
+                                <i class="fas fa-money-bill-wave me-1"></i>Withdraw
+                            </a></li>
+                        </ul>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('staking') }}">
@@ -63,9 +81,19 @@
                             <i class="fas fa-cog me-1"></i>Admin
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url_for('admin_dashboard') }}">Dashboard</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('admin_users') }}">Users</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('admin_orders') }}">Orders</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_dashboard') }}">
+                                <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_users') }}">
+                                <i class="fas fa-users me-1"></i>Manage Users
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_deposits') }}">
+                                <i class="fas fa-coins me-1"></i>Process Deposits
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_settings') }}">
+                                <i class="fas fa-wallet me-1"></i>Crypto Addresses
+                            </a></li>
                         </ul>
                     </li>
                     {% endif %}

@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Crypto Deposit - TradePro{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card bg-dark border-success">
+                <div class="card-header bg-success">
+                    <h4 class="card-title mb-0 text-dark">
+                        <i class="fab fa-bitcoin me-2"></i>Crypto Deposit
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info border-info bg-transparent text-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Deposit cryptocurrency to fund your real trading account. All deposits require admin verification.
+                    </div>
+
+                    <!-- Deposit Addresses -->
+                    <div class="row mb-4">
+                        <div class="col-md-4 mb-3">
+                            <div class="card bg-secondary border-warning">
+                                <div class="card-body text-center">
+                                    <i class="fab fa-bitcoin fa-2x text-warning mb-2"></i>
+                                    <h6 class="text-warning">Bitcoin</h6>
+                                    <small class="text-light" style="word-break: break-all;">{{ addresses.BTC }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card bg-secondary border-success">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-dollar-sign fa-2x text-success mb-2"></i>
+                                    <h6 class="text-success">USDT (TRC-20)</h6>
+                                    <small class="text-light" style="word-break: break-all;">{{ addresses.USDT }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card bg-secondary border-primary">
+                                <div class="card-body text-center">
+                                    <i class="fab fa-ethereum fa-2x text-primary mb-2"></i>
+                                    <h6 class="text-primary">Ethereum</h6>
+                                    <small class="text-light" style="word-break: break-all;">{{ addresses.ETH }}</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Deposit Form -->
+                    <form method="POST" enctype="multipart/form-data">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-light">{{ form.currency.label }}</label>
+                                {{ form.currency(class="form-select bg-secondary border-success text-light") }}
+                                {% for error in form.currency.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-light">{{ form.amount.label }}</label>
+                                {{ form.amount(class="form-control bg-secondary border-success text-light", placeholder="Enter amount in USD") }}
+                                {% for error in form.amount.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label text-light">{{ form.transaction_hash.label }}</label>
+                            {{ form.transaction_hash(class="form-control bg-secondary border-success text-light", placeholder="Enter transaction hash from your wallet") }}
+                            {% for error in form.transaction_hash.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label text-light">{{ form.proof_document.label }}</label>
+                            {{ form.proof_document(class="form-control bg-secondary border-success text-light") }}
+                            <div class="form-text text-muted">
+                                Upload screenshot or proof of your crypto transaction. Supported formats: JPG, PNG, PDF
+                            </div>
+                            {% for error in form.proof_document.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="alert alert-warning border-warning bg-transparent text-warning">
+                            <h6><i class="fas fa-exclamation-triangle me-2"></i>Important Instructions:</h6>
+                            <ul class="mb-0">
+                                <li>Send crypto only to the address for the selected currency</li>
+                                <li>For USDT, use only TRC-20 network (Tron)</li>
+                                <li>Upload clear proof of your transaction</li>
+                                <li>Deposits are processed manually by admin (1-24 hours)</li>
+                                <li>Minimum deposit: $10, Maximum: $100,000</li>
+                            </ul>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-paper-plane me-2"></i>Submit Deposit Request
+                            </button>
+                            <a href="{{ url_for('deposit_status') }}" class="btn btn-outline-info">
+                                <i class="fas fa-history me-2"></i>View Deposit Status
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

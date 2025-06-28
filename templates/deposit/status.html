@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Deposit Status - TradePro{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-success">
+            <i class="fas fa-history me-2"></i>Deposit Status
+        </h2>
+        <a href="{{ url_for('crypto_deposit') }}" class="btn btn-success">
+            <i class="fas fa-plus me-2"></i>New Deposit
+        </a>
+    </div>
+
+    {% if deposits %}
+    <div class="row">
+        {% for deposit in deposits %}
+        <div class="col-lg-6 mb-4">
+            <div class="card bg-dark border-{{ 'warning' if deposit.status == 'pending' else ('success' if deposit.status == 'approved' else 'danger') }}">
+                <div class="card-header bg-{{ 'warning' if deposit.status == 'pending' else ('success' if deposit.status == 'approved' else 'danger') }}">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="card-title mb-0 text-dark">
+                            <i class="fas fa-{{ 'clock' if deposit.status == 'pending' else ('check-circle' if deposit.status == 'approved' else 'times-circle') }} me-2"></i>
+                            Deposit #{{ deposit.id }}
+                        </h6>
+                        <span class="badge bg-dark text-light">
+                            {{ deposit.status.upper() }}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-2">
+                        <div class="col-sm-4"><strong>Amount:</strong></div>
+                        <div class="col-sm-8">
+                            <span class="text-success fs-5">${{ "%.2f"|format(deposit.amount) }}</span>
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-sm-4"><strong>Currency:</strong></div>
+                        <div class="col-sm-8">
+                            <span class="badge bg-{{ 'warning' if deposit.currency == 'BTC' else ('success' if deposit.currency == 'USDT' else 'primary') }}">
+                                {{ deposit.currency }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-sm-4"><strong>Transaction:</strong></div>
+                        <div class="col-sm-8">
+                            <code class="text-info" style="font-size: 0.8rem;">{{ deposit.transaction_hash[:20] }}...</code>
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-sm-4"><strong>Submitted:</strong></div>
+                        <div class="col-sm-8">
+                            <small class="text-muted">{{ deposit.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                        </div>
+                    </div>
+                    
+                    {% if deposit.status != 'pending' %}
+                    <div class="row mb-2">
+                        <div class="col-sm-4"><strong>Processed:</strong></div>
+                        <div class="col-sm-8">
+                            <small class="text-muted">
+                                {% if deposit.processed_at %}
+                                    {{ deposit.processed_at.strftime('%Y-%m-%d %H:%M') }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if deposit.admin_notes %}
+                    <div class="row mb-2">
+                        <div class="col-sm-4"><strong>Notes:</strong></div>
+                        <div class="col-sm-8">
+                            <small class="text-muted">{{ deposit.admin_notes }}</small>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if deposit.status == 'pending' %}
+                    <div class="alert alert-info border-info bg-transparent text-info mt-3 mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Your deposit is being reviewed by our admin team. Processing typically takes 1-24 hours.
+                    </div>
+                    {% elif deposit.status == 'approved' %}
+                    <div class="alert alert-success border-success bg-transparent text-success mt-3 mb-0">
+                        <i class="fas fa-check-circle me-2"></i>
+                        Deposit approved! Balance has been credited to your account.
+                    </div>
+                    {% else %}
+                    <div class="alert alert-danger border-danger bg-transparent text-danger mt-3 mb-0">
+                        <i class="fas fa-times-circle me-2"></i>
+                        Deposit was rejected. Please contact support if you have questions.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card bg-dark border-info">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-inbox fa-4x text-muted mb-4"></i>
+            <h4 class="text-light">No Deposits Yet</h4>
+            <p class="text-muted">You haven't made any crypto deposits. Start by making your first deposit to fund your real trading account.</p>
+            <a href="{{ url_for('crypto_deposit') }}" class="btn btn-success btn-lg">
+                <i class="fas fa-plus me-2"></i>Make First Deposit
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card bg-dark border-secondary">
+                <div class="card-header">
+                    <h6 class="card-title mb-0 text-light">
+                        <i class="fas fa-question-circle me-2"></i>Need Help?
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-2">
+                        If you have questions about your deposit status or need assistance, please contact our support team.
+                    </p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <small class="text-muted">
+                                <strong>Processing Times:</strong><br>
+                                • Bitcoin: 1-3 confirmations<br>
+                                • USDT (TRC-20): 1-2 confirmations<br>
+                                • Ethereum: 12+ confirmations
+                            </small>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted">
+                                <strong>Common Issues:</strong><br>
+                                • Wrong network used<br>
+                                • Insufficient transaction fees<br>
+                                • Incomplete documentation
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
