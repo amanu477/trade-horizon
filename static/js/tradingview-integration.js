@@ -513,24 +513,27 @@ class TradingViewChart {
         }
         
         if (!this.selectedDirection) {
-            alert('Please select trade direction (Call or Put)');
+            alert('Please select trade direction (Buy or Sell)');
             return;
         }
         
+        // Ensure we have a valid asset
+        const asset = this.currentAsset || 'EURUSD';
+        
         try {
-            const response = await fetch('/place-trade', {
+            const formData = new FormData();
+            formData.append('asset', asset);
+            formData.append('trade_type', this.selectedDirection);
+            formData.append('amount', amount);
+            formData.append('expiry_minutes', expiry);
+            formData.append('csrf_token', this.getCSRFToken());
+            
+            const response = await fetch('/place_trade', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
                     'X-CSRFToken': this.getCSRFToken()
                 },
-                body: new URLSearchParams({
-                    asset: this.currentAsset,
-                    trade_type: this.selectedDirection,
-                    amount: amount,
-                    expiry_minutes: expiry,
-                    csrf_token: this.getCSRFToken()
-                })
+                body: formData
             });
             
             if (response.ok) {
