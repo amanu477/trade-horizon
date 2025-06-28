@@ -895,20 +895,34 @@ def admin_required(f):
 @login_required
 @admin_required
 def admin_dashboard():
-    """Admin dashboard with user management only"""
-    # Get basic user statistics only
+    """Comprehensive admin dashboard with detailed user management"""
+    # User statistics
     total_users = User.query.count()
     active_users = User.query.filter_by(is_active=True).count()
+    inactive_users = User.query.filter_by(is_active=False).count()
     admin_users = User.query.filter_by(is_admin=True).count()
     
-    # Recent users only
-    recent_users = User.query.order_by(User.created_at.desc()).limit(10).all()
+    # Recent activity
+    recent_users = User.query.order_by(User.created_at.desc()).limit(8).all()
+    recent_logins = User.query.filter(User.last_login.isnot(None)).order_by(User.last_login.desc()).limit(5).all()
+    
+    # User registration trends (last 7 days)
+    from datetime import datetime, timedelta
+    week_ago = datetime.utcnow() - timedelta(days=7)
+    new_users_week = User.query.filter(User.created_at >= week_ago).count()
+    
+    # Admin activity stats
+    admin_list = User.query.filter_by(is_admin=True, is_active=True).all()
     
     return render_template('admin/dashboard.html', 
                          total_users=total_users,
                          active_users=active_users,
+                         inactive_users=inactive_users,
                          admin_users=admin_users,
-                         recent_users=recent_users)
+                         recent_users=recent_users,
+                         recent_logins=recent_logins,
+                         new_users_week=new_users_week,
+                         admin_list=admin_list)
 
 @app.route('/admin/users')
 @login_required
