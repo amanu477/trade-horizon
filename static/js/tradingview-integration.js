@@ -611,8 +611,75 @@ class TradingViewChart {
         // Update balance in the wallet display if it exists
         const balanceElements = document.querySelectorAll('.balance-display, #wallet-balance');
         balanceElements.forEach(element => {
-            element.textContent = `$${parseFloat(newBalance).toFixed(2)}`;
+            const oldBalance = parseFloat(element.textContent.replace('$', '')) || 0;
+            const newBalanceValue = parseFloat(newBalance);
+            
+            element.textContent = `$${newBalanceValue.toFixed(2)}`;
+            
+            // Add visual effect when balance changes
+            if (oldBalance !== newBalanceValue) {
+                element.style.transition = 'color 0.3s ease, transform 0.3s ease';
+                element.style.color = newBalanceValue > oldBalance ? '#26a69a' : '#ef5350';
+                element.style.transform = 'scale(1.1)';
+                
+                setTimeout(() => {
+                    element.style.color = '';
+                    element.style.transform = 'scale(1)';
+                }, 600);
+            }
         });
+    }
+    
+    loadWalletBalance() {
+        // Fetch current balance and update display
+        fetch('/api/wallet_balance')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Check if we're on demo or live page
+                    const isDemo = this.mode === 'demo';
+                    const balance = isDemo ? data.demo_balance : data.balance;
+                    this.updateBalanceDisplay(balance);
+                }
+            })
+            .catch(error => console.error('Error loading wallet balance:', error));
+    }
+    
+    showNotification(message, type) {
+        // Create and show a notification
+        const notificationDiv = document.createElement('div');
+        notificationDiv.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 4px;
+            color: white;
+            font-weight: bold;
+            z-index: 10000;
+            background: ${type === 'success' ? '#26a69a' : type === 'info' ? '#3498db' : '#ef5350'};
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        `;
+        notificationDiv.textContent = message;
+        
+        document.body.appendChild(notificationDiv);
+        
+        // Animate in
+        setTimeout(() => {
+            notificationDiv.style.transform = 'translateX(0)';
+        }, 100);
+        
+        // Auto-remove after 4 seconds
+        setTimeout(() => {
+            notificationDiv.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+                if (notificationDiv.parentNode) {
+                    notificationDiv.parentNode.removeChild(notificationDiv);
+                }
+            }, 300);
+        }, 4000);
     }
     
     showTradeMessage(message, type) {
@@ -824,7 +891,12 @@ class TradingViewChart {
                             setTimeout(() => {
                                 tradeElement.remove();
                                 this.loadWalletBalance(); // Refresh balance
-                                this.showNotification(`Trade ${result.trade_result}! Balance updated.`, 
+                                
+                                // Show detailed notification with profit/loss
+                                const profitLoss = result.profit_loss || 0;
+                                const sign = profitLoss >= 0 ? '+' : '';
+                                const notificationMessage = `Trade ${result.trade_result.toUpperCase()}! ${sign}$${profitLoss.toFixed(2)}`;
+                                this.showNotification(notificationMessage, 
                                     result.trade_result === 'won' ? 'success' : 'info');
                             }, 500);
                         }, 2000);
