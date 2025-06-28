@@ -937,12 +937,12 @@ def api_process_expired_trade(trade_id):
                 'error': 'Trade already processed'
             })
         
-        # Allow processing when trade has expired or is within 1 second of expiry
+        # Allow processing when trade has expired or is about to expire
         from datetime import datetime, timedelta
         current_time = datetime.utcnow()
-        time_buffer = timedelta(seconds=1)
+        time_buffer = timedelta(seconds=2)
         
-        # Allow processing if we're within 1 second of expiry time or past it
+        # Allow processing if we're within 2 seconds of expiry time or past it
         if current_time < (trade.expiry_time - time_buffer):
             return jsonify({
                 'success': False,
@@ -971,20 +971,24 @@ def api_process_expired_trade(trade_id):
             won = current_price < trade.entry_price
         
         # Update trade status and calculate profit/loss
+        from decimal import Decimal
+        
         if won:
             trade.status = 'won'
-            profit = float(trade.amount) * float(trade.payout_percentage) / 100
+            profit = Decimal(str(trade.amount)) * (Decimal(str(trade.payout_percentage)) / Decimal('100'))
             trade.profit_loss = profit
         else:
             trade.status = 'lost'
-            trade.profit_loss = -float(trade.amount)
+            trade.profit_loss = -Decimal(str(trade.amount))
         
         # Update user balance
         wallet = current_user.wallet
+        profit_loss_decimal = Decimal(str(trade.profit_loss))
+        
         if trade.is_demo:
-            wallet.demo_balance += trade.profit_loss
+            wallet.demo_balance = wallet.demo_balance + profit_loss_decimal
         else:
-            wallet.balance += trade.profit_loss
+            wallet.balance = wallet.balance + profit_loss_decimal
         
         # Create transaction record
         transaction = Transaction()
