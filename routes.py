@@ -893,9 +893,13 @@ def admin_required(f):
 
 @app.route('/admin')
 @login_required
-@admin_required
 def admin_dashboard():
     """Advanced admin dashboard with comprehensive user reporting and analytics"""
+    # Check admin privileges
+    if not current_user.is_admin:
+        flash('Admin privileges required.', 'error')
+        return redirect(url_for('dashboard'))
+        
     from datetime import datetime, timedelta
     
     # Core user statistics
@@ -981,6 +985,14 @@ def admin_dashboard():
                          recent_activity=recent_activity,
                          admin_list=admin_list,
                          daily_registrations=daily_registrations)
+
+@app.route('/admin/test')
+@login_required
+def admin_test():
+    """Simple admin test route"""
+    if not current_user.is_admin:
+        return f"User: {current_user.username}, Admin: {current_user.is_admin}, Authenticated: {current_user.is_authenticated}"
+    return f"Admin access working! User: {current_user.username}"
 
 @app.route('/admin/users')
 @login_required
