@@ -525,6 +525,7 @@ def withdraw():
             db.session.commit()
             
             flash(f'Withdrawal request of ${form.amount.data:.2f} {form.currency.data} submitted successfully! Admin will review and process your request within 24 hours.', 'success')
+            return redirect(url_for('user_withdrawals'))
     else:
         flash('Invalid withdrawal amount', 'error')
     
