@@ -184,6 +184,27 @@ class DepositRequest(db.Model):
     def __repr__(self):
         return f'<DepositRequest {self.user.username}: {self.amount} {self.currency}>'
 
+class WithdrawalRequest(db.Model):
+    __tablename__ = 'withdrawal_requests'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    amount = db.Column(db.Numeric(10, 2), nullable=False)
+    method = db.Column(db.String(20), nullable=False)  # bank, paypal, crypto
+    wallet_address = db.Column(db.String(255), nullable=True)  # For crypto withdrawals
+    bank_details = db.Column(db.Text, nullable=True)  # For bank transfers
+    status = db.Column(db.String(20), default='pending')  # pending, approved, rejected
+    admin_notes = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    processed_at = db.Column(db.DateTime, nullable=True)
+    processed_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    
+    user = db.relationship('User', foreign_keys=[user_id], backref='withdrawal_requests')
+    processed_by_admin = db.relationship('User', foreign_keys=[processed_by])
+    
+    def __repr__(self):
+        return f'<WithdrawalRequest {self.user.username}: ${self.amount} via {self.method}>'
+
 class AdminSettings(db.Model):
     __tablename__ = 'admin_settings'
     

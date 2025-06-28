@@ -41,8 +41,25 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-warning" href="{{ url_for('admin_deposits') }}">
+                        <a class="nav-link text-warning position-relative" href="{{ url_for('admin_deposits') }}">
                             <i class="fas fa-coins me-1"></i>Deposits
+                            {% if pending_deposits > 0 %}
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                {{ pending_deposits }}
+                                <span class="visually-hidden">pending deposits</span>
+                            </span>
+                            {% endif %}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-warning position-relative" href="{{ url_for('admin_withdrawals') }}">
+                            <i class="fas fa-money-bill-wave me-1"></i>Withdrawals
+                            {% if pending_withdrawals > 0 %}
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                {{ pending_withdrawals }}
+                                <span class="visually-hidden">pending withdrawals</span>
+                            </span>
+                            {% endif %}
                         </a>
                     </li>
                     <li class="nav-item">

@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block title %}Admin - Withdrawal Requests{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="text-white">
+                    <i class="fas fa-money-bill-wave me-2"></i>Withdrawal Requests
+                </h2>
+                <div class="text-muted">
+                    <small>Total Requests: {{ withdrawals|length }}</small>
+                </div>
+            </div>
+
+            <!-- Withdrawal Requests Table -->
+            <div class="card bg-dark border-secondary">
+                <div class="card-body">
+                    {% if withdrawals %}
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>User</th>
+                                    <th>Amount</th>
+                                    <th>Method</th>
+                                    <th>Status</th>
+                                    <th>Requested</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for withdrawal in withdrawals %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-secondary">#{{ withdrawal.id }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div>
+                                                <strong>{{ withdrawal.user.username }}</strong><br>
+                                                <small class="text-muted">{{ withdrawal.user.email }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="h5 text-warning">${{ "%.2f"|format(withdrawal.amount) }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ withdrawal.method.title() }}</span>
+                                        {% if withdrawal.wallet_address %}
+                                        <br><small class="text-muted">{{ withdrawal.wallet_address[:20] }}...</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if withdrawal.status == 'pending' %}
+                                        <span class="badge bg-warning">Pending</span>
+                                        {% elif withdrawal.status == 'approved' %}
+                                        <span class="badge bg-success">Approved</span>
+                                        {% elif withdrawal.status == 'rejected' %}
+                                        <span class="badge bg-danger">Rejected</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small>{{ withdrawal.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                        {% if withdrawal.processed_at %}
+                                        <br><small class="text-success">Processed: {{ withdrawal.processed_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if withdrawal.status == 'pending' %}
+                                        <div class="btn-group" role="group">
+                                            <button type="button" class="btn btn-success btn-sm" 
+                                                    onclick="processWithdrawal({{ withdrawal.id }}, 'approved')">
+                                                <i class="fas fa-check"></i> Approve
+                                            </button>
+                                            <button type="button" class="btn btn-danger btn-sm" 
+                                                    onclick="processWithdrawal({{ withdrawal.id }}, 'rejected')">
+                                                <i class="fas fa-times"></i> Reject
+                                            </button>
+                                        </div>
+                                        {% else %}
+                                        <span class="text-muted">
+                                            {% if withdrawal.processed_by_admin %}
+                                            Processed by {{ withdrawal.processed_by_admin.username }}
+                                            {% endif %}
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% if withdrawal.admin_notes %}
+                                <tr class="table-secondary">
+                                    <td colspan="7">
+                                        <small><strong>Admin Notes:</strong> {{ withdrawal.admin_notes }}</small>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-money-bill-wave fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">No Withdrawal Requests</h4>
+                        <p class="text-muted">All withdrawal requests will appear here for admin review.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Process Withdrawal Modal -->
+<div class="modal fade" id="processWithdrawalModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark">
+            <div class="modal-header">
+                <h5 class="modal-title text-white">Process Withdrawal Request</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="processWithdrawalForm" method="POST">
+                {{ csrf_token() }}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label text-white">Status</label>
+                        <select name="status" class="form-select bg-dark text-white border-secondary" required>
+                            <option value="approved">Approve Withdrawal</option>
+                            <option value="rejected">Reject Withdrawal</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-white">Admin Notes</label>
+                        <textarea name="admin_notes" class="form-control bg-dark text-white border-secondary" 
+                                  rows="3" placeholder="Optional notes about this decision..."></textarea>
+                    </div>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Important:</strong> Approved withdrawals will deduct the amount from user's balance.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Process Request</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function processWithdrawal(withdrawalId, status) {
+    const form = document.getElementById('processWithdrawalForm');
+    form.action = `/admin/process_withdrawal/${withdrawalId}`;
+    
+    const statusSelect = form.querySelector('select[name="status"]');
+    statusSelect.value = status;
+    
+    const modal = new bootstrap.Modal(document.getElementById('processWithdrawalModal'));
+    modal.show();
+}
+</script>
+{% endblock %}

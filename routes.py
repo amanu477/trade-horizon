@@ -8,7 +8,7 @@ import json
 from functools import wraps
 
 from app import app, db
-from models import User, Wallet, Trade, StakingPosition, Transaction, MarketData, DepositRequest, AdminSettings
+from models import User, Wallet, Trade, StakingPosition, Transaction, MarketData, DepositRequest, WithdrawalRequest, AdminSettings
 from forms import (LoginForm, RegisterForm, TradeForm, StakingForm, WithdrawForm, 
                   DepositForm, AdminUserForm, CryptoDepositForm, AdminDepositForm, 
                   AdminSettingsForm, TradeManipulationForm)
@@ -512,21 +512,18 @@ def withdraw():
         if wallet.balance < form.amount.data:
             flash('Insufficient balance', 'error')
         else:
-            wallet.balance -= form.amount.data
-            wallet.total_withdrawn += form.amount.data
-            
-            transaction = Transaction(
+            # Create withdrawal request instead of immediate processing
+            withdrawal_request = WithdrawalRequest(
                 user_id=current_user.id,
-                transaction_type='withdrawal',
-                amount=-form.amount.data,
-                description=f'Withdrawal via {form.method.data}',
+                amount=form.amount.data,
+                method=form.method.data,
                 status='pending'
             )
             
-            db.session.add(transaction)
+            db.session.add(withdrawal_request)
             db.session.commit()
             
-            flash(f'Withdrawal request for ${form.amount.data} submitted successfully', 'success')
+            flash(f'Withdrawal request of ${form.amount.data:.2f} submitted successfully! Admin will review and process your request within 24 hours.', 'success')
     else:
         flash('Invalid withdrawal amount', 'error')
     
@@ -685,9 +682,18 @@ def api_chart_data_new(symbol):
 @app.context_processor
 def inject_global_vars():
     """Inject global variables into all templates"""
+    # Count pending requests for admin notifications
+    pending_deposits = 0
+    pending_withdrawals = 0
+    if current_user.is_authenticated and current_user.is_admin:
+        pending_deposits = DepositRequest.query.filter_by(status='pending').count()
+        pending_withdrawals = WithdrawalRequest.query.filter_by(status='pending').count()
+    
     return {
         'current_year': datetime.utcnow().year,
-        'app_name': 'TradePro'
+        'app_name': 'TradePro',
+        'pending_deposits': pending_deposits,
+        'pending_withdrawals': pending_withdrawals
     }
 
 # Background task to process expired trades
@@ -1302,6 +1308,59 @@ def admin_delete_user(user_id):
 def admin_deposits():
     deposits = DepositRequest.query.order_by(DepositRequest.created_at.desc()).all()
     return render_template('admin/deposits.html', deposits=deposits)
+
+@app.route('/admin/withdrawals')
+@login_required
+@admin_required
+def admin_withdrawals():
+    withdrawals = WithdrawalRequest.query.order_by(WithdrawalRequest.created_at.desc()).all()
+    return render_template('admin/withdrawals.html', withdrawals=withdrawals)
+
+@app.route('/admin/process_withdrawal/<int:withdrawal_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_process_withdrawal(withdrawal_id):
+    withdrawal = WithdrawalRequest.query.get_or_404(withdrawal_id)
+    
+    if withdrawal.status != 'pending':
+        flash('This withdrawal request has already been processed.', 'warning')
+        return redirect(url_for('admin_withdrawals'))
+    
+    status = request.form.get('status')
+    admin_notes = request.form.get('admin_notes', '')
+    
+    if status == 'approved':
+        # Deduct amount from user's balance
+        user_wallet = withdrawal.user.wallet
+        if user_wallet.balance >= withdrawal.amount:
+            user_wallet.balance -= withdrawal.amount
+            user_wallet.total_withdrawn += withdrawal.amount
+            
+            # Create transaction record
+            transaction = Transaction(
+                user_id=withdrawal.user_id,
+                transaction_type='withdrawal',
+                amount=-withdrawal.amount,
+                description=f'Withdrawal via {withdrawal.method} - Approved by admin'
+            )
+            db.session.add(transaction)
+            
+            withdrawal.status = 'approved'
+            flash(f'Withdrawal of ${withdrawal.amount:.2f} approved and processed successfully.', 'success')
+        else:
+            flash(f'Cannot approve withdrawal - user has insufficient balance (${user_wallet.balance:.2f} available).', 'error')
+            return redirect(url_for('admin_withdrawals'))
+    
+    elif status == 'rejected':
+        withdrawal.status = 'rejected'
+        flash(f'Withdrawal request of ${withdrawal.amount:.2f} has been rejected.', 'warning')
+    
+    withdrawal.admin_notes = admin_notes
+    withdrawal.processed_at = datetime.utcnow()
+    withdrawal.processed_by = current_user.id
+    
+    db.session.commit()
+    return redirect(url_for('admin_withdrawals'))
 
 @app.route('/admin/process_deposit/<int:deposit_id>', methods=['GET', 'POST'])
 @login_required
