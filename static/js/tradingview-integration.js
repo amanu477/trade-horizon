@@ -654,32 +654,13 @@ class TradingViewChart {
             timerElement.textContent = 'EXPIRED';
             timerElement.style.color = '#e74c3c';
             
-            // Process expired trade and remove from active trades
-            setTimeout(() => {
-                const tradeElement = document.getElementById(`trade-${tradeId}`);
-                if (tradeElement) {
-                    // Show trade is processing
-                    tradeElement.style.border = '2px solid #f39c12';
-                    tradeElement.style.background = '#34495e';
-                    
-                    // Add processing indicator
-                    const processingDiv = document.createElement('div');
-                    processingDiv.style.cssText = 'text-align: center; color: #f39c12; font-weight: bold; margin-top: 8px;';
-                    processingDiv.textContent = 'Processing trade result...';
-                    tradeElement.appendChild(processingDiv);
-                    
-                    setTimeout(() => {
-                        tradeElement.style.transition = 'opacity 0.5s';
-                        tradeElement.style.opacity = '0';
-                        setTimeout(() => {
-                            tradeElement.remove();
-                            this.loadActiveTrades(); // Refresh the list
-                            this.updateBalance(); // Update balance after trade closure
-                            this.showNotification('Trade completed and moved to history', 'info');
-                        }, 500);
-                    }, 1500);
-                }
-            }, 1000);
+            // Immediately process expired trade
+            this.processExpiredTrade(tradeId);
+            
+            // Clear this timer to prevent multiple calls
+            const timers = this.tradeTimers || [];
+            timers.forEach(timer => clearInterval(timer));
+            this.tradeTimers = [];
         } else {
             timerElement.textContent = this.formatTime(remainingSeconds);
             
@@ -716,6 +697,53 @@ class TradingViewChart {
                 })
                 .catch(error => console.error('Error updating balance:', error));
         }, 500);
+    }
+    
+    async processExpiredTrade(tradeId) {
+        try {
+            // Call backend to process the expired trade
+            const response = await fetch(`/api/process_expired_trade/${tradeId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': this.getCSRFToken()
+                }
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Show processing animation
+                    const tradeElement = document.getElementById(`trade-${tradeId}`);
+                    if (tradeElement) {
+                        tradeElement.style.border = '2px solid #f39c12';
+                        tradeElement.style.background = '#34495e';
+                        
+                        const processingDiv = document.createElement('div');
+                        processingDiv.style.cssText = 'text-align: center; color: #f39c12; font-weight: bold; margin-top: 8px;';
+                        processingDiv.textContent = `Trade ${result.trade_result.toUpperCase()}! Processing...`;
+                        tradeElement.appendChild(processingDiv);
+                        
+                        // Animate removal after showing result
+                        setTimeout(() => {
+                            tradeElement.style.transition = 'opacity 0.5s';
+                            tradeElement.style.opacity = '0';
+                            setTimeout(() => {
+                                tradeElement.remove();
+                                this.updateBalance();
+                                this.showNotification(`Trade ${result.trade_result}! Balance updated.`, 
+                                    result.trade_result === 'won' ? 'success' : 'info');
+                            }, 500);
+                        }, 2000);
+                    }
+                } else {
+                    console.error('Failed to process expired trade:', result.error);
+                }
+            }
+        } catch (error) {
+            console.error('Error processing expired trade:', error);
+        }
     }
     
     getCSRFToken() {

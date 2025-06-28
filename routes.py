@@ -875,3 +875,87 @@ def process_expired_trades_for_user(user_id):
     except Exception as e:
         print(f"Error processing expired trades for user {user_id}: {e}")
         db.session.rollback()
+
+@app.route('/api/process_expired_trade/<int:trade_id>', methods=['POST'])
+@login_required
+def api_process_expired_trade(trade_id):
+    """Process a single expired trade"""
+    try:
+        trade = Trade.query.filter_by(id=trade_id, user_id=current_user.id).first()
+        
+        if not trade:
+            return jsonify({
+                'success': False,
+                'error': 'Trade not found'
+            })
+        
+        if trade.status != 'active':
+            return jsonify({
+                'success': False,
+                'error': 'Trade already processed'
+            })
+        
+        # Check if trade is actually expired
+        from datetime import datetime
+        if datetime.utcnow() < trade.expiry_time:
+            return jsonify({
+                'success': False,
+                'error': 'Trade has not expired yet'
+            })
+        
+        # Get current market price
+        from market_data import RealMarketData
+        market_data = RealMarketData()
+        current_price_data = market_data.get_real_price(trade.asset)
+        current_price = float(current_price_data['price'])
+        
+        # Calculate trade result
+        trade.exit_price = current_price
+        trade.closed_at = datetime.utcnow()
+        
+        # Determine win/loss
+        if trade.trade_type == 'call':
+            won = current_price > trade.entry_price
+        else:  # put
+            won = current_price < trade.entry_price
+        
+        # Update trade status and calculate profit/loss
+        if won:
+            trade.status = 'won'
+            profit = float(trade.amount) * float(trade.payout_percentage) / 100
+            trade.profit_loss = profit
+        else:
+            trade.status = 'lost'
+            trade.profit_loss = -float(trade.amount)
+        
+        # Update user balance
+        wallet = current_user.wallet
+        if trade.is_demo:
+            wallet.demo_balance += trade.profit_loss
+        else:
+            wallet.balance += trade.profit_loss
+        
+        # Create transaction record
+        transaction = Transaction()
+        transaction.user_id = current_user.id
+        transaction.transaction_type = 'trade_result'
+        transaction.amount = trade.profit_loss
+        transaction.description = f"Trade {trade.status}: {trade.asset} {trade.trade_type}"
+        transaction.status = 'completed'
+        
+        db.session.add(transaction)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'trade_result': trade.status,
+            'profit_loss': float(trade.profit_loss),
+            'new_balance': float(wallet.demo_balance if trade.is_demo else wallet.balance)
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
