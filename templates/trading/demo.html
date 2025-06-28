@@ -5,25 +5,10 @@
 {% block main_class %}p-0{% endblock %}
 
 {% block content %}
-<div id="tradingview-trading-interface" style="height: 100vh; overflow: hidden;">
-    <!-- TradingView professional trading interface will be rendered here -->
+<div id="trading-interface" style="height: 100vh; overflow: hidden;">
+    <!-- Simple TradingView interface will be rendered here -->
 </div>
 
-<!-- Load TradingView Integration -->
-<script src="{{ url_for('static', filename='js/tradingview-integration.js') }}"></script>
-
-<script>
-// Initialize TradingView trading interface
-(function() {
-    console.log('Loading TradingView demo trading interface...');
-    
-    // Create TradingView professional interface
-    window.tradingChart = new TradingViewChart('tradingview-trading-interface', {
-        asset: 'EURUSD',
-        mode: 'demo'
-    });
-    
-    console.log('TradingView demo trading interface loaded successfully');
-})();
-</script>
+<!-- Load Simple TradingView Integration -->
+<script src="{{ url_for('static', filename='js/simple-tradingview.js') }}"></script>
 {% endblock %}
