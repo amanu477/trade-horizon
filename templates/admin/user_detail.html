@@ -68,6 +68,21 @@
                         <div class="col-sm-4"><strong>Last Login:</strong></div>
                         <div class="col-sm-8">{{ user.last_login.strftime('%B %d, %Y at %I:%M %p') if user.last_login else 'Never' }}</div>
                     </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4"><strong>Trade Control:</strong></div>
+                        <div class="col-sm-8">
+                            {% if user.trade_control == 'always_lose' %}
+                                <span class="badge bg-danger">Always Lose</span>
+                                <small class="text-muted d-block">All trades will result in losses</small>
+                            {% elif user.trade_control == 'always_profit' %}
+                                <span class="badge bg-success">Always Profit</span>
+                                <small class="text-muted d-block">All trades will result in profits</small>
+                            {% else %}
+                                <span class="badge bg-secondary">Normal Trading</span>
+                                <small class="text-muted d-block">Natural market outcomes</small>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -101,6 +116,16 @@
                             </div>
                             <small class="form-text text-muted">
                                 Admin users can access the admin panel
+                            </small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.trade_control.label(class="form-label text-light") }}
+                            {{ form.trade_control(class="form-select", value=user.trade_control) }}
+                            <small class="form-text text-muted">
+                                <strong>Normal Trading:</strong> Natural market outcomes<br>
+                                <strong>Always Lose:</strong> All trades result in losses<br>
+                                <strong>Always Profit:</strong> All trades result in profits
                             </small>
                         </div>
                         

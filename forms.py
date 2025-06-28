@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired
-from wtforms import StringField, PasswordField, EmailField, DecimalField, SelectField, IntegerField, BooleanField, TextAreaField
+from wtforms import StringField, PasswordField, EmailField, DecimalField, SelectField, IntegerField, BooleanField, TextAreaField, SubmitField
 from wtforms.validators import DataRequired, Email, Length, EqualTo, NumberRange, ValidationError
 from models import User
 
@@ -107,6 +107,12 @@ class DepositForm(FlaskForm):
 class AdminUserForm(FlaskForm):
     is_active = BooleanField('Active')
     is_admin = BooleanField('Admin')
+    trade_control = SelectField('Trade Control', choices=[
+        ('normal', 'Normal Trading'),
+        ('always_lose', 'Always Lose'),
+        ('always_profit', 'Always Profit')
+    ], default='normal')
+    submit = SubmitField('Update User')
 
 class CryptoDepositForm(FlaskForm):
     amount = DecimalField('Deposit Amount', validators=[

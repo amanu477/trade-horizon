@@ -15,6 +15,7 @@ class User(UserMixin, db.Model):
     last_name = db.Column(db.String(80), nullable=True)
     is_admin = db.Column(db.Boolean, default=False)
     is_active = db.Column(db.Boolean, default=True)
+    trade_control = db.Column(db.String(20), default='normal')  # 'normal', 'always_lose', 'always_profit'
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     last_login = db.Column(db.DateTime, nullable=True)
     

