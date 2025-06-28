@@ -653,22 +653,27 @@ class TradingViewChart {
         if (remainingSeconds <= 0) {
             timerElement.textContent = 'EXPIRED';
             timerElement.style.color = '#e74c3c';
+            timerElement.style.fontWeight = 'bold';
             
-            // Immediately process expired trade
-            this.processExpiredTrade(tradeId);
-            
-            // Clear this timer to prevent multiple calls
-            const timers = this.tradeTimers || [];
-            timers.forEach(timer => clearInterval(timer));
-            this.tradeTimers = [];
+            // Process expired trade only once
+            if (!timerElement.dataset.processed) {
+                timerElement.dataset.processed = 'true';
+                this.processExpiredTrade(tradeId);
+            }
         } else {
             timerElement.textContent = this.formatTime(remainingSeconds);
             
-            // Change color when time is running out
-            if (remainingSeconds <= 30) {
+            // Color coding for urgency
+            if (remainingSeconds <= 10) {
                 timerElement.style.color = '#e74c3c';
+                timerElement.style.fontWeight = 'bold';
+            } else if (remainingSeconds <= 30) {
+                timerElement.style.color = '#f39c12';
+                timerElement.style.fontWeight = 'bold';
             } else if (remainingSeconds <= 60) {
                 timerElement.style.color = '#f39c12';
+            } else {
+                timerElement.style.color = '#95a5a6';
             }
         }
     }

@@ -895,9 +895,13 @@ def api_process_expired_trade(trade_id):
                 'error': 'Trade already processed'
             })
         
-        # Check if trade is actually expired
-        from datetime import datetime
-        if datetime.utcnow() < trade.expiry_time:
+        # Check if trade is close to expiry (allow processing within 5 seconds of expiry)
+        from datetime import datetime, timedelta
+        current_time = datetime.utcnow()
+        time_buffer = timedelta(seconds=5)
+        
+        # Allow processing if we're within 5 seconds of expiry time
+        if current_time < (trade.expiry_time - time_buffer):
             return jsonify({
                 'success': False,
                 'error': 'Trade has not expired yet'
