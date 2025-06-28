@@ -307,11 +307,15 @@ class SimpleTradingInterface {
                 if (result.success) {
                     // Show result notification
                     const status = result.trade.status;
-                    const message = status === 'profit' ? 
-                        `Trade won! Profit: $${result.trade.profit_loss}` : 
-                        `Trade lost: -$${Math.abs(result.trade.profit_loss)}`;
+                    let message;
+                    if (status === 'profit' || status === 'won') {
+                        message = `Trade PROFIT! +$${result.trade.profit_loss.toFixed(2)}`;
+                    } else {
+                        const lossAmount = Math.abs(result.trade.profit_loss);
+                        message = `Trade LOSS! You lost $${lossAmount.toFixed(2)}`;
+                    }
                     
-                    this.showMessage(message, status === 'profit' ? 'success' : 'error');
+                    this.showMessage(message, status === 'profit' || status === 'won' ? 'success' : 'error');
                     
                     // Update balance and refresh trades
                     this.loadWalletBalance();

@@ -1018,9 +1018,13 @@ class TradingViewChart {
                     
                     // Show result notification
                     const profitLoss = result.profit_loss || 0;
-                    const sign = profitLoss >= 0 ? '+' : '';
-                    const resultText = result.trade_result === 'profit' || result.trade_result === 'won' ? 'PROFIT' : 'LOSS';
-                    const notificationMessage = `Trade ${resultText}! ${sign}$${profitLoss.toFixed(2)}`;
+                    let notificationMessage;
+                    if (result.trade_result === 'profit' || result.trade_result === 'won') {
+                        notificationMessage = `Trade PROFIT! +$${profitLoss.toFixed(2)}`;
+                    } else {
+                        const lossAmount = Math.abs(profitLoss);
+                        notificationMessage = `Trade LOSS! You lost $${lossAmount.toFixed(2)}`;
+                    }
                     this.showTradeMessage(notificationMessage, 
                         result.trade_result === 'profit' || result.trade_result === 'won' ? 'success' : 'error');
                         

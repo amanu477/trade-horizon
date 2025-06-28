@@ -127,6 +127,8 @@ TradePro is a Flask-based binary options trading platform that provides both dem
 - Secure session management
 
 ## Changelog
+- June 28, 2025: **Enhanced Loss Message Display** - Updated trade loss notifications to clearly show "Trade LOSS! You lost $X.XX" instead of just showing negative amounts, providing clearer feedback to users about their losses
+- June 28, 2025: **Improved Balance Validation Messages** - Changed insufficient balance notifications from red error messages to orange warning messages for better user experience and removed profile/logout buttons from admin quick actions
 - June 28, 2025: **Unified Admin Experience** - Removed duplicate dashboards and streamlined admin workflow so admin users see only the analytics dashboard, eliminating confusion between user and admin interfaces
 - June 28, 2025: **Direct Admin Login Flow** - Admin users now redirect directly to analytics dashboard upon login instead of the regular user dashboard, creating a dedicated admin experience
 - June 28, 2025: **Simplified Navigation** - Updated navigation menu to show different options for admin vs regular users, with admin-specific menu items highlighted in warning color
