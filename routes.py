@@ -198,15 +198,22 @@ def place_trade():
         except (ValueError, TypeError):
             amount = 0
             
+        # Handle both expiry_seconds (new) and expiry_minutes (legacy) for backward compatibility
         try:
-            expiry_minutes = int(data.get('expiry_minutes', 1))
+            if 'expiry_seconds' in data:
+                expiry_seconds = int(data.get('expiry_seconds', 300))
+            elif 'expiry_minutes' in data:
+                expiry_minutes = int(data.get('expiry_minutes', 5))
+                expiry_seconds = expiry_minutes * 60
+            else:
+                expiry_seconds = 300  # Default 5 minutes
         except (ValueError, TypeError):
-            expiry_minutes = 1
+            expiry_seconds = 300
             
         # Default to demo mode for now
         is_demo = True
         
-        logging.info(f"Parsed trade: asset={asset}, type={trade_type}, amount={amount}, expiry={expiry_minutes}, demo={is_demo}")
+        logging.info(f"Parsed trade: asset={asset}, type={trade_type}, amount={amount}, expiry={expiry_seconds}s, demo={is_demo}")
         
         # Validation
         if not asset or not trade_type or amount <= 0:
@@ -239,11 +246,12 @@ def place_trade():
             entry_price = get_asset_price(asset)
         
         # Calculate expiry time
-        expiry_time = datetime.utcnow() + timedelta(minutes=expiry_minutes)
+        expiry_time = datetime.utcnow() + timedelta(seconds=expiry_seconds)
         
         # Get payout percentage
         try:
-            payout_percentage = payout_manager.get_current_payout(asset, expiry_minutes)
+            expiry_minutes_for_payout = int(expiry_seconds / 60)  # Convert to minutes for payout calculation
+            payout_percentage = payout_manager.get_current_payout(asset, expiry_minutes_for_payout)
         except:
             payout_percentage = 85.0
         

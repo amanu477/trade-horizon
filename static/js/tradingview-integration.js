@@ -517,15 +517,15 @@ class TradingViewChart {
         }
     }
 
-    convertTimeToMinutes(timeString) {
+    convertTimeToSeconds(timeString) {
         const [hours, minutes, seconds] = timeString.split(':').map(Number);
-        return (hours * 60) + minutes + (seconds / 60);
+        return (hours * 3600) + (minutes * 60) + seconds;
     }
 
     async placeTrade() {
         const amount = parseFloat(document.getElementById('amount-input').value);
         const timeInput = document.getElementById('expiry-input').value;
-        const expiryMinutes = this.convertTimeToMinutes(timeInput);
+        const expirySeconds = this.convertTimeToSeconds(timeInput);
         
         if (!amount || amount < 1) {
             alert('Please enter a valid investment amount');
@@ -537,7 +537,7 @@ class TradingViewChart {
             return;
         }
         
-        if (!timeInput || expiryMinutes < 1) {
+        if (!timeInput || expirySeconds < 1) {
             alert('Please enter a valid expiry time');
             return;
         }
@@ -550,7 +550,7 @@ class TradingViewChart {
             asset: asset,
             trade_type: this.selectedDirection,
             amount: amount,
-            expiry_minutes: expiryMinutes
+            expiry_seconds: expirySeconds
         });
         
         // Create hidden form
@@ -574,7 +574,7 @@ class TradingViewChart {
             'asset': asset,
             'trade_type': this.selectedDirection,
             'amount': amount,
-            'expiry_minutes': expiryMinutes
+            'expiry_seconds': expirySeconds
         };
         
         for (const [name, value] of Object.entries(fields)) {
