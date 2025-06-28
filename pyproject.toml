@@ -22,4 +22,6 @@ dependencies = [
     "yfinance>=0.2.63",
     "websocket-client>=1.8.0",
     "requests>=2.32.4",
+    "sendgrid>=6.12.4",
+    "pandas>=2.3.0",
 ]
