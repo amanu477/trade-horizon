@@ -1,0 +1,86 @@
+/* TradingView Custom Styles */
+
+/* Ensure the top toolbar is visible with brown theme */
+.tv-header {
+    background-color: #8B4513 !important;
+    border-bottom: 1px solid #A0522D !important;
+}
+
+/* Style the timeframe buttons */
+.tv-header__inner {
+    background-color: #8B4513 !important;
+}
+
+/* Make sure symbol search and timeframes are visible */
+.tv-header__content {
+    display: flex !important;
+    visibility: visible !important;
+}
+
+/* Timeframe selector styling */
+.tv-header__timeframe {
+    background-color: #8B4513 !important;
+    color: #fff !important;
+}
+
+/* Symbol search styling */
+.tv-header__symbol-search {
+    background-color: #8B4513 !important;
+    color: #fff !important;
+}
+
+/* Interval buttons styling */
+.tv-header__timeframe-button {
+    background-color: #8B4513 !important;
+    color: #fff !important;
+    border: 1px solid #A0522D !important;
+}
+
+.tv-header__timeframe-button:hover {
+    background-color: #A0522D !important;
+}
+
+.tv-header__timeframe-button--active {
+    background-color: #D2691E !important;
+    color: #fff !important;
+}
+
+/* Chart type selector */
+.tv-header__chart-type {
+    background-color: #8B4513 !important;
+    color: #fff !important;
+}
+
+/* Symbol info styling */
+.tv-symbol-info {
+    background-color: #8B4513 !important;
+    color: #fff !important;
+}
+
+/* Controls styling */
+.tv-header__controls {
+    background-color: #8B4513 !important;
+}
+
+/* Drawing tools toolbar */
+.tv-side-toolbar {
+    background-color: #1e222d !important;
+    border-right: 1px solid #2a2e39 !important;
+}
+
+/* Legend styling */
+.tv-legend {
+    background-color: transparent !important;
+}
+
+/* Price scale styling */
+.tv-price-axis {
+    background-color: #131722 !important;
+    color: #868993 !important;
+}
+
+/* Time scale styling */
+.tv-time-axis {
+    background-color: #131722 !important;
+    color: #868993 !important;
+}

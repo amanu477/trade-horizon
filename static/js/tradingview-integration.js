@@ -77,7 +77,7 @@ class TradingViewChart {
                 <div style="background: #1e222d; padding: 8px 16px; border-bottom: 1px solid #2a2e39; display: flex; justify-content: space-between; align-items: center; z-index: 1000;">
                     <div style="display: flex; align-items: center; gap: 16px;">
                         <!-- Asset Selector -->
-                        <select id="asset-selector" style="background: #2a2e39; color: #d1d4dc; border: 1px solid #434651; padding: 6px 12px; border-radius: 4px; font-size: 14px;">
+                        <select id="asset-selector" style="background: #8B4513; color: #fff; border: 1px solid #A0522D; padding: 8px 12px; border-radius: 4px; font-size: 14px; font-weight: 500;">
                             <optgroup label="Major Forex">
                                 <option value="EURUSD">EUR/USD</option>
                                 <option value="GBPUSD">GBP/USD</option>
@@ -125,6 +125,21 @@ class TradingViewChart {
                                 <option value="NVDA">NVIDIA</option>
                             </optgroup>
                         </select>
+                        
+                        <!-- Timeframe Selector -->
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <span style="color: #fff; font-size: 14px; font-weight: 500;">Timeframe:</span>
+                            <select id="timeframe-selector" style="background: #8B4513; color: #fff; border: 1px solid #A0522D; padding: 6px 10px; border-radius: 4px; font-size: 13px;">
+                                <option value="1">1m</option>
+                                <option value="5">5m</option>
+                                <option value="15">15m</option>
+                                <option value="30">30m</option>
+                                <option value="60" selected>1h</option>
+                                <option value="240">4h</option>
+                                <option value="1D">1D</option>
+                                <option value="1W">1W</option>
+                            </select>
+                        </div>
                         
                         <!-- Current Price Display -->
                         <div id="price-display" style="color: #2962ff; font-weight: bold; font-size: 16px;">
@@ -245,7 +260,7 @@ class TradingViewChart {
             theme: 'dark',
             style: '1',
             locale: 'en',
-            toolbar_bg: '#131722',
+            toolbar_bg: '#2a2e39',
             enable_publishing: false,
             allow_symbol_change: true,
             hide_top_toolbar: false,
@@ -272,24 +287,39 @@ class TradingViewChart {
                 'volume.volume.color.1': '#26a69a55'
             },
             disabled_features: [
-                'use_localstorage_for_settings'
+                'use_localstorage_for_settings',
+                'header_symbol_search',
+                'symbol_search_hot_key'
             ],
             enabled_features: [
                 'study_templates',
                 'side_toolbar_in_fullscreen_mode',
                 'header_in_fullscreen_mode',
-                'remove_library_container_border'
+                'remove_library_container_border',
+                'header_intervals',
+                'header_chart_type',
+                'header_resolutions',
+                'header_settings'
             ],
             fullscreen: false,
-            autosize: true
+            autosize: true,
+            custom_css_url: '/static/css/tradingview-custom.css'
         });
         
         // Wait for widget to be ready before setting up interactions
-        this.widget.onChartReady(() => {
-            console.log('TradingView chart is ready');
-            // Start price updates after chart is ready
-            this.startPriceUpdates();
-        });
+        if (this.widget.onChartReady) {
+            this.widget.onChartReady(() => {
+                console.log('TradingView chart is ready');
+                // Start price updates after chart is ready
+                this.startPriceUpdates();
+            });
+        } else {
+            // Fallback for older TradingView versions
+            setTimeout(() => {
+                console.log('TradingView chart initialized (fallback)');
+                this.startPriceUpdates();
+            }, 3000);
+        }
     }
     
     setupEventListeners() {
@@ -338,6 +368,22 @@ class TradingViewChart {
                 setTimeout(() => {
                     if (this.widget && this.widget.chart) {
                         this.widget.chart().setSymbol(symbol);
+                    }
+                }, 2000);
+            }
+        }
+    }
+    
+    setTimeframe(interval) {
+        if (this.widget && this.widget.chart) {
+            try {
+                this.widget.chart().setResolution(interval);
+                console.log(`Switched to timeframe: ${interval}`);
+            } catch (error) {
+                console.log('Chart not ready for timeframe change, will retry...');
+                setTimeout(() => {
+                    if (this.widget && this.widget.chart) {
+                        this.widget.chart().setResolution(interval);
                     }
                 }, 2000);
             }
