@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Deposit Management - TradePro Admin{% endblock %}
+{% block title %}Manage Deposits - TradePro Admin{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
@@ -8,69 +8,137 @@
         <h2 class="text-success">
             <i class="fas fa-coins me-2"></i>Deposit Management
         </h2>
-        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-success">
-            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
-        </a>
+        <div>
+            <a href="{{ url_for('admin_settings') }}" class="btn btn-outline-warning me-2">
+                <i class="fas fa-cog me-1"></i>Crypto Settings
+            </a>
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-success">
+                <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+            </a>
+        </div>
     </div>
 
-    <!-- Pending Deposits -->
-    <div class="card bg-dark border-warning mb-4">
-        <div class="card-header bg-warning">
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-dark border-warning">
+                <div class="card-body text-center">
+                    <i class="fas fa-clock fa-2x text-warning mb-2"></i>
+                    <h6 class="text-light">Pending</h6>
+                    <h4 class="text-warning">{{ deposits|selectattr('status', 'equalto', 'pending')|list|length }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-dark border-success">
+                <div class="card-body text-center">
+                    <i class="fas fa-check fa-2x text-success mb-2"></i>
+                    <h6 class="text-light">Approved</h6>
+                    <h4 class="text-success">{{ deposits|selectattr('status', 'equalto', 'approved')|list|length }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-dark border-danger">
+                <div class="card-body text-center">
+                    <i class="fas fa-times fa-2x text-danger mb-2"></i>
+                    <h6 class="text-light">Rejected</h6>
+                    <h4 class="text-danger">{{ deposits|selectattr('status', 'equalto', 'rejected')|list|length }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-dark border-info">
+                <div class="card-body text-center">
+                    <i class="fas fa-dollar-sign fa-2x text-info mb-2"></i>
+                    <h6 class="text-light">Total Volume</h6>
+                    <h4 class="text-info">${{ "%.2f"|format(deposits|sum(attribute='amount')) }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deposits Table -->
+    <div class="card bg-dark border-secondary">
+        <div class="card-header bg-secondary">
             <h5 class="card-title mb-0 text-dark">
-                <i class="fas fa-clock me-2"></i>Pending Deposits ({{ pending_deposits|length }})
+                <i class="fas fa-list me-2"></i>All Deposit Requests ({{ deposits|length }})
             </h5>
         </div>
         <div class="card-body">
-            {% if pending_deposits %}
+            {% if deposits %}
             <div class="table-responsive">
-                <table class="table table-dark table-striped">
+                <table class="table table-dark table-hover">
                     <thead>
                         <tr>
+                            <th>Date</th>
                             <th>User</th>
                             <th>Amount</th>
                             <th>Currency</th>
                             <th>Transaction Hash</th>
+                            <th>Status</th>
                             <th>Proof</th>
-                            <th>Submitted</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for deposit in pending_deposits %}
+                        {% for deposit in deposits %}
                         <tr>
                             <td>
-                                <strong>{{ deposit.user.username }}</strong><br>
+                                <div>{{ deposit.created_at.strftime('%m/%d/%Y') }}</div>
+                                <small class="text-muted">{{ deposit.created_at.strftime('%H:%M') }}</small>
+                            </td>
+                            <td>
+                                <div class="fw-bold">{{ deposit.user.username }}</div>
                                 <small class="text-muted">{{ deposit.user.email }}</small>
                             </td>
                             <td>
-                                <span class="text-success">${{ "%.2f"|format(deposit.amount) }}</span>
+                                <span class="text-success fs-6">${{ "%.2f"|format(deposit.amount) }}</span>
                             </td>
                             <td>
-                                <span class="badge bg-{{ 'warning' if deposit.currency == 'BTC' else ('success' if deposit.currency == 'USDT' else 'primary') }}">
-                                    {{ deposit.currency }}
+                                <span class="badge bg-info">{{ deposit.currency }}</span>
+                            </td>
+                            <td>
+                                {% if deposit.transaction_hash %}
+                                <code class="text-warning">{{ deposit.transaction_hash[:20] }}...</code>
+                                {% else %}
+                                <span class="text-muted">Not provided</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if deposit.status == 'pending' %}
+                                <span class="badge bg-warning">
+                                    <i class="fas fa-clock me-1"></i>Pending
                                 </span>
-                            </td>
-                            <td>
-                                <code class="text-info" style="font-size: 0.8rem;">
-                                    {{ deposit.transaction_hash[:20] }}...
-                                </code>
+                                {% elif deposit.status == 'approved' %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check me-1"></i>Approved
+                                </span>
+                                {% else %}
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-times me-1"></i>Rejected
+                                </span>
+                                {% endif %}
                             </td>
                             <td>
                                 {% if deposit.proof_document %}
-                                <a href="/static/uploads/deposits/{{ deposit.proof_document }}" target="_blank" class="btn btn-sm btn-outline-info">
-                                    <i class="fas fa-file-image"></i> View
+                                <a href="/static/uploads/deposits/{{ deposit.proof_document }}" target="_blank" class="btn btn-outline-info btn-sm">
+                                    <i class="fas fa-eye"></i>
                                 </a>
                                 {% else %}
-                                <span class="text-muted">No file</span>
+                                <span class="text-muted">No proof</span>
                                 {% endif %}
                             </td>
                             <td>
-                                <small class="text-muted">{{ deposit.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
-                            </td>
-                            <td>
-                                <a href="{{ url_for('admin_process_deposit', deposit_id=deposit.id) }}" class="btn btn-sm btn-success">
-                                    <i class="fas fa-check-circle"></i> Process
+                                {% if deposit.status == 'pending' %}
+                                <a href="{{ url_for('admin_process_deposit', deposit_id=deposit.id) }}" class="btn btn-warning btn-sm">
+                                    <i class="fas fa-edit me-1"></i>Process
                                 </a>
+                                {% else %}
+                                <a href="{{ url_for('admin_process_deposit', deposit_id=deposit.id) }}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-eye me-1"></i>View
+                                </a>
+                                {% endif %}
                             </td>
                         </tr>
                         {% endfor %}
@@ -78,78 +146,23 @@
                 </table>
             </div>
             {% else %}
-            <div class="text-center py-4">
-                <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
-                <h5 class="text-light">No pending deposits</h5>
-                <p class="text-muted">All deposits have been processed</p>
+            <div class="text-center text-muted py-5">
+                <i class="fas fa-coins fa-3x mb-3"></i>
+                <h5>No Deposit Requests</h5>
+                <p>Users haven't submitted any cryptocurrency deposit requests yet.</p>
+                <a href="{{ url_for('admin_settings') }}" class="btn btn-warning">
+                    <i class="fas fa-cog me-1"></i>Configure Crypto Addresses
+                </a>
             </div>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- Recent Processed Deposits -->
-    <div class="card bg-dark border-success">
-        <div class="card-header bg-success">
-            <h5 class="card-title mb-0 text-dark">
-                <i class="fas fa-history me-2"></i>Recently Processed Deposits
-            </h5>
-        </div>
-        <div class="card-body">
-            {% if processed_deposits %}
-            <div class="table-responsive">
-                <table class="table table-dark table-striped">
-                    <thead>
-                        <tr>
-                            <th>User</th>
-                            <th>Amount</th>
-                            <th>Currency</th>
-                            <th>Status</th>
-                            <th>Admin Notes</th>
-                            <th>Processed By</th>
-                            <th>Date</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for deposit in processed_deposits %}
-                        <tr>
-                            <td>{{ deposit.user.username }}</td>
-                            <td>${{ "%.2f"|format(deposit.amount) }}</td>
-                            <td>
-                                <span class="badge bg-{{ 'warning' if deposit.currency == 'BTC' else ('success' if deposit.currency == 'USDT' else 'primary') }}">
-                                    {{ deposit.currency }}
-                                </span>
-                            </td>
-                            <td>
-                                <span class="badge bg-{{ 'success' if deposit.status == 'approved' else 'danger' }}">
-                                    {{ deposit.status.upper() }}
-                                </span>
-                            </td>
-                            <td>
-                                {% if deposit.admin_notes %}
-                                <small class="text-muted">{{ deposit.admin_notes[:50] }}...</small>
-                                {% else %}
-                                -
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if deposit.processed_by_admin %}
-                                {{ deposit.processed_by_admin.username }}
-                                {% else %}
-                                System
-                                {% endif %}
-                            </td>
-                            <td>
-                                <small class="text-muted">{{ deposit.processed_at.strftime('%Y-%m-%d %H:%M') if deposit.processed_at else '-' }}</small>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <p class="text-muted text-center">No processed deposits yet</p>
             {% endif %}
         </div>
     </div>
 </div>
+
+<script>
+// Auto-refresh every 30 seconds for new deposits
+setTimeout(() => {
+    location.reload();
+}, 30000);
+</script>
 {% endblock %}

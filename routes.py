@@ -382,25 +382,94 @@ def wallet():
 def deposit():
     form = DepositForm()
     if form.validate_on_submit():
-        wallet = current_user.wallet
-        wallet.balance += form.amount.data
-        wallet.total_invested += form.amount.data
-        
-        transaction = Transaction(
-            user_id=current_user.id,
-            transaction_type='deposit',
-            amount=form.amount.data,
-            description=f'Deposit via {form.method.data}'
-        )
-        
-        db.session.add(transaction)
-        db.session.commit()
-        
-        flash(f'Successfully deposited ${form.amount.data}', 'success')
+        # Redirect to deposit page with amount and currency
+        return redirect(url_for('crypto_deposit', 
+                              amount=form.amount.data, 
+                              currency=form.currency.data))
     else:
-        flash('Invalid deposit amount', 'error')
+        flash('Please check your deposit details', 'error')
     
     return redirect(url_for('wallet'))
+
+@app.route('/deposit/crypto')
+@login_required
+def crypto_deposit():
+    amount = request.args.get('amount', type=float)
+    currency = request.args.get('currency', '')
+    
+    if not amount or not currency:
+        flash('Invalid deposit request', 'error')
+        return redirect(url_for('wallet'))
+    
+    # Get admin-set wallet addresses
+    addresses = {}
+    usdt_setting = AdminSettings.query.filter_by(setting_key='usdt_address').first()
+    btc_setting = AdminSettings.query.filter_by(setting_key='btc_address').first()
+    eth_setting = AdminSettings.query.filter_by(setting_key='eth_address').first()
+    
+    if usdt_setting:
+        addresses['USDT'] = usdt_setting.setting_value
+    if btc_setting:
+        addresses['BTC'] = btc_setting.setting_value
+    if eth_setting:
+        addresses['ETH'] = eth_setting.setting_value
+    
+    # Check if admin has set the address for this currency
+    if currency not in addresses:
+        flash(f'Deposit address for {currency} not configured. Please contact support.', 'error')
+        return redirect(url_for('wallet'))
+    
+    return render_template('deposit/crypto.html', 
+                         amount=amount, 
+                         currency=currency,
+                         address=addresses[currency])
+
+@app.route('/deposit/submit', methods=['POST'])
+@login_required
+def submit_deposit():
+    form = CryptoDepositForm()
+    if form.validate_on_submit():
+        # Handle file upload for proof of payment
+        proof_filename = None
+        if form.proof_document.data:
+            import os
+            from werkzeug.utils import secure_filename
+            
+            # Create uploads directory if it doesn't exist
+            upload_dir = os.path.join('static', 'uploads', 'deposits')
+            os.makedirs(upload_dir, exist_ok=True)
+            
+            # Generate secure filename
+            filename = secure_filename(form.proof_document.data.filename)
+            timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+            proof_filename = f"{current_user.id}_{timestamp}_{filename}"
+            
+            # Save file
+            form.proof_document.data.save(os.path.join(upload_dir, proof_filename))
+        
+        # Create deposit request
+        deposit_request = DepositRequest(
+            user_id=current_user.id,
+            amount=form.amount.data,
+            currency=form.currency.data,
+            transaction_hash=form.transaction_hash.data,
+            proof_document=proof_filename
+        )
+        
+        db.session.add(deposit_request)
+        db.session.commit()
+        
+        flash(f'Deposit request submitted successfully! Amount: ${form.amount.data} {form.currency.data}. Admin will review and approve your deposit.', 'success')
+        return redirect(url_for('deposit_status'))
+    else:
+        flash('Please check your deposit information', 'error')
+        return redirect(url_for('wallet'))
+
+@app.route('/deposit/status')
+@login_required
+def deposit_status():
+    deposits = DepositRequest.query.filter_by(user_id=current_user.id).order_by(DepositRequest.created_at.desc()).all()
+    return render_template('deposit/status.html', deposits=deposits)
 
 @app.route('/withdraw', methods=['POST'])
 @login_required
@@ -1160,3 +1229,94 @@ def admin_delete_user(user_id):
         db.session.rollback()
         flash(f'Error deleting user: {str(e)}', 'error')
         return redirect(url_for('admin_user_detail', user_id=user_id))
+
+@app.route('/admin/deposits')
+@login_required
+@admin_required
+def admin_deposits():
+    deposits = DepositRequest.query.order_by(DepositRequest.created_at.desc()).all()
+    return render_template('admin/deposits.html', deposits=deposits)
+
+@app.route('/admin/process_deposit/<int:deposit_id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def admin_process_deposit(deposit_id):
+    deposit = DepositRequest.query.get_or_404(deposit_id)
+    form = AdminDepositForm()
+    
+    if form.validate_on_submit():
+        deposit.status = form.status.data
+        deposit.admin_notes = form.admin_notes.data
+        deposit.processed_at = datetime.utcnow()
+        deposit.processed_by = current_user.id
+        
+        if form.status.data == 'approved':
+            # Add balance to user's account
+            balance_to_add = form.balance_amount.data or deposit.amount
+            user = deposit.user
+            user.wallet.balance += balance_to_add
+            user.wallet.total_invested += balance_to_add
+            
+            # Create transaction record
+            transaction = Transaction(
+                user_id=user.id,
+                transaction_type='deposit',
+                amount=balance_to_add,
+                description=f'Crypto deposit approved: {deposit.currency} ${balance_to_add}'
+            )
+            db.session.add(transaction)
+            
+        db.session.commit()
+        
+        status_msg = 'approved' if form.status.data == 'approved' else 'rejected'
+        flash(f'Deposit request {status_msg} successfully', 'success')
+        return redirect(url_for('admin_deposits'))
+    
+    return render_template('admin/process_deposit.html', deposit=deposit, form=form)
+
+@app.route('/admin/settings', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def admin_settings():
+    form = AdminSettingsForm()
+    
+    if form.validate_on_submit():
+        # Update or create settings
+        settings = [
+            ('usdt_address', form.usdt_address.data),
+            ('btc_address', form.btc_address.data),
+            ('eth_address', form.eth_address.data)
+        ]
+        
+        for key, value in settings:
+            setting = AdminSettings.query.filter_by(setting_key=key).first()
+            if setting:
+                setting.setting_value = value
+                setting.updated_by = current_user.id
+                setting.updated_at = datetime.utcnow()
+            else:
+                setting = AdminSettings(
+                    setting_key=key,
+                    setting_value=value,
+                    description=f'{key.replace("_", " ").title()} for deposits',
+                    updated_by=current_user.id
+                )
+                db.session.add(setting)
+        
+        db.session.commit()
+        flash('Cryptocurrency addresses updated successfully', 'success')
+        return redirect(url_for('admin_settings'))
+    
+    # Load current settings
+    usdt_setting = AdminSettings.query.filter_by(setting_key='usdt_address').first()
+    btc_setting = AdminSettings.query.filter_by(setting_key='btc_address').first()
+    eth_setting = AdminSettings.query.filter_by(setting_key='eth_address').first()
+    
+    if usdt_setting:
+        form.usdt_address.data = usdt_setting.setting_value
+    if btc_setting:
+        form.btc_address.data = btc_setting.setting_value
+    if eth_setting:
+        form.eth_address.data = eth_setting.setting_value
+    
+    return render_template('admin/settings.html', form=form)

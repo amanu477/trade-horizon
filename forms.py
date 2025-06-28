@@ -97,11 +97,10 @@ class DepositForm(FlaskForm):
         NumberRange(min=10, max=100000, message="Amount must be between $10 and $100,000")
     ])
     
-    method = SelectField('Deposit Method', choices=[
-        ('card', 'Credit/Debit Card'),
-        ('bank', 'Bank Transfer'),
-        ('paypal', 'PayPal'),
-        ('crypto', 'Cryptocurrency')
+    currency = SelectField('Cryptocurrency', choices=[
+        ('USDT', 'USDT (TRC-20)'),
+        ('BTC', 'Bitcoin'),
+        ('ETH', 'Ethereum')
     ], validators=[DataRequired()])
 
 class AdminUserForm(FlaskForm):

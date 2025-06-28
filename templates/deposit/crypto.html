@@ -1,117 +1,187 @@
 {% extends "base.html" %}
 
-{% block title %}Crypto Deposit - TradePro{% endblock %}
+{% block title %}Cryptocurrency Deposit - TradePro{% endblock %}
 
 {% block content %}
-<div class="container py-5">
+<div class="container py-4">
     <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="card bg-dark border-success">
+        <div class="col-lg-10">
+            <!-- Deposit Summary -->
+            <div class="card bg-dark border-success mb-4">
                 <div class="card-header bg-success">
                     <h4 class="card-title mb-0 text-dark">
-                        <i class="fab fa-bitcoin me-2"></i>Crypto Deposit
+                        <i class="fas fa-coins me-2"></i>Cryptocurrency Deposit - {{ currency }}
                     </h4>
                 </div>
-                <div class="card-body">
-                    <div class="alert alert-info border-info bg-transparent text-info">
-                        <i class="fas fa-info-circle me-2"></i>
-                        Deposit cryptocurrency to fund your real trading account. All deposits require admin verification.
-                    </div>
-
-                    <!-- Deposit Addresses -->
-                    <div class="row mb-4">
-                        <div class="col-md-4 mb-3">
-                            <div class="card bg-secondary border-warning">
-                                <div class="card-body text-center">
-                                    <i class="fab fa-bitcoin fa-2x text-warning mb-2"></i>
-                                    <h6 class="text-warning">Bitcoin</h6>
-                                    <small class="text-light" style="word-break: break-all;">{{ addresses.BTC }}</small>
-                                </div>
-                            </div>
+                <div class="card-body text-center">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6 class="text-muted">Deposit Amount</h6>
+                            <h3 class="text-success">${{ "%.2f"|format(amount) }}</h3>
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="card bg-secondary border-success">
-                                <div class="card-body text-center">
-                                    <i class="fas fa-dollar-sign fa-2x text-success mb-2"></i>
-                                    <h6 class="text-success">USDT (TRC-20)</h6>
-                                    <small class="text-light" style="word-break: break-all;">{{ addresses.USDT }}</small>
-                                </div>
-                            </div>
+                        <div class="col-md-4">
+                            <h6 class="text-muted">Currency</h6>
+                            <h3 class="text-warning">{{ currency }}</h3>
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="card bg-secondary border-primary">
-                                <div class="card-body text-center">
-                                    <i class="fab fa-ethereum fa-2x text-primary mb-2"></i>
-                                    <h6 class="text-primary">Ethereum</h6>
-                                    <small class="text-light" style="word-break: break-all;">{{ addresses.ETH }}</small>
-                                </div>
-                            </div>
+                        <div class="col-md-4">
+                            <h6 class="text-muted">Processing Time</h6>
+                            <h3 class="text-info">1-24 Hours</h3>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <!-- Deposit Form -->
-                    <form method="POST" enctype="multipart/form-data">
-                        {{ form.hidden_tag() }}
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-light">{{ form.currency.label }}</label>
-                                {{ form.currency(class="form-select bg-secondary border-success text-light") }}
-                                {% for error in form.currency.errors %}
-                                <div class="text-danger small">{{ error }}</div>
-                                {% endfor %}
+            <div class="row">
+                <!-- Step 1: Send Payment -->
+                <div class="col-lg-6 mb-4">
+                    <div class="card bg-dark border-warning h-100">
+                        <div class="card-header bg-warning">
+                            <h5 class="card-title mb-0 text-dark">
+                                <i class="fas fa-paper-plane me-2"></i>Step 1: Send Payment
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-warning border-warning bg-transparent text-warning mb-4">
+                                <h6><i class="fas fa-exclamation-triangle me-2"></i>Important:</h6>
+                                <ul class="mb-0">
+                                    <li>Send exactly <strong>${{ "%.2f"|format(amount) }}</strong> worth of {{ currency }}</li>
+                                    <li>Use the address below - do not modify it</li>
+                                    <li>{{ currency }} deposits only - other currencies will be lost</li>
+                                    <li>Minimum network confirmations required</li>
+                                </ul>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-light">{{ form.amount.label }}</label>
-                                {{ form.amount(class="form-control bg-secondary border-success text-light", placeholder="Enter amount in USD") }}
-                                {% for error in form.amount.errors %}
-                                <div class="text-danger small">{{ error }}</div>
-                                {% endfor %}
+
+                            <div class="mb-3">
+                                <label class="form-label text-light"><strong>{{ currency }} Deposit Address:</strong></label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control bg-secondary border-warning text-light" 
+                                           value="{{ address }}" readonly id="depositAddress">
+                                    <button class="btn btn-outline-warning" type="button" onclick="copyAddress()">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text text-muted">Click the copy button to copy the address</div>
+                            </div>
+
+                            <!-- QR Code placeholder -->
+                            <div class="text-center mt-4">
+                                <div class="border border-warning rounded p-3" style="display: inline-block;">
+                                    <div id="qrcode" class="mb-2"></div>
+                                    <small class="text-muted">QR Code for {{ currency }} Address</small>
+                                </div>
                             </div>
                         </div>
+                    </div>
+                </div>
 
-                        <div class="mb-3">
-                            <label class="form-label text-light">{{ form.transaction_hash.label }}</label>
-                            {{ form.transaction_hash(class="form-control bg-secondary border-success text-light", placeholder="Enter transaction hash from your wallet") }}
-                            {% for error in form.transaction_hash.errors %}
-                            <div class="text-danger small">{{ error }}</div>
-                            {% endfor %}
+                <!-- Step 2: Submit Proof -->
+                <div class="col-lg-6 mb-4">
+                    <div class="card bg-dark border-info h-100">
+                        <div class="card-header bg-info">
+                            <h5 class="card-title mb-0 text-dark">
+                                <i class="fas fa-upload me-2"></i>Step 2: Submit Proof
+                            </h5>
                         </div>
+                        <div class="card-body">
+                            <form method="POST" action="{{ url_for('submit_deposit') }}" enctype="multipart/form-data">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                <input type="hidden" name="amount" value="{{ amount }}">
+                                <input type="hidden" name="currency" value="{{ currency }}">
 
-                        <div class="mb-3">
-                            <label class="form-label text-light">{{ form.proof_document.label }}</label>
-                            {{ form.proof_document(class="form-control bg-secondary border-success text-light") }}
-                            <div class="form-text text-muted">
-                                Upload screenshot or proof of your crypto transaction. Supported formats: JPG, PNG, PDF
-                            </div>
-                            {% for error in form.proof_document.errors %}
-                            <div class="text-danger small">{{ error }}</div>
-                            {% endfor %}
-                        </div>
+                                <div class="mb-4">
+                                    <label class="form-label text-light">Transaction Hash</label>
+                                    <input type="text" name="transaction_hash" class="form-control bg-secondary border-info text-light" 
+                                           placeholder="Enter transaction hash from your wallet" required>
+                                    <div class="form-text text-muted">Copy the transaction ID from your wallet after sending</div>
+                                </div>
 
-                        <div class="alert alert-warning border-warning bg-transparent text-warning">
-                            <h6><i class="fas fa-exclamation-triangle me-2"></i>Important Instructions:</h6>
-                            <ul class="mb-0">
-                                <li>Send crypto only to the address for the selected currency</li>
-                                <li>For USDT, use only TRC-20 network (Tron)</li>
-                                <li>Upload clear proof of your transaction</li>
-                                <li>Deposits are processed manually by admin (1-24 hours)</li>
-                                <li>Minimum deposit: $10, Maximum: $100,000</li>
-                            </ul>
-                        </div>
+                                <div class="mb-4">
+                                    <label class="form-label text-light">Proof of Payment</label>
+                                    <input type="file" name="proof_document" class="form-control bg-secondary border-info text-light" 
+                                           accept="image/*,.pdf" required>
+                                    <div class="form-text text-muted">Upload screenshot of your transaction or receipt</div>
+                                </div>
 
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-success btn-lg">
-                                <i class="fas fa-paper-plane me-2"></i>Submit Deposit Request
-                            </button>
-                            <a href="{{ url_for('deposit_status') }}" class="btn btn-outline-info">
-                                <i class="fas fa-history me-2"></i>View Deposit Status
-                            </a>
+                                <div class="alert alert-info border-info bg-transparent text-info mb-4">
+                                    <h6><i class="fas fa-info-circle me-2"></i>What happens next:</h6>
+                                    <ol class="mb-0">
+                                        <li>Admin reviews your transaction on the blockchain</li>
+                                        <li>Verification typically takes 1-24 hours</li>
+                                        <li>Funds are added to your live trading balance</li>
+                                        <li>You'll receive notification of approval/rejection</li>
+                                    </ol>
+                                </div>
+
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-info btn-lg">
+                                        <i class="fas fa-check me-2"></i>I Have Sent Payment - Submit Proof
+                                    </button>
+                                    <a href="{{ url_for('deposit_status') }}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-history me-2"></i>View My Deposit History
+                                    </a>
+                                    <a href="{{ url_for('wallet') }}" class="btn btn-outline-danger">
+                                        <i class="fas fa-arrow-left me-2"></i>Cancel Deposit
+                                    </a>
+                                </div>
+                            </form>
                         </div>
-                    </form>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script>
+// Generate QR code for the deposit address
+document.addEventListener('DOMContentLoaded', function() {
+    const address = '{{ address }}';
+    const currency = '{{ currency }}';
+    const amount = '{{ amount }}';
+    
+    // Create QR code with payment URL format
+    let qrData = address;
+    if (currency === 'BTC') {
+        qrData = `bitcoin:${address}?amount=${amount/100000000}`; // Convert to BTC
+    } else if (currency === 'ETH') {
+        qrData = `ethereum:${address}?value=${amount*1000000000000000000}`; // Convert to Wei
+    }
+    
+    QRCode.toCanvas(document.getElementById('qrcode'), qrData, {
+        width: 150,
+        margin: 2,
+        color: {
+            dark: '#ffffff',
+            light: '#343a40'
+        }
+    }, function (error) {
+        if (error) {
+            document.getElementById('qrcode').innerHTML = '<i class="fas fa-qrcode fa-3x text-muted"></i>';
+        }
+    });
+});
+
+// Copy address to clipboard
+function copyAddress() {
+    const addressField = document.getElementById('depositAddress');
+    addressField.select();
+    addressField.setSelectionRange(0, 99999); // For mobile devices
+    
+    navigator.clipboard.writeText(addressField.value).then(function() {
+        // Show success feedback
+        const button = event.target.closest('button');
+        const originalHtml = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check"></i>';
+        button.classList.remove('btn-outline-warning');
+        button.classList.add('btn-success');
+        
+        setTimeout(() => {
+            button.innerHTML = originalHtml;
+            button.classList.remove('btn-success');
+            button.classList.add('btn-outline-warning');
+        }, 2000);
+    });
+}
+</script>
 {% endblock %}

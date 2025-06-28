@@ -40,6 +40,16 @@
                             <i class="fas fa-users me-1"></i>Manage Users
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-warning" href="{{ url_for('admin_deposits') }}">
+                            <i class="fas fa-coins me-1"></i>Deposits
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-warning" href="{{ url_for('admin_settings') }}">
+                            <i class="fas fa-cog me-1"></i>Settings
+                        </a>
+                    </li>
                     {% else %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('dashboard') }}">

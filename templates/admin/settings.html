@@ -1,83 +1,167 @@
 {% extends "base.html" %}
 
-{% block title %}Admin Settings - TradePro{% endblock %}
+{% block title %}Crypto Settings - TradePro Admin{% endblock %}
 
 {% block content %}
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="text-success">
-            <i class="fas fa-cog me-2"></i>Admin Settings
+            <i class="fas fa-cog me-2"></i>Cryptocurrency Settings
         </h2>
-        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-success">
-            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
-        </a>
+        <div>
+            <a href="{{ url_for('admin_deposits') }}" class="btn btn-outline-warning me-2">
+                <i class="fas fa-coins me-1"></i>Manage Deposits
+            </a>
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-success">
+                <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+            </a>
+        </div>
     </div>
 
-    <div class="card bg-dark border-success">
-        <div class="card-header bg-success">
-            <h5 class="card-title mb-0 text-dark">
-                <i class="fas fa-wallet me-2"></i>Crypto Deposit Addresses
-            </h5>
-        </div>
-        <div class="card-body">
-            <div class="alert alert-info border-info bg-transparent text-info mb-4">
-                <i class="fas fa-info-circle me-2"></i>
-                Configure the crypto wallet addresses where users will send their deposits. These addresses will be displayed to all users making deposits.
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card bg-dark border-warning">
+                <div class="card-header bg-warning">
+                    <h5 class="card-title mb-0 text-dark">
+                        <i class="fas fa-wallet me-2"></i>Deposit Wallet Addresses
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning border-warning bg-transparent text-warning mb-4">
+                        <h6><i class="fas fa-exclamation-triangle me-2"></i>Important Security Notes:</h6>
+                        <ul class="mb-0">
+                            <li><strong>Use dedicated addresses:</strong> Create separate wallets for each currency</li>
+                            <li><strong>Verify ownership:</strong> Only use addresses you control completely</li>
+                            <li><strong>Test first:</strong> Send small amounts to verify addresses work</li>
+                            <li><strong>Backup keys:</strong> Store private keys securely offline</li>
+                            <li><strong>Monitor regularly:</strong> Check for incoming deposits frequently</li>
+                        </ul>
+                    </div>
+
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- USDT TRC-20 Address -->
+                        <div class="mb-4">
+                            <label class="form-label text-light">
+                                <i class="fas fa-coins me-2 text-success"></i>{{ form.usdt_address.label }}
+                            </label>
+                            {{ form.usdt_address(class="form-control bg-secondary border-success text-light", placeholder="Enter your USDT TRC-20 wallet address") }}
+                            {% for error in form.usdt_address.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                            <div class="form-text text-muted">
+                                <strong>USDT TRC-20</strong> - Tron network USDT address (starts with T)
+                            </div>
+                        </div>
+
+                        <!-- Bitcoin Address -->
+                        <div class="mb-4">
+                            <label class="form-label text-light">
+                                <i class="fab fa-bitcoin me-2 text-warning"></i>{{ form.btc_address.label }}
+                            </label>
+                            {{ form.btc_address(class="form-control bg-secondary border-warning text-light", placeholder="Enter your Bitcoin wallet address") }}
+                            {% for error in form.btc_address.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                            <div class="form-text text-muted">
+                                <strong>Bitcoin</strong> - Legacy, SegWit, or Bech32 address (starts with 1, 3, or bc1)
+                            </div>
+                        </div>
+
+                        <!-- Ethereum Address -->
+                        <div class="mb-4">
+                            <label class="form-label text-light">
+                                <i class="fab fa-ethereum me-2 text-info"></i>{{ form.eth_address.label }}
+                            </label>
+                            {{ form.eth_address(class="form-control bg-secondary border-info text-light", placeholder="Enter your Ethereum wallet address") }}
+                            {% for error in form.eth_address.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                            <div class="form-text text-muted">
+                                <strong>Ethereum</strong> - Standard ETH address (starts with 0x)
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info border-info bg-transparent text-info mb-4">
+                            <h6><i class="fas fa-info-circle me-2"></i>How It Works:</h6>
+                            <ol class="mb-0">
+                                <li>Users select deposit amount and cryptocurrency</li>
+                                <li>System shows them the appropriate address from above</li>
+                                <li>Users send payment and upload proof</li>
+                                <li>You review and approve/reject deposits manually</li>
+                                <li>Approved deposits add balance to user accounts</li>
+                            </ol>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-save me-2"></i>Save Cryptocurrency Addresses
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
 
-            <form method="POST">
-                {{ form.hidden_tag() }}
-                
-                <div class="mb-4">
-                    <label class="form-label text-light">{{ form.usdt_address.label }}</label>
-                    {{ form.usdt_address(class="form-control bg-secondary border-success text-light", placeholder="Enter USDT TRC-20 wallet address") }}
-                    <div class="form-text text-muted">
-                        USDT address on Tron network (TRC-20). Example: TN3W4H6rK2ce4vX9YnFQHwKENnHjoxb3m9
+            <!-- Current Settings Display -->
+            {% if form.usdt_address.data or form.btc_address.data or form.eth_address.data %}
+            <div class="card bg-dark border-secondary mt-4">
+                <div class="card-header bg-secondary">
+                    <h6 class="card-title mb-0 text-dark">
+                        <i class="fas fa-eye me-2"></i>Current Active Addresses
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if form.usdt_address.data %}
+                    <div class="mb-3">
+                        <strong class="text-success">USDT TRC-20:</strong>
+                        <code class="text-light ms-2">{{ form.usdt_address.data }}</code>
+                        <button class="btn btn-outline-success btn-sm ms-2" onclick="copyToClipboard('{{ form.usdt_address.data }}')">
+                            <i class="fas fa-copy"></i>
+                        </button>
                     </div>
-                    {% for error in form.usdt_address.errors %}
-                    <div class="text-danger small">{{ error }}</div>
-                    {% endfor %}
-                </div>
-
-                <div class="mb-4">
-                    <label class="form-label text-light">{{ form.btc_address.label }}</label>
-                    {{ form.btc_address(class="form-control bg-secondary border-success text-light", placeholder="Enter Bitcoin wallet address") }}
-                    <div class="form-text text-muted">
-                        Bitcoin address for receiving BTC deposits. Example: 1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa
+                    {% endif %}
+                    
+                    {% if form.btc_address.data %}
+                    <div class="mb-3">
+                        <strong class="text-warning">Bitcoin:</strong>
+                        <code class="text-light ms-2">{{ form.btc_address.data }}</code>
+                        <button class="btn btn-outline-warning btn-sm ms-2" onclick="copyToClipboard('{{ form.btc_address.data }}')">
+                            <i class="fas fa-copy"></i>
+                        </button>
                     </div>
-                    {% for error in form.btc_address.errors %}
-                    <div class="text-danger small">{{ error }}</div>
-                    {% endfor %}
-                </div>
-
-                <div class="mb-4">
-                    <label class="form-label text-light">{{ form.eth_address.label }}</label>
-                    {{ form.eth_address(class="form-control bg-secondary border-success text-light", placeholder="Enter Ethereum wallet address") }}
-                    <div class="form-text text-muted">
-                        Ethereum address for receiving ETH deposits. Example: 0x742d35Cc6634C0532925a3b8D4DF85F1e3c3f4b5
+                    {% endif %}
+                    
+                    {% if form.eth_address.data %}
+                    <div class="mb-3">
+                        <strong class="text-info">Ethereum:</strong>
+                        <code class="text-light ms-2">{{ form.eth_address.data }}</code>
+                        <button class="btn btn-outline-info btn-sm ms-2" onclick="copyToClipboard('{{ form.eth_address.data }}')">
+                            <i class="fas fa-copy"></i>
+                        </button>
                     </div>
-                    {% for error in form.eth_address.errors %}
-                    <div class="text-danger small">{{ error }}</div>
-                    {% endfor %}
+                    {% endif %}
                 </div>
-
-                <div class="alert alert-warning border-warning bg-transparent text-warning mb-4">
-                    <h6><i class="fas fa-exclamation-triangle me-2"></i>Security Warning:</h6>
-                    <ul class="mb-0">
-                        <li>Use only wallet addresses you control completely</li>
-                        <li>Double-check each address before saving</li>
-                        <li>Test with small amounts first</li>
-                        <li>Keep private keys secure and backed up</li>
-                    </ul>
-                </div>
-
-                <div class="d-grid">
-                    <button type="submit" class="btn btn-success btn-lg">
-                        <i class="fas fa-save me-2"></i>Save Settings
-                    </button>
-                </div>
-            </form>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
+
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        // Show success feedback
+        const button = event.target.closest('button');
+        const originalHtml = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check"></i>';
+        button.classList.add('btn-success');
+        
+        setTimeout(() => {
+            button.innerHTML = originalHtml;
+            button.classList.remove('btn-success');
+        }, 2000);
+    });
+}
+</script>
 {% endblock %}
