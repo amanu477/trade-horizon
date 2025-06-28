@@ -568,6 +568,12 @@ class TradingViewChart {
             expiry_seconds: durationSeconds
         });
         
+        // Disable button to prevent double submission
+        const buyButton = document.getElementById('buy-button');
+        const sellButton = document.getElementById('sell-button');
+        if (buyButton) buyButton.disabled = true;
+        if (sellButton) sellButton.disabled = true;
+        
         // Get CSRF token
         const csrfToken = document.querySelector('meta[name="csrf-token"]');
         
@@ -582,20 +588,41 @@ class TradingViewChart {
             formData.append('csrf_token', csrfToken.getAttribute('content'));
         }
         
-        // Send AJAX request
+        // Send AJAX request with better error handling
         fetch('/place_trade', {
             method: 'POST',
             body: formData,
-            credentials: 'same-origin'
+            credentials: 'same-origin',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.text().then(text => {
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    console.error('Invalid JSON response:', text);
+                    throw new Error('Invalid server response');
+                }
+            });
+        })
         .then(data => {
+            // Re-enable buttons
+            if (buyButton) buyButton.disabled = false;
+            if (sellButton) sellButton.disabled = false;
+            
             if (data.success) {
                 // Update balance display
                 this.updateBalanceDisplay(data.new_balance);
                 
-                // Refresh active trades list to show new trade
-                this.loadActiveTrades();
+                // Refresh active trades list with delay to ensure backend processing
+                setTimeout(() => {
+                    this.loadActiveTrades();
+                }, 1000);
                 
                 // Show success message
                 this.showTradeMessage('Trade placed successfully!', 'success');
@@ -604,8 +631,12 @@ class TradingViewChart {
             }
         })
         .catch(error => {
+            // Re-enable buttons on error
+            if (buyButton) buyButton.disabled = false;
+            if (sellButton) sellButton.disabled = false;
+            
             console.error('Error placing trade:', error);
-            this.showTradeMessage('Network error. Please try again.', 'error');
+            this.showTradeMessage(`Trade placement failed: ${error.message}`, 'error');
         });
     }
     
@@ -781,18 +812,29 @@ class TradingViewChart {
         trades.forEach(trade => {
             if (trade.remaining_seconds > 0) {
                 // Store the initial remaining seconds for countdown
-                let remainingSeconds = trade.remaining_seconds;
+                let remainingSeconds = Math.max(0, Math.floor(trade.remaining_seconds));
+                
+                // Update immediately
+                this.updateTradeTimerWithSeconds(trade.id, remainingSeconds);
                 
                 const timer = setInterval(() => {
-                    remainingSeconds--;
+                    remainingSeconds = Math.max(0, remainingSeconds - 1);
                     this.updateTradeTimerWithSeconds(trade.id, remainingSeconds);
                     
                     if (remainingSeconds <= 0) {
                         clearInterval(timer);
-                        this.processExpiredTrade(trade.id);
+                        // Add delay before processing to ensure UI update
+                        setTimeout(() => {
+                            this.processExpiredTrade(trade.id);
+                        }, 100);
                     }
                 }, 1000);
                 this.tradeTimers.push(timer);
+            } else {
+                // Trade is already expired, process immediately
+                setTimeout(() => {
+                    this.processExpiredTrade(trade.id);
+                }, 100);
             }
         });
     }
@@ -874,6 +916,18 @@ class TradingViewChart {
     
     async processExpiredTrade(tradeId) {
         try {
+            // Immediately remove from active trades display
+            const tradeElement = document.getElementById(`trade-${tradeId}`);
+            if (tradeElement) {
+                tradeElement.style.background = '#34495e';
+                tradeElement.style.border = '2px solid #f39c12';
+                
+                const processingDiv = document.createElement('div');
+                processingDiv.style.cssText = 'text-align: center; color: #f39c12; font-weight: bold; margin-top: 8px;';
+                processingDiv.textContent = 'Processing...';
+                tradeElement.appendChild(processingDiv);
+            }
+            
             // Call backend to process the expired trade
             const response = await fetch(`/api/process_expired_trade/${tradeId}`, {
                 method: 'POST',
@@ -887,47 +941,49 @@ class TradingViewChart {
                 const result = await response.json();
                 
                 if (result.success) {
-                    // Show processing animation
-                    const tradeElement = document.getElementById(`trade-${tradeId}`);
-                    if (tradeElement) {
-                        tradeElement.style.border = '2px solid #f39c12';
-                        tradeElement.style.background = '#34495e';
-                        
-                        const processingDiv = document.createElement('div');
-                        processingDiv.style.cssText = 'text-align: center; color: #f39c12; font-weight: bold; margin-top: 8px;';
-                        processingDiv.textContent = `Trade ${result.trade_result.toUpperCase()}! Processing...`;
-                        tradeElement.appendChild(processingDiv);
-                        
-                        // Animate removal after showing result
+                    // Remove trade element immediately
+                    if (tradeElement && tradeElement.parentElement) {
+                        tradeElement.style.transition = 'opacity 0.3s';
+                        tradeElement.style.opacity = '0';
                         setTimeout(() => {
-                            if (tradeElement && tradeElement.parentElement) {
-                                tradeElement.style.transition = 'opacity 0.5s';
-                                tradeElement.style.opacity = '0';
-                                setTimeout(() => {
-                                    if (tradeElement && tradeElement.parentElement) {
-                                        tradeElement.remove();
-                                    }
-                                    this.loadWalletBalance(); // Refresh balance
-                                    
-                                    // Show detailed notification with profit/loss
-                                    const profitLoss = result.profit_loss || 0;
-                                    const sign = profitLoss >= 0 ? '+' : '';
-                                    const notificationMessage = `Trade ${result.trade_result.toUpperCase()}! ${sign}$${profitLoss.toFixed(2)}`;
-                                    this.showTradeMessage(notificationMessage, 
-                                        result.trade_result === 'profit' || result.trade_result === 'won' ? 'success' : 'info');
-                                }, 500);
-                            } else {
-                                // Element already removed, just refresh balance
-                                this.loadWalletBalance();
+                            if (tradeElement.parentElement) {
+                                tradeElement.remove();
                             }
-                        }, 2000);
+                        }, 300);
                     }
+                    
+                    // Update balance immediately
+                    this.updateBalanceDisplay(result.new_balance);
+                    
+                    // Show result notification
+                    const profitLoss = result.profit_loss || 0;
+                    const sign = profitLoss >= 0 ? '+' : '';
+                    const resultText = result.trade_result === 'profit' || result.trade_result === 'won' ? 'PROFIT' : 'LOSS';
+                    const notificationMessage = `Trade ${resultText}! ${sign}$${profitLoss.toFixed(2)}`;
+                    this.showTradeMessage(notificationMessage, 
+                        result.trade_result === 'profit' || result.trade_result === 'won' ? 'success' : 'error');
+                        
+                    // Refresh trades list after short delay
+                    setTimeout(() => {
+                        this.loadActiveTrades();
+                    }, 1000);
                 } else {
                     console.error('Failed to process expired trade:', result.error);
+                    // Re-enable trade element if processing failed
+                    if (tradeElement) {
+                        tradeElement.style.background = '#2a2e39';
+                        tradeElement.style.border = '3px solid #ef5350';
+                    }
                 }
             }
         } catch (error) {
             console.error('Error processing expired trade:', error);
+            // Re-enable trade element if processing failed
+            const tradeElement = document.getElementById(`trade-${tradeId}`);
+            if (tradeElement) {
+                tradeElement.style.background = '#2a2e39';
+                tradeElement.style.border = '3px solid #ef5350';
+            }
         }
     }
     
