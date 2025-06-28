@@ -530,6 +530,13 @@ def withdraw():
     
     return redirect(url_for('wallet'))
 
+@app.route('/withdrawals')
+@login_required
+def user_withdrawals():
+    """User's withdrawal requests page"""
+    withdrawals = WithdrawalRequest.query.filter_by(user_id=current_user.id).order_by(WithdrawalRequest.created_at.desc()).all()
+    return render_template('user_withdrawals.html', withdrawals=withdrawals)
+
 @app.route('/staking')
 @login_required
 def staking():

@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block title %}My Withdrawal Requests{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="text-white">
+                    <i class="fas fa-money-bill-wave me-2"></i>My Withdrawal Requests
+                </h2>
+                <a href="{{ url_for('wallet') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-wallet me-2"></i>Back to Wallet
+                </a>
+            </div>
+
+            <!-- Withdrawal Requests -->
+            <div class="card bg-dark border-secondary">
+                <div class="card-body">
+                    {% if withdrawals %}
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Request ID</th>
+                                    <th>Amount</th>
+                                    <th>Currency</th>
+                                    <th>Wallet Address</th>
+                                    <th>Status</th>
+                                    <th>Requested</th>
+                                    <th>Processed</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for withdrawal in withdrawals %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-secondary">#{{ withdrawal.id }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="h6 text-warning">${{ "%.2f"|format(withdrawal.amount) }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ withdrawal.currency }}</span>
+                                    </td>
+                                    <td>
+                                        <code class="text-muted">{{ withdrawal.wallet_address[:15] }}...{{ withdrawal.wallet_address[-10:] }}</code>
+                                    </td>
+                                    <td>
+                                        {% if withdrawal.status == 'pending' %}
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="fas fa-clock me-1"></i>Pending Review
+                                        </span>
+                                        {% elif withdrawal.status == 'approved' %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check me-1"></i>Approved
+                                        </span>
+                                        {% elif withdrawal.status == 'rejected' %}
+                                        <span class="badge bg-danger">
+                                            <i class="fas fa-times me-1"></i>Rejected
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ withdrawal.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                    </td>
+                                    <td>
+                                        {% if withdrawal.processed_at %}
+                                        <small class="text-muted">{{ withdrawal.processed_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                        {% else %}
+                                        <small class="text-muted">Not yet processed</small>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% if withdrawal.admin_notes %}
+                                <tr class="table-secondary">
+                                    <td colspan="7">
+                                        <small>
+                                            <i class="fas fa-comment me-2"></i>
+                                            <strong>Admin Notes:</strong> {{ withdrawal.admin_notes }}
+                                        </small>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Status Summary -->
+                    <div class="row mt-4">
+                        <div class="col-md-4">
+                            <div class="card bg-secondary border-warning">
+                                <div class="card-body text-center">
+                                    <h5 class="text-warning">{{ withdrawals|selectattr("status", "equalto", "pending")|list|length }}</h5>
+                                    <small class="text-muted">Pending Requests</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-secondary border-success">
+                                <div class="card-body text-center">
+                                    <h5 class="text-success">{{ withdrawals|selectattr("status", "equalto", "approved")|list|length }}</h5>
+                                    <small class="text-muted">Approved</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-secondary border-danger">
+                                <div class="card-body text-center">
+                                    <h5 class="text-danger">{{ withdrawals|selectattr("status", "equalto", "rejected")|list|length }}</h5>
+                                    <small class="text-muted">Rejected</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-money-bill-wave fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">No Withdrawal Requests</h4>
+                        <p class="text-muted">You haven't submitted any withdrawal requests yet.</p>
+                        <a href="{{ url_for('wallet') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Submit Withdrawal Request
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Information Box -->
+            <div class="alert alert-info mt-4">
+                <h6><i class="fas fa-info-circle me-2"></i>Withdrawal Information</h6>
+                <ul class="mb-0 small">
+                    <li>Withdrawal requests are reviewed by administrators within 24 hours</li>
+                    <li>Only cryptocurrency withdrawals are supported (USDT TRC-20, Bitcoin, Ethereum)</li>
+                    <li>Ensure your wallet address is correct - incorrect addresses may result in loss of funds</li>
+                    <li>You will receive notifications when your request is processed</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

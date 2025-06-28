@@ -86,10 +86,21 @@
                             </a></li>
                         </ul>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('wallet') }}">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-wallet me-1"></i>Wallet
                         </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('wallet') }}">
+                                <i class="fas fa-wallet me-1"></i>My Wallet
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('user_withdrawals') }}">
+                                <i class="fas fa-money-bill-wave me-1"></i>Withdrawal Requests
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('deposit_status') }}">
+                                <i class="fas fa-plus me-1"></i>Deposit Status
+                            </a></li>
+                        </ul>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('staking') }}">
