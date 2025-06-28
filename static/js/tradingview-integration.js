@@ -234,6 +234,9 @@ class TradingViewChart {
                 
                 // Start price updates after chart is ready
                 this.startPriceUpdates();
+                
+                // Start monitoring for symbol changes
+                this.monitorTradingViewSymbol();
             });
         } else {
             // Fallback initialization
@@ -488,11 +491,66 @@ class TradingViewChart {
         }, 2000);
     }
     
+    // Monitor TradingView chart for symbol changes
+    monitorTradingViewSymbol() {
+        setInterval(() => {
+            try {
+                if (this.widget && this.widget.chart) {
+                    this.widget.chart().symbol((symbol) => {
+                        // Convert TradingView symbol to our format
+                        const ourSymbol = this.convertTradingViewSymbol(symbol);
+                        if (ourSymbol && ourSymbol !== this.currentAsset) {
+                            this.currentAsset = ourSymbol;
+                            console.log(`Symbol synchronized: ${ourSymbol}`);
+                        }
+                    });
+                }
+            } catch (error) {
+                // Chart might not be ready, continue silently
+            }
+        }, 3000);
+    }
+    
+    // Convert TradingView symbol format to our internal format
+    convertTradingViewSymbol(tvSymbol) {
+        // Reverse mapping from TradingView symbols to our symbols
+        const reverseMap = {};
+        for (const [ourSymbol, tvSymbolMapped] of Object.entries(this.symbolMap)) {
+            reverseMap[tvSymbolMapped] = ourSymbol;
+        }
+        
+        // Try direct match first
+        if (reverseMap[tvSymbol]) {
+            return reverseMap[tvSymbol];
+        }
+        
+        // Extract symbol from TradingView format (e.g., "FX:EURUSD" -> "EURUSD")
+        const symbolPart = tvSymbol.split(':').pop();
+        
+        // Common symbol mappings
+        const commonMappings = {
+            'EURUSD': 'EURUSD',
+            'GBPUSD': 'GBPUSD', 
+            'USDJPY': 'USDJPY',
+            'USDCHF': 'USDCHF',
+            'AUDUSD': 'AUDUSD',
+            'NZDUSD': 'NZDUSD',
+            'USDCAD': 'USDCAD',
+            'BTCUSDT': 'BTCUSD',
+            'ETHUSDT': 'ETHUSD',
+            'GOLD': 'XAUUSD',
+            'SILVER': 'XAGUSD',
+            'USOIL': 'CRUDE'
+        };
+        
+        return commonMappings[symbolPart] || symbolPart;
+    }
+    
     // Function removed - Buy/Sell buttons execute trades directly
     
     updatePotentialProfit() {
         const amount = parseFloat(document.getElementById('amount-input').value) || 0;
-        const payout = 0.85; // 85% payout
+        const payout = 0.95; // 95% payout - fixed as requested
         const profit = (amount * payout).toFixed(2);
         document.getElementById('potential-profit').textContent = `$${profit}`;
     }
