@@ -717,9 +717,6 @@ class TradingViewChart {
     // Price display removed from header - function no longer needed
     
     setupSymbolSynchronization() {
-        // Add a manual sync button for user convenience
-        this.addManualSyncButton();
-        
         // Set up automated monitoring with multiple detection methods
         const iframe = document.querySelector('#tradingview-widget iframe');
         if (iframe) {
@@ -749,58 +746,7 @@ class TradingViewChart {
         }
     }
     
-    addManualSyncButton() {
-        // Add a sync button to the trading panel for manual synchronization
-        const tradingPanel = document.querySelector('#buy-btn').parentElement;
-        if (tradingPanel && !document.getElementById('sync-symbol-btn')) {
-            const syncButton = document.createElement('button');
-            syncButton.id = 'sync-symbol-btn';
-            syncButton.innerHTML = '🔄 Sync Symbol';
-            syncButton.style.cssText = `
-                background: #2196f3; color: white; border: none; 
-                padding: 8px 12px; border-radius: 4px; font-size: 12px; 
-                cursor: pointer; margin-top: 8px; width: 100%;
-            `;
-            syncButton.onclick = () => this.manualSymbolSync();
-            tradingPanel.appendChild(syncButton);
-        }
-    }
-    
-    manualSymbolSync() {
-        // Manual synchronization triggered by user
-        try {
-            // Try to detect current TradingView symbol from various sources
-            const iframe = document.querySelector('#tradingview-widget iframe');
-            if (iframe && iframe.contentWindow) {
-                // Try to communicate with iframe
-                this.requestSymbolFromTradingView();
-            }
-            
-            // Show user feedback
-            this.showNotification('Attempting to sync symbol...', 'info');
-            
-            // Force check all detection methods
-            this.extractSymbolFromUrl(iframe ? iframe.src : '');
-            this.monitorTradingViewHeader();
-            this.monitorDocumentTitle();
-            
-        } catch (error) {
-            console.log('Manual sync error:', error);
-            this.showNotification('Symbol sync failed - try changing symbol in TradingView', 'error');
-        }
-    }
-    
-    requestSymbolFromTradingView() {
-        // Attempt to communicate with TradingView iframe
-        const iframe = document.querySelector('#tradingview-widget iframe');
-        if (iframe && iframe.contentWindow) {
-            try {
-                iframe.contentWindow.postMessage({action: 'getSymbol'}, '*');
-            } catch (error) {
-                console.log('PostMessage communication failed:', error);
-            }
-        }
-    }
+    // Symbol sync functions removed to prevent null reference errors
     
     monitorDocumentTitle() {
         // Monitor document title changes for symbol information
