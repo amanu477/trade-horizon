@@ -34,6 +34,9 @@ def create_default_users():
         )
         db.session.add(admin)
         
+        # Commit admin user first to get the ID
+        db.session.commit()
+        
         # Create admin wallet
         admin_wallet = Wallet(
             user_id=admin.id,
@@ -56,6 +59,9 @@ def create_default_users():
             is_active=True
         )
         db.session.add(test_user)
+        
+        # Commit test user first to get the ID
+        db.session.commit()
         
         # Create test user wallet
         test_wallet = Wallet(
