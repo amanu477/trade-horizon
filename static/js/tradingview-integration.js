@@ -255,7 +255,7 @@ class TradingViewChart {
             width: '100%',
             height: '100%',
             symbol: symbol,
-            interval: '1m',
+            interval: '1',
             timezone: 'Etc/UTC',
             theme: 'dark',
             style: '1',
@@ -281,8 +281,22 @@ class TradingViewChart {
                 'scalesProperties.lineColor': '#2a2e39'
             },
             studies_overrides: {},
-            disabled_features: [],
-            enabled_features: [],
+            disabled_features: [
+                'use_localstorage_for_settings'
+            ],
+            enabled_features: [
+                'study_templates',
+                'header_symbol_search',
+                'header_resolutions', 
+                'header_chart_type',
+                'header_indicators',
+                'header_settings',
+                'header_compare',
+                'header_undo_redo',
+                'left_toolbar',
+                'control_bar',
+                'timeframes_toolbar'
+            ],
             fullscreen: false,
             autosize: true
         });
@@ -297,7 +311,15 @@ class TradingViewChart {
         } else {
             // Fallback for older TradingView versions
             setTimeout(() => {
-                console.log('TradingView chart initialized (fallback)');
+                console.log('TradingView chart initialized successfully');
+            
+            // Wait for widget to be ready
+            this.widget.onChartReady(() => {
+                console.log('TradingView chart is ready');
+                
+                // Start real-time updates
+                this.startRealTimeUpdates();
+            });
                 this.startPriceUpdates();
             }, 3000);
         }
@@ -477,13 +499,25 @@ class TradingViewChart {
                     })
                 });
                 
-                const result = await response.json();
-                
-                if (result.success) {
-                    document.body.removeChild(modal);
-                    this.showNotification('Trade placed successfully!', 'success');
+                if (response.ok) {
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        document.body.removeChild(modal);
+                        this.showNotification('Trade placed successfully!', 'success');
+                        
+                        // Update balance display if available
+                        if (result.remaining_balance) {
+                            const balanceDisplay = document.getElementById('balance-display');
+                            if (balanceDisplay) {
+                                balanceDisplay.textContent = `$${result.remaining_balance.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                            }
+                        }
+                    } else {
+                        this.showNotification(result.message || 'Failed to place trade', 'error');
+                    }
                 } else {
-                    this.showNotification(result.error || 'Failed to place trade', 'error');
+                    this.showNotification('Failed to place trade', 'error');
                 }
             } catch (error) {
                 console.error('Error placing trade:', error);
