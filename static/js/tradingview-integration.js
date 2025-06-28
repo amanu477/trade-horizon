@@ -401,18 +401,19 @@ class TradingViewChart {
             const expiry = modal.querySelector('#modal-expiry').value;
             
             try {
+                // Use FormData for compatibility with Flask-WTF
+                const formData = new FormData();
+                formData.append('asset', this.currentAsset);
+                formData.append('trade_type', selectedDirection);
+                formData.append('amount', parseFloat(amount));
+                formData.append('expiry_seconds', parseInt(expiry) * 60); // Convert minutes to seconds
+                formData.append('is_demo', this.mode === 'demo' ? 'true' : 'false');
+                formData.append('csrf_token', this.getCSRFToken());
+                
                 const response = await fetch('/place_trade', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': this.getCSRFToken()
-                    },
-                    body: JSON.stringify({
-                        asset: this.currentAsset,
-                        trade_type: selectedDirection,
-                        amount: parseFloat(amount),
-                        expiry_minutes: parseInt(expiry)
-                    })
+                    body: formData,
+                    credentials: 'same-origin'
                 });
                 
                 if (response.ok) {
@@ -630,8 +631,8 @@ class TradingViewChart {
         });
         
         // Disable button to prevent double submission
-        const buyButton = document.getElementById('buy-button');
-        const sellButton = document.getElementById('sell-button');
+        const buyButton = document.getElementById('buy-btn');
+        const sellButton = document.getElementById('sell-btn');
         if (buyButton) buyButton.disabled = true;
         if (sellButton) sellButton.disabled = true;
         
@@ -678,7 +679,15 @@ class TradingViewChart {
             
             if (data.success) {
                 // Update balance display
-                this.updateBalanceDisplay(data.new_balance);
+                if (data.new_balance !== undefined) {
+                    this.updateBalanceDisplay(data.new_balance);
+                }
+                
+                // Also update the balance display element directly
+                const balanceDisplay = document.getElementById('balance-display');
+                if (balanceDisplay && data.remaining_balance !== undefined) {
+                    balanceDisplay.textContent = `$${parseFloat(data.remaining_balance).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                }
                 
                 // Refresh active trades list with delay to ensure backend processing
                 setTimeout(() => {
@@ -686,9 +695,12 @@ class TradingViewChart {
                 }, 1000);
                 
                 // Show success message
-                this.showTradeMessage('Trade placed successfully!', 'success');
+                this.showNotification('Trade placed successfully!', 'success');
             } else {
-                this.showTradeMessage(data.error || 'Failed to place trade', 'error');
+                // Check if it's a balance issue to show as warning instead of error
+                const message = data.message || data.error || 'Failed to place trade';
+                const messageType = message.includes('Not enough balance') ? 'warning' : 'error';
+                this.showNotification(message, messageType);
             }
         })
         .catch(error => {
@@ -697,26 +709,27 @@ class TradingViewChart {
             if (sellButton) sellButton.disabled = false;
             
             console.error('Error placing trade:', error);
-            this.showTradeMessage(`Trade placement failed: ${error.message}`, 'error');
+            this.showNotification(`Trade placement failed: ${error.message}`, 'error');
         });
     }
     
     updateBalanceDisplay(newBalance) {
         // Update balance in the wallet display if it exists
-        const balanceElements = document.querySelectorAll('.balance-display, #wallet-balance');
+        const balanceElements = document.querySelectorAll('.balance-display, #wallet-balance, #balance-display');
         balanceElements.forEach(element => {
-            const oldBalance = parseFloat(element.textContent.replace('$', '')) || 0;
-            const newBalanceValue = parseFloat(newBalance);
-            
-            element.textContent = `$${newBalanceValue.toFixed(2)}`;
-            
-            // Add visual effect when balance changes
-            if (oldBalance !== newBalanceValue) {
-                element.style.transition = 'color 0.3s ease, transform 0.3s ease';
-                element.style.color = newBalanceValue > oldBalance ? '#26a69a' : '#ef5350';
-                element.style.transform = 'scale(1.1)';
+            if (element && element.textContent) {
+                const oldBalance = parseFloat(element.textContent.replace('$', '').replace(',', '')) || 0;
+                const newBalanceValue = parseFloat(newBalance);
                 
-                setTimeout(() => {
+                element.textContent = `$${newBalanceValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                
+                // Add visual effect when balance changes
+                if (oldBalance !== newBalanceValue) {
+                    element.style.transition = 'color 0.3s ease, transform 0.3s ease';
+                    element.style.color = newBalanceValue > oldBalance ? '#26a69a' : '#ef5350';
+                    element.style.transform = 'scale(1.1)';
+                    
+                    setTimeout(() => {
                     element.style.color = '';
                     element.style.transform = 'scale(1)';
                 }, 600);
