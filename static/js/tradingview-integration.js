@@ -1,0 +1,388 @@
+/**
+ * TradingView Integration for Professional Trading Platform
+ * Replaces custom chart with full TradingView widget functionality
+ */
+
+class TradingViewChart {
+    constructor(containerId, options = {}) {
+        this.containerId = containerId;
+        this.currentAsset = options.asset || 'EURUSD';
+        this.mode = options.mode || 'demo';
+        this.widget = null;
+        this.trades = [];
+        
+        // Asset symbol mapping for TradingView
+        this.symbolMap = {
+            'EURUSD': 'FX:EURUSD',
+            'GBPUSD': 'FX:GBPUSD', 
+            'USDJPY': 'FX:USDJPY',
+            'BTCUSD': 'CRYPTOCAP:BTC',
+            'ETHUSD': 'CRYPTOCAP:ETH',
+            'XAUUSD': 'TVC:GOLD',
+            'CRUDE': 'TVC:USOIL'
+        };
+        
+        this.init();
+    }
+    
+    init() {
+        this.createTradingInterface();
+        this.loadTradingView();
+    }
+    
+    createTradingInterface() {
+        const container = document.getElementById(this.containerId);
+        
+        container.innerHTML = `
+            <div style="height: 100vh; background: #131722; display: flex; flex-direction: column;">
+                <!-- Top Trading Bar -->
+                <div style="background: #1e222d; padding: 8px 16px; border-bottom: 1px solid #2a2e39; display: flex; justify-content: space-between; align-items: center; z-index: 1000;">
+                    <div style="display: flex; align-items: center; gap: 16px;">
+                        <!-- Asset Selector -->
+                        <select id="asset-selector" style="background: #2a2e39; color: #d1d4dc; border: 1px solid #434651; padding: 6px 12px; border-radius: 4px; font-size: 14px;">
+                            <option value="EURUSD">EUR/USD</option>
+                            <option value="GBPUSD">GBP/USD</option>
+                            <option value="USDJPY">USD/JPY</option>
+                            <option value="BTCUSD">BTC/USD</option>
+                            <option value="ETHUSD">ETH/USD</option>
+                            <option value="XAUUSD">Gold/USD</option>
+                            <option value="CRUDE">Crude Oil</option>
+                        </select>
+                        
+                        <!-- Current Price Display -->
+                        <div id="price-display" style="color: #2962ff; font-weight: bold; font-size: 16px;">
+                            Loading...
+                        </div>
+                        
+                        <!-- Payout Info -->
+                        <div id="payout-info" style="color: #4caf50; font-size: 14px;">
+                            Payout: 85%
+                        </div>
+                    </div>
+                    
+                    <!-- Account Info -->
+                    <div style="display: flex; align-items: center; gap: 16px;">
+                        <div style="color: #d1d4dc; font-size: 14px;">
+                            Balance: <span id="balance-display" style="color: #4caf50; font-weight: bold;">$${this.mode === 'demo' ? '10,000.00' : '1,000.00'}</span>
+                        </div>
+                        <div style="background: ${this.mode === 'demo' ? '#ff9800' : '#4caf50'}; color: white; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; text-transform: uppercase;">
+                            ${this.mode} Mode
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Main Content Area -->
+                <div style="flex: 1; display: flex; height: calc(100vh - 60px);">
+                    <!-- TradingView Chart -->
+                    <div id="tradingview-widget" style="flex: 1; height: 100%; background: #131722;"></div>
+                    
+                    <!-- Trading Panel -->
+                    <div style="width: 320px; background: #1e222d; border-left: 1px solid #2a2e39; display: flex; flex-direction: column;">
+                        <!-- Trade Controls -->
+                        <div style="padding: 20px; border-bottom: 1px solid #2a2e39;">
+                            <h3 style="color: #d1d4dc; margin: 0 0 16px 0; font-size: 16px;">Place Trade</h3>
+                            
+                            <!-- Trade Direction -->
+                            <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+                                <button id="call-btn" class="trade-direction-btn" style="flex: 1; background: #26a69a; color: white; border: none; padding: 12px; border-radius: 4px; font-weight: bold; cursor: pointer; transition: all 0.2s;">
+                                    CALL ↗
+                                </button>
+                                <button id="put-btn" class="trade-direction-btn" style="flex: 1; background: #ef5350; color: white; border: none; padding: 12px; border-radius: 4px; font-weight: bold; cursor: pointer; transition: all 0.2s;">
+                                    PUT ↘
+                                </button>
+                            </div>
+                            
+                            <!-- Investment Amount -->
+                            <div style="margin-bottom: 16px;">
+                                <label style="color: #868993; font-size: 12px; display: block; margin-bottom: 4px;">Investment Amount</label>
+                                <input id="amount-input" type="number" value="10" min="1" max="10000" 
+                                       style="width: 100%; background: #2a2e39; color: #d1d4dc; border: 1px solid #434651; padding: 8px 12px; border-radius: 4px; font-size: 14px;">
+                                
+                                <!-- Quick Amount Buttons -->
+                                <div style="display: flex; gap: 4px; margin-top: 8px;">
+                                    <button onclick="setAmount(10)" style="flex: 1; background: #2a2e39; color: #d1d4dc; border: 1px solid #434651; padding: 4px; border-radius: 3px; font-size: 12px; cursor: pointer;">$10</button>
+                                    <button onclick="setAmount(25)" style="flex: 1; background: #2a2e39; color: #d1d4dc; border: 1px solid #434651; padding: 4px; border-radius: 3px; font-size: 12px; cursor: pointer;">$25</button>
+                                    <button onclick="setAmount(50)" style="flex: 1; background: #2a2e39; color: #d1d4dc; border: 1px solid #434651; padding: 4px; border-radius: 3px; font-size: 12px; cursor: pointer;">$50</button>
+                                    <button onclick="setAmount(100)" style="flex: 1; background: #2a2e39; color: #d1d4dc; border: 1px solid #434651; padding: 4px; border-radius: 3px; font-size: 12px; cursor: pointer;">$100</button>
+                                </div>
+                            </div>
+                            
+                            <!-- Expiry Time -->
+                            <div style="margin-bottom: 16px;">
+                                <label style="color: #868993; font-size: 12px; display: block; margin-bottom: 4px;">Expiry Time (minutes)</label>
+                                <input id="expiry-input" type="number" value="5" min="1" max="1440"
+                                       style="width: 100%; background: #2a2e39; color: #d1d4dc; border: 1px solid #434651; padding: 8px 12px; border-radius: 4px; font-size: 14px;">
+                            </div>
+                            
+                            <!-- Potential Profit -->
+                            <div style="background: #2a2e39; padding: 12px; border-radius: 4px; margin-bottom: 16px;">
+                                <div style="display: flex; justify-content: space-between; color: #d1d4dc; font-size: 14px;">
+                                    <span>Potential Profit:</span>
+                                    <span id="potential-profit" style="color: #4caf50; font-weight: bold;">$8.50</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Trade Button -->
+                            <button id="place-trade-btn" style="width: 100%; background: #2962ff; color: white; border: none; padding: 14px; border-radius: 4px; font-weight: bold; font-size: 16px; cursor: pointer; transition: all 0.2s;">
+                                PLACE TRADE
+                            </button>
+                        </div>
+                        
+                        <!-- Active Trades -->
+                        <div style="flex: 1; padding: 20px; overflow-y: auto;">
+                            <h3 style="color: #d1d4dc; margin: 0 0 16px 0; font-size: 16px;">Active Trades</h3>
+                            <div id="trades-list" style="color: #868993; font-size: 14px;">
+                                No active trades
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        this.setupEventListeners();
+    }
+    
+    loadTradingView() {
+        // Load TradingView widget script
+        if (!window.TradingView) {
+            const script = document.createElement('script');
+            script.src = 'https://s3.tradingview.com/tv.js';
+            script.onload = () => this.createWidget();
+            document.head.appendChild(script);
+        } else {
+            this.createWidget();
+        }
+    }
+    
+    createWidget() {
+        const symbol = this.symbolMap[this.currentAsset] || 'FX:EURUSD';
+        
+        this.widget = new TradingView.widget({
+            container_id: 'tradingview-widget',
+            width: '100%',
+            height: '100%',
+            symbol: symbol,
+            interval: '1',
+            timezone: 'Etc/UTC',
+            theme: 'dark',
+            style: '1',
+            locale: 'en',
+            toolbar_bg: '#131722',
+            enable_publishing: false,
+            hide_top_toolbar: false,
+            hide_legend: false,
+            save_image: false,
+            hide_volume: false,
+            studies: [
+                'MASimple@tv-basicstudies',
+                'RSI@tv-basicstudies'
+            ],
+            overrides: {
+                'paneProperties.background': '#131722',
+                'paneProperties.vertGridProperties.color': '#2a2e39',
+                'paneProperties.horzGridProperties.color': '#2a2e39',
+                'symbolWatermarkProperties.transparency': 90,
+                'scalesProperties.textColor': '#868993',
+                'scalesProperties.lineColor': '#2a2e39'
+            },
+            studies_overrides: {
+                'volume.volume.color.0': '#ef535055',
+                'volume.volume.color.1': '#26a69a55'
+            },
+            disabled_features: [
+                'use_localstorage_for_settings',
+                'volume_force_overlay',
+                'create_volume_indicator_by_default'
+            ],
+            enabled_features: [
+                'study_templates'
+            ]
+        });
+        
+        // Start price updates
+        this.startPriceUpdates();
+    }
+    
+    setupEventListeners() {
+        // Asset selector
+        document.getElementById('asset-selector').addEventListener('change', (e) => {
+            this.currentAsset = e.target.value;
+            this.updateChart();
+        });
+        
+        // Trade direction buttons
+        document.getElementById('call-btn').addEventListener('click', () => {
+            this.selectedDirection = 'call';
+            this.updateDirectionButtons();
+        });
+        
+        document.getElementById('put-btn').addEventListener('click', () => {
+            this.selectedDirection = 'put';
+            this.updateDirectionButtons();
+        });
+        
+        // Amount input
+        document.getElementById('amount-input').addEventListener('input', () => {
+            this.updatePotentialProfit();
+        });
+        
+        // Place trade button
+        document.getElementById('place-trade-btn').addEventListener('click', () => {
+            this.placeTrade();
+        });
+        
+        // Set default selection
+        this.selectedDirection = 'call';
+        this.updateDirectionButtons();
+        this.updatePotentialProfit();
+    }
+    
+    updateChart() {
+        if (this.widget) {
+            const symbol = this.symbolMap[this.currentAsset] || 'FX:EURUSD';
+            this.widget.chart().setSymbol(symbol);
+        }
+    }
+    
+    updateDirectionButtons() {
+        const callBtn = document.getElementById('call-btn');
+        const putBtn = document.getElementById('put-btn');
+        
+        if (this.selectedDirection === 'call') {
+            callBtn.style.background = '#26a69a';
+            callBtn.style.opacity = '1';
+            putBtn.style.background = '#2a2e39';
+            putBtn.style.opacity = '0.6';
+        } else {
+            putBtn.style.background = '#ef5350';
+            putBtn.style.opacity = '1';
+            callBtn.style.background = '#2a2e39';
+            callBtn.style.opacity = '0.6';
+        }
+    }
+    
+    updatePotentialProfit() {
+        const amount = parseFloat(document.getElementById('amount-input').value) || 0;
+        const payout = 0.85; // 85% payout
+        const profit = (amount * payout).toFixed(2);
+        document.getElementById('potential-profit').textContent = `$${profit}`;
+    }
+    
+    startPriceUpdates() {
+        // Update price display with real market data
+        setInterval(async () => {
+            try {
+                const response = await fetch(`/api/market-data-new/${this.currentAsset}`);
+                const data = await response.json();
+                
+                if (data.price) {
+                    const priceDisplay = document.getElementById('price-display');
+                    const changePercent = data.change_percent || 0;
+                    const color = changePercent >= 0 ? '#26a69a' : '#ef5350';
+                    
+                    priceDisplay.textContent = `${data.price.toFixed(5)}`;
+                    priceDisplay.style.color = color;
+                }
+            } catch (error) {
+                console.error('Error updating price:', error);
+            }
+        }, 2000);
+    }
+    
+    async placeTrade() {
+        const amount = parseFloat(document.getElementById('amount-input').value);
+        const expiry = parseInt(document.getElementById('expiry-input').value);
+        
+        if (!amount || amount < 1) {
+            alert('Please enter a valid investment amount');
+            return;
+        }
+        
+        if (!this.selectedDirection) {
+            alert('Please select trade direction (Call or Put)');
+            return;
+        }
+        
+        try {
+            const response = await fetch('/place-trade', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': this.getCSRFToken()
+                },
+                body: new URLSearchParams({
+                    asset: this.currentAsset,
+                    trade_type: this.selectedDirection,
+                    amount: amount,
+                    expiry_minutes: expiry,
+                    csrf_token: this.getCSRFToken()
+                })
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                this.addTradeToList(result);
+                this.updateBalance();
+                alert('Trade placed successfully!');
+            } else {
+                const error = await response.json();
+                alert(`Error: ${error.message || 'Failed to place trade'}`);
+            }
+        } catch (error) {
+            console.error('Error placing trade:', error);
+            alert('Failed to place trade. Please try again.');
+        }
+    }
+    
+    addTradeToList(trade) {
+        const tradesList = document.getElementById('trades-list');
+        
+        if (tradesList.textContent === 'No active trades') {
+            tradesList.innerHTML = '';
+        }
+        
+        const tradeElement = document.createElement('div');
+        tradeElement.style.cssText = 'background: #2a2e39; padding: 12px; border-radius: 4px; margin-bottom: 8px;';
+        tradeElement.innerHTML = `
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                <span style="color: #d1d4dc; font-weight: bold;">${trade.asset}</span>
+                <span style="color: ${trade.trade_type === 'call' ? '#26a69a' : '#ef5350'}; font-weight: bold;">
+                    ${trade.trade_type.toUpperCase()}
+                </span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 12px; color: #868993;">
+                <span>$${trade.amount}</span>
+                <span id="timer-${trade.id}">--:--</span>
+            </div>
+        `;
+        
+        tradesList.appendChild(tradeElement);
+    }
+    
+    updateBalance() {
+        // Update balance display after trade
+        setTimeout(() => {
+            fetch('/api/user-balance')
+                .then(response => response.json())
+                .then(data => {
+                    const balanceDisplay = document.getElementById('balance-display');
+                    balanceDisplay.textContent = `$${data.balance.toFixed(2)}`;
+                })
+                .catch(error => console.error('Error updating balance:', error));
+        }, 500);
+    }
+    
+    getCSRFToken() {
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        return meta ? meta.getAttribute('content') : '';
+    }
+}
+
+// Global functions for quick amount selection
+function setAmount(amount) {
+    document.getElementById('amount-input').value = amount;
+    if (window.tradingChart) {
+        window.tradingChart.updatePotentialProfit();
+    }
+}

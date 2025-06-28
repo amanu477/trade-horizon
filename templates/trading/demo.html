@@ -5,50 +5,25 @@
 {% block main_class %}p-0{% endblock %}
 
 {% block content %}
-<div id="professional-trading-interface" style="height: 100vh; overflow: hidden;">
-    <!-- Professional trading interface will be rendered here -->
+<div id="tradingview-trading-interface" style="height: 100vh; overflow: hidden;">
+    <!-- TradingView professional trading interface will be rendered here -->
 </div>
 
-<!-- Load Fast Trading Interface immediately -->
-<script src="{{ url_for('static', filename='js/fast-trading-interface.js') }}"></script>
+<!-- Load TradingView Integration -->
+<script src="{{ url_for('static', filename='js/tradingview-integration.js') }}"></script>
 
 <script>
-// Initialize immediately without waiting
+// Initialize TradingView trading interface
 (function() {
-    console.log('Loading demo trading interface...');
+    console.log('Loading TradingView demo trading interface...');
     
-    // Use fast interface for immediate loading
-    if (typeof FastTradingInterface !== 'undefined') {
-        window.tradingChart = new FastTradingInterface('professional-trading-interface', {
-            asset: 'EURUSD',
-            mode: 'demo'
-        });
-        console.log('Demo trading interface loaded successfully');
-    } else {
-        console.log('FastTradingInterface not available, trying ProfessionalTradingChart...');
-        
-        // Fallback to advanced interface if available
-        const tryAdvanced = () => {
-            if (typeof ProfessionalTradingChart !== 'undefined') {
-                window.tradingChart = new ProfessionalTradingChart('professional-trading-interface', {
-                    asset: 'EURUSD',
-                    timeframe: '1m',
-                    mode: 'demo'
-                });
-                console.log('Advanced trading interface loaded');
-            } else {
-                console.log('Advanced interface not available, showing fast interface...');
-                // Show basic working interface
-                document.getElementById('professional-trading-interface').innerHTML = FastTradingInterface.createBasicInterface('demo');
-            }
-        };
-        
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', tryAdvanced);
-        } else {
-            tryAdvanced();
-        }
-    }
+    // Create TradingView professional interface
+    window.tradingChart = new TradingViewChart('tradingview-trading-interface', {
+        asset: 'EURUSD',
+        mode: 'demo'
+    });
+    
+    console.log('TradingView demo trading interface loaded successfully');
 })();
 </script>
 {% endblock %}
