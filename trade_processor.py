@@ -25,23 +25,31 @@ def process_expired_trades():
                 user = User.query.get(trade.user_id)
                 trade_control = user.trade_control if user else 'normal'
                 
+                print(f"Processing trade {trade.id} for user {user.username if user else 'Unknown'}")
+                print(f"User trade control setting: {trade_control}")
+                
                 # Get current market price
                 current_price = market_data.get_real_price(trade.asset)
                 
                 # Apply admin trade control overrides
                 if trade_control == 'always_lose':
                     # Force trade to lose regardless of market price
+                    print(f"FORCING TRADE {trade.id} TO LOSE (admin control)")
                     trade.status = 'lose'
                     trade.exit_price = current_price
                     trade.profit_loss = -trade.amount
                 elif trade_control == 'always_profit':
                     # Force trade to win regardless of market price
+                    print(f"FORCING TRADE {trade.id} TO WIN (admin control)")
                     trade.status = 'profit'
                     trade.exit_price = current_price
                     trade.profit_loss = trade.amount * (trade.payout_percentage / 100)
                 else:
                     # Normal trading - calculate result based on market price
+                    print(f"Processing trade {trade.id} normally")
                     trade.calculate_result(current_price)
+                
+                print(f"Trade {trade.id} final status: {trade.status}, P/L: {trade.profit_loss}")
                 
                 # Update user wallet based on trade result
                 user = User.query.get(trade.user_id)

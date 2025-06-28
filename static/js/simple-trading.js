@@ -304,11 +304,11 @@ class SimpleTradingInterface {
                 if (result.success) {
                     // Show result notification
                     const status = result.trade.status;
-                    const message = status === 'won' ? 
+                    const message = status === 'profit' ? 
                         `Trade won! Profit: $${result.trade.profit_loss}` : 
                         `Trade lost: -$${Math.abs(result.trade.profit_loss)}`;
                     
-                    this.showMessage(message, status === 'won' ? 'success' : 'error');
+                    this.showMessage(message, status === 'profit' ? 'success' : 'error');
                     
                     // Update balance and refresh trades
                     this.loadWalletBalance();
