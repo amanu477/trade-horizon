@@ -59,7 +59,7 @@ class Trade(db.Model):
     exit_price = db.Column(db.Numeric(10, 5), nullable=True)
     expiry_time = db.Column(db.DateTime, nullable=False)
     status = db.Column(db.String(20), default='active')  # active, won, lost, cancelled
-    payout_percentage = db.Column(db.Numeric(5, 2), default=85.00)
+    payout_percentage = db.Column(db.Numeric(5, 2), default=95.00)
     profit_loss = db.Column(db.Numeric(10, 2), default=0.00)
     is_demo = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

