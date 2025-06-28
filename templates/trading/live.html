@@ -14,33 +14,6 @@
     <!-- TradingView professional trading interface will be rendered here -->
 </div>
 
-<!-- Load TradingView Integration -->
-<script src="{{ url_for('static', filename='js/tradingview-integration.js') }}"></script>
-
-<script>
-// Initialize TradingView trading interface
-(function() {
-    console.log('Loading TradingView live trading interface...');
-    
-    // Create TradingView professional interface
-    window.tradingChart = new TradingViewChart('tradingview-trading-interface', {
-        asset: 'EURUSD',
-        mode: 'live'
-    });
-    
-    // Initialize active trades monitoring after chart is ready
-    setTimeout(() => {
-        if (window.tradingChart && window.tradingChart.loadActiveTrades) {
-            window.tradingChart.loadActiveTrades();
-            
-            // Set up automatic refresh every 30 seconds
-            setInterval(() => {
-                window.tradingChart.loadActiveTrades();
-            }, 30000);
-        }
-    }, 2000);
-    
-    console.log('TradingView live trading interface loaded successfully');
-})();
-</script>
+<!-- Load Simple Trading Interface -->
+<script src="{{ url_for('static', filename='js/simple-trading.js') }}"></script>
 {% endblock %}

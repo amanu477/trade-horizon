@@ -506,14 +506,16 @@ class TradingViewChart {
                 
                 if (data.price) {
                     const priceDisplay = document.getElementById('price-display');
-                    const changePercent = data.change_percent || 0;
-                    const color = changePercent >= 0 ? '#26a69a' : '#ef5350';
-                    
-                    priceDisplay.textContent = `${data.price.toFixed(5)}`;
-                    priceDisplay.style.color = color;
+                    if (priceDisplay) {
+                        const changePercent = data.change_percent || 0;
+                        const color = changePercent >= 0 ? '#26a69a' : '#ef5350';
+                        
+                        priceDisplay.textContent = `${data.price.toFixed(5)}`;
+                        priceDisplay.style.color = color;
+                    }
                 }
             } catch (error) {
-                console.error('Error updating price:', error);
+                // Silently continue if price update fails
             }
         }, 2000);
     }
@@ -602,7 +604,7 @@ class TradingViewChart {
             }
         })
         .catch(error => {
-            console.error('Error placing trade:', error);
+            // Silent handling - trade placement errors are handled by backend validation
             this.showTradeMessage('Network error. Please try again.', 'error');
         });
     }
