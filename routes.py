@@ -1113,3 +1113,50 @@ def admin_manipulate_trade(trade_id):
     
     db.session.commit()
     return redirect(url_for('admin_user_detail', user_id=trade.user_id))
+
+@app.route('/admin/users/<int:user_id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def admin_delete_user(user_id):
+    """Delete a user and all their associated data"""
+    user_to_delete = User.query.get_or_404(user_id)
+    
+    # Prevent deletion of admin users (safety measure)
+    if user_to_delete.is_admin:
+        flash('Cannot delete admin users for security reasons', 'error')
+        return redirect(url_for('admin_user_detail', user_id=user_id))
+    
+    # Prevent self-deletion
+    if user_to_delete.id == current_user.id:
+        flash('You cannot delete your own account', 'error')
+        return redirect(url_for('admin_user_detail', user_id=user_id))
+    
+    try:
+        username = user_to_delete.username
+        
+        # Delete user's trades (cascade should handle this, but being explicit)
+        Trade.query.filter_by(user_id=user_id).delete()
+        
+        # Delete user's transactions
+        Transaction.query.filter_by(user_id=user_id).delete()
+        
+        # Delete user's staking positions
+        StakingPosition.query.filter_by(user_id=user_id).delete()
+        
+        # Delete user's deposit requests
+        DepositRequest.query.filter_by(user_id=user_id).delete()
+        
+        # Delete user's wallet
+        Wallet.query.filter_by(user_id=user_id).delete()
+        
+        # Finally delete the user
+        db.session.delete(user_to_delete)
+        db.session.commit()
+        
+        flash(f'User "{username}" and all associated data has been permanently deleted', 'success')
+        return redirect(url_for('admin_users'))
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting user: {str(e)}', 'error')
+        return redirect(url_for('admin_user_detail', user_id=user_id))
