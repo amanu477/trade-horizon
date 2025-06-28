@@ -135,6 +135,10 @@ def demo_trading():
     form = TradeForm()
     return render_template('trading/demo.html', form=form, is_demo=True)
 
+@app.route('/trading/test')
+def trading_test():
+    return render_template('trading/tradingview_test.html')
+
 @app.route('/trading/live')
 @login_required
 def live_trading():

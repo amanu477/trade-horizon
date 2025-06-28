@@ -255,7 +255,7 @@ class TradingViewChart {
             width: '100%',
             height: '100%',
             symbol: symbol,
-            interval: '1m',
+            interval: '5',
             timezone: 'Etc/UTC',
             theme: 'dark',
             style: '1',
@@ -268,10 +268,7 @@ class TradingViewChart {
             hide_side_toolbar: false,
             save_image: false,
             hide_volume: false,
-            studies: [
-                'MASimple@tv-basicstudies',
-                'RSI@tv-basicstudies'
-            ],
+            studies: [],
             overrides: {
                 'paneProperties.background': '#131722',
                 'paneProperties.vertGridProperties.color': '#2a2e39',
@@ -281,8 +278,14 @@ class TradingViewChart {
                 'scalesProperties.lineColor': '#2a2e39'
             },
             studies_overrides: {},
-            disabled_features: [],
-            enabled_features: [],
+            disabled_features: [
+                'use_localstorage_for_settings'
+            ],
+            enabled_features: [
+                'study_templates',
+                'side_toolbar_in_fullscreen_mode',
+                'header_in_fullscreen_mode'
+            ],
             fullscreen: false,
             autosize: true
         });
