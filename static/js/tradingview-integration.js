@@ -515,7 +515,7 @@ class TradingViewChart {
                     }
                 }
             } catch (error) {
-                // Silently continue if price update fails
+                // Continue silently - price display is optional
             }
         }, 2000);
     }
@@ -604,7 +604,7 @@ class TradingViewChart {
             }
         })
         .catch(error => {
-            // Silent handling - trade placement errors are handled by backend validation
+            console.error('Error placing trade:', error);
             this.showTradeMessage('Network error. Please try again.', 'error');
         });
     }
