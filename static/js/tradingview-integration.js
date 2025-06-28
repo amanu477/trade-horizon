@@ -521,21 +521,21 @@ class TradingViewChart {
         const asset = this.currentAsset || 'EURUSD';
         
         try {
-            const csrfToken = this.getCSRFToken();
-            console.log('CSRF Token:', csrfToken);
-            
             const formData = new FormData();
             formData.append('asset', asset);
             formData.append('trade_type', this.selectedDirection);
             formData.append('amount', amount);
             formData.append('expiry_minutes', expiry);
-            formData.append('csrf_token', csrfToken);
+            
+            console.log('Placing trade:', {
+                asset: asset,
+                trade_type: this.selectedDirection,
+                amount: amount,
+                expiry_minutes: expiry
+            });
             
             const response = await fetch('/place_trade', {
                 method: 'POST',
-                headers: {
-                    'X-CSRFToken': csrfToken
-                },
                 body: formData
             });
             

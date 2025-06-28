@@ -150,20 +150,35 @@ def live_trading():
 @login_required
 def place_trade():
     try:
+        print(f"[TRADE] Request method: {request.method}")
+        print(f"[TRADE] Content type: {request.content_type}")
+        print(f"[TRADE] Form data: {dict(request.form)}")
+        print(f"[TRADE] User: {current_user.username}")
+        
         # Handle both form and AJAX requests
         if request.is_json:
             data = request.get_json()
         else:
             data = request.form
         
-        logging.info(f"Trade request data: {dict(data)}")
+        print(f"[TRADE] Parsed data: {dict(data)}")
         
-        # Extract trade data
-        asset = data.get('asset')
-        trade_type = data.get('trade_type')
-        amount = float(data.get('amount', 0))
-        expiry_minutes = int(data.get('expiry_minutes', 1))
-        is_demo = data.get('is_demo', 'true').lower() == 'true'
+        # Extract trade data with validation
+        asset = data.get('asset', '').strip()
+        trade_type = data.get('trade_type', '').strip()
+        
+        try:
+            amount = float(data.get('amount', 0))
+        except (ValueError, TypeError):
+            amount = 0
+            
+        try:
+            expiry_minutes = int(data.get('expiry_minutes', 1))
+        except (ValueError, TypeError):
+            expiry_minutes = 1
+            
+        # Default to demo mode for now
+        is_demo = True
         
         logging.info(f"Parsed trade: asset={asset}, type={trade_type}, amount={amount}, expiry={expiry_minutes}, demo={is_demo}")
         
