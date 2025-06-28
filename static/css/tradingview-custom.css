@@ -6,6 +6,9 @@
     border-bottom: 1px solid #2a2e39 !important;
     height: auto !important;
     min-height: 50px !important;
+    display: flex !important;
+    visibility: visible !important;
+    z-index: 1000 !important;
 }
 
 /* Style the timeframe buttons */
@@ -92,6 +95,31 @@
     visibility: visible !important;
 }
 
+/* Force visibility of all header buttons and controls */
+.tv-header__button,
+.tv-header__dropdown-button,
+.tv-header__toolbar-button,
+.tv-symbol-button,
+.tv-interval-picker,
+.tv-chart-type-button,
+.tv-indicators-button {
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Ensure the symbol picker is visible */
+.tv-symbol-header__symbol-button {
+    display: flex !important;
+    visibility: visible !important;
+}
+
+/* Make sure interval/timeframe buttons are visible */
+.tv-interval-picker__button {
+    display: inline-block !important;
+    visibility: visible !important;
+}
+
 /* Ensure indicators button is visible */
 .tv-header__indicators-button {
     background-color: #2a2e39 !important;
@@ -136,6 +164,23 @@
 .tv-header__toolbar-button,
 .tv-header__dropdown-button {
     display: inline-flex !important;
+    visibility: visible !important;
+}
+
+/* Override any hidden styles */
+.tv-header [class*="hidden"],
+.tv-header [style*="display: none"],
+.tv-header [style*="visibility: hidden"] {
+    display: inline-flex !important;
+    visibility: visible !important;
+}
+
+/* Specific styling for key elements */
+.tv-header__symbol-container,
+.tv-header__intervals-container,
+.tv-header__chart-type-container,
+.tv-header__indicators-container {
+    display: flex !important;
     visibility: visible !important;
 }
 

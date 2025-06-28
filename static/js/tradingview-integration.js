@@ -268,6 +268,9 @@ class TradingViewChart {
             hide_side_toolbar: false,
             save_image: true,
             hide_volume: false,
+            show_popup_button: true,
+            popup_width: "1000",
+            popup_height: "650",
             studies: [
                 'MASimple@tv-basicstudies',
                 'RSI@tv-basicstudies',
@@ -287,7 +290,6 @@ class TradingViewChart {
                 'volume.volume.color.1': '#26a69a55'
             },
             disabled_features: [
-                'use_localstorage_for_settings',
                 'volume_force_overlay'
             ],
             enabled_features: [
