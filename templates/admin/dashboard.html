@@ -16,9 +16,9 @@
         </nav>
     </div>
 
-    <!-- Statistics Cards -->
+    <!-- User Management Statistics -->
     <div class="row mb-4">
-        <div class="col-xl-3 col-md-6 mb-4">
+        <div class="col-xl-4 col-md-6 mb-4">
             <div class="card bg-dark border-success h-100">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
@@ -36,7 +36,7 @@
             </div>
         </div>
 
-        <div class="col-xl-3 col-md-6 mb-4">
+        <div class="col-xl-4 col-md-6 mb-4">
             <div class="card bg-dark border-success h-100">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
@@ -54,171 +54,124 @@
             </div>
         </div>
 
-        <div class="col-xl-3 col-md-6 mb-4">
+        <div class="col-xl-4 col-md-6 mb-4">
             <div class="card bg-dark border-success h-100">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                Total Trades
+                                Admin Users
                             </div>
-                            <div class="h5 mb-0 font-weight-bold text-light">{{ total_trades }}</div>
+                            <div class="h5 mb-0 font-weight-bold text-light">{{ admin_users }}</div>
                         </div>
                         <div class="col-auto">
-                            <i class="fas fa-chart-line fa-2x text-success"></i>
+                            <i class="fas fa-user-shield fa-2x text-success"></i>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card bg-dark border-success h-100">
+    <!-- Recent Users -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-dark border-success">
+                <div class="card-header bg-success text-dark">
+                    <h6 class="m-0 font-weight-bold">
+                        <i class="fas fa-user-plus me-2"></i>Recent Users
+                    </h6>
+                </div>
                 <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                Pending Deposits
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-light">{{ pending_deposits }}</div>
+                    {% if recent_users %}
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Username</th>
+                                        <th>Email</th>
+                                        <th>Name</th>
+                                        <th>Status</th>
+                                        <th>Admin</th>
+                                        <th>Joined</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user in recent_users %}
+                                    <tr>
+                                        <td>{{ user.username }}</td>
+                                        <td>{{ user.email }}</td>
+                                        <td>{{ user.get_full_name() or '-' }}</td>
+                                        <td>
+                                            {% if user.is_active %}
+                                                <span class="badge bg-success">Active</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Inactive</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if user.is_admin %}
+                                                <span class="badge bg-warning text-dark">Admin</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">User</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+                                        <td>
+                                            <a href="{{ url_for('admin_user_detail', user_id=user.id) }}" 
+                                               class="btn btn-sm btn-outline-success">
+                                                <i class="fas fa-edit"></i> Edit
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         </div>
-                        <div class="col-auto">
-                            <i class="fas fa-clock fa-2x text-warning"></i>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No users found</p>
                         </div>
-                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Quick Actions -->
-    <div class="row mb-4">
+    <div class="row mt-4">
         <div class="col-12">
             <div class="card bg-dark border-success">
-                <div class="card-header bg-success">
-                    <h5 class="card-title mb-0 text-dark">
+                <div class="card-header bg-success text-dark">
+                    <h6 class="m-0 font-weight-bold">
                         <i class="fas fa-tools me-2"></i>Quick Actions
-                    </h5>
+                    </h6>
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-3 mb-3">
-                            <a href="{{ url_for('admin_users') }}" class="btn btn-outline-success w-100">
-                                <i class="fas fa-users me-2"></i>Manage Users
+                        <div class="col-md-6 mb-3">
+                            <a href="{{ url_for('admin_users') }}" class="btn btn-outline-success btn-lg w-100">
+                                <i class="fas fa-users me-2"></i>Manage All Users
                             </a>
                         </div>
-                        <div class="col-md-3 mb-3">
-                            <a href="{{ url_for('admin_deposits') }}" class="btn btn-outline-warning w-100">
-                                <i class="fas fa-coins me-2"></i>Process Deposits
-                            </a>
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <a href="{{ url_for('admin_settings') }}" class="btn btn-outline-info w-100">
-                                <i class="fas fa-cog me-2"></i>Settings
-                            </a>
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <a href="{{ url_for('admin_orders') }}" class="btn btn-outline-primary w-100">
-                                <i class="fas fa-chart-area me-2"></i>View Trades
+                        <div class="col-md-6 mb-3">
+                            <a href="{{ url_for('register') }}" class="btn btn-outline-info btn-lg w-100">
+                                <i class="fas fa-user-plus me-2"></i>Add New User
                             </a>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Recent Activity -->
-    <div class="row">
-        <div class="col-lg-8 mb-4">
-            <div class="card bg-dark border-success">
-                <div class="card-header bg-success">
-                    <h5 class="card-title mb-0 text-dark">
-                        <i class="fas fa-clock me-2"></i>Recent Trades
-                    </h5>
-                </div>
-                <div class="card-body">
-                    {% if recent_trades %}
-                    <div class="table-responsive">
-                        <table class="table table-dark table-striped">
-                            <thead>
-                                <tr>
-                                    <th>User</th>
-                                    <th>Asset</th>
-                                    <th>Type</th>
-                                    <th>Amount</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for trade in recent_trades %}
-                                <tr>
-                                    <td>{{ trade.user.username }}</td>
-                                    <td>{{ trade.asset }}</td>
-                                    <td>
-                                        <span class="badge bg-{{ 'success' if trade.trade_type == 'call' else 'danger' }}">
-                                            {{ trade.trade_type.upper() }}
-                                        </span>
-                                    </td>
-                                    <td>${{ "%.2f"|format(trade.amount) }}</td>
-                                    <td>
-                                        <span class="badge bg-{{ 'warning' if trade.status == 'active' else ('success' if trade.status == 'won' else 'danger') }}">
-                                            {{ trade.status.upper() }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        {% if trade.status == 'active' %}
-                                        <a href="{{ url_for('admin_manipulate_trade', trade_id=trade.id) }}" class="btn btn-sm btn-outline-warning">
-                                            <i class="fas fa-edit"></i> Manage
-                                        </a>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <p class="text-muted text-center">No recent trades</p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-4 mb-4">
-            <div class="card bg-dark border-success">
-                <div class="card-header bg-success">
-                    <h5 class="card-title mb-0 text-dark">
-                        <i class="fas fa-money-bill-wave me-2"></i>Recent Deposits
-                    </h5>
-                </div>
-                <div class="card-body">
-                    {% if recent_deposits %}
-                    {% for deposit in recent_deposits %}
-                    <div class="d-flex justify-content-between align-items-center border-bottom border-secondary py-2">
-                        <div>
-                            <strong class="text-light">{{ deposit.user.username }}</strong><br>
-                            <small class="text-muted">
-                                ${{ "%.2f"|format(deposit.amount) }} {{ deposit.currency }}
-                            </small>
-                        </div>
-                        <span class="badge bg-{{ 'warning' if deposit.status == 'pending' else ('success' if deposit.status == 'approved' else 'danger') }}">
-                            {{ deposit.status.upper() }}
-                        </span>
-                    </div>
-                    {% endfor %}
-                    <div class="text-center mt-3">
-                        <a href="{{ url_for('admin_deposits') }}" class="btn btn-sm btn-outline-success">
-                            View All Deposits
-                        </a>
-                    </div>
-                    {% else %}
-                    <p class="text-muted text-center">No recent deposits</p>
-                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+// Auto-refresh dashboard data every 30 seconds
+setInterval(function() {
+    location.reload();
+}, 30000);
+</script>
 {% endblock %}

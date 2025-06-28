@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Binary Options Trading Platform{% endblock %}</title>
+    <title>{% block title %}TradePro{% endblock %}</title>
     
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -12,13 +12,13 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Custom CSS -->
-    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    <link href="/static/css/style.css" rel="stylesheet">
 </head>
 <body>
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-success">
         <div class="container-fluid">
-            <a class="navbar-brand fw-bold text-success" href="{{ url_for('index') }}">
+            <a class="navbar-brand fw-bold text-success" href="/">
                 <i class="fas fa-chart-line me-2"></i>TradePro
             </a>
             
@@ -34,45 +34,9 @@
                             <i class="fas fa-tachometer-alt me-1"></i>Dashboard
                         </a>
                     </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-chart-candlestick me-1"></i>Trading
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url_for('demo_trading') }}">
-                                <i class="fas fa-play me-1"></i>Demo Trading
-                            </a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('live_trading') }}">
-                                <i class="fas fa-dollar-sign me-1"></i>Live Trading
-                            </a></li>
-                        </ul>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-wallet me-1"></i>Wallet
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url_for('wallet') }}">
-                                <i class="fas fa-eye me-1"></i>View Balance
-                            </a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('crypto_deposit') }}">
-                                <i class="fas fa-plus me-1"></i>Crypto Deposit
-                            </a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('deposit_status') }}">
-                                <i class="fas fa-history me-1"></i>Deposit Status
-                            </a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ url_for('deposit') }}">
-                                <i class="fas fa-credit-card me-1"></i>Other Deposits
-                            </a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('withdraw') }}">
-                                <i class="fas fa-money-bill-wave me-1"></i>Withdraw
-                            </a></li>
-                        </ul>
-                    </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('staking') }}">
-                            <i class="fas fa-coins me-1"></i>Staking
+                        <a class="nav-link" href="{{ url_for('profile') }}">
+                            <i class="fas fa-user me-1"></i>Profile
                         </a>
                     </li>
                     {% if current_user.is_admin %}
@@ -87,40 +51,34 @@
                             <li><a class="dropdown-item" href="{{ url_for('admin_users') }}">
                                 <i class="fas fa-users me-1"></i>Manage Users
                             </a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('admin_deposits') }}">
-                                <i class="fas fa-coins me-1"></i>Process Deposits
-                            </a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ url_for('admin_settings') }}">
-                                <i class="fas fa-wallet me-1"></i>Crypto Addresses
-                            </a></li>
                         </ul>
                     </li>
                     {% endif %}
                 </ul>
                 
-                <ul class="navbar-nav">
+                <ul class="navbar-nav ms-auto">
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-user-circle me-1"></i>{{ current_user.username }}
-                            {% if current_user.wallet %}
-                            <span class="badge bg-success ms-2">${{ "%.2f"|format(current_user.wallet.balance) }}</span>
-                            {% endif %}
+                            <i class="fas fa-user me-1"></i>{{ current_user.username }}
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url_for('profile') }}">Profile</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('profile') }}">
+                                <i class="fas fa-user-edit me-1"></i>Profile
+                            </a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('logout') }}">
+                                <i class="fas fa-sign-out-alt me-1"></i>Logout
+                            </a></li>
                         </ul>
                     </li>
                 </ul>
                 {% else %}
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('login') }}">Login</a>
+                        <a class="nav-link" href="/login">Login</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('register') }}">Register</a>
+                        <a class="nav-link" href="/register">Register</a>
                     </li>
                 </ul>
                 {% endif %}
@@ -131,14 +89,12 @@
     <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-        <div class="container mt-3">
             {% for category, message in messages %}
-            <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
+                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show m-0" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
             {% endfor %}
-        </div>
         {% endif %}
     {% endwith %}
 
@@ -153,11 +109,11 @@
             <div class="row">
                 <div class="col-md-6">
                     <h5 class="text-success">TradePro</h5>
-                    <p class="text-muted">Professional Binary Options Trading Platform</p>
+                    <p class="text-muted">Professional User Management Platform</p>
                 </div>
                 <div class="col-md-6 text-md-end">
                     <p class="text-muted mb-0">© {{ current_year }} TradePro. All rights reserved.</p>
-                    <small class="text-muted">Risk Warning: Trading involves substantial risk of loss.</small>
+                    <small class="text-muted">Admin Panel: User Management Only</small>
                 </div>
             </div>
         </div>
@@ -166,7 +122,7 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Custom JS -->
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="/static/js/main.js"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

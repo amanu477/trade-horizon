@@ -107,13 +107,6 @@ class DepositForm(FlaskForm):
 class AdminUserForm(FlaskForm):
     is_active = BooleanField('Active')
     is_admin = BooleanField('Admin')
-    balance_adjustment = DecimalField('Balance Adjustment')
-    real_balance = DecimalField('Real Balance', validators=[
-        NumberRange(min=0, message="Balance cannot be negative")
-    ])
-    demo_balance = DecimalField('Demo Balance', validators=[
-        NumberRange(min=0, message="Balance cannot be negative")
-    ])
 
 class CryptoDepositForm(FlaskForm):
     amount = DecimalField('Deposit Amount', validators=[
