@@ -860,6 +860,18 @@ class TradingViewChart {
         }, 500);
     }
     
+    loadWalletBalance() {
+        // Refresh wallet balance after trade completion
+        fetch('/api/wallet_balance')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    this.updateBalanceDisplay(data.balance);
+                }
+            })
+            .catch(error => console.error('Error loading wallet balance:', error));
+    }
+    
     async processExpiredTrade(tradeId) {
         try {
             // Call backend to process the expired trade
@@ -888,19 +900,26 @@ class TradingViewChart {
                         
                         // Animate removal after showing result
                         setTimeout(() => {
-                            tradeElement.style.transition = 'opacity 0.5s';
-                            tradeElement.style.opacity = '0';
-                            setTimeout(() => {
-                                tradeElement.remove();
-                                this.loadWalletBalance(); // Refresh balance
-                                
-                                // Show detailed notification with profit/loss
-                                const profitLoss = result.profit_loss || 0;
-                                const sign = profitLoss >= 0 ? '+' : '';
-                                const notificationMessage = `Trade ${result.trade_result.toUpperCase()}! ${sign}$${profitLoss.toFixed(2)}`;
-                                this.showNotification(notificationMessage, 
-                                    result.trade_result === 'won' ? 'success' : 'info');
-                            }, 500);
+                            if (tradeElement && tradeElement.parentElement) {
+                                tradeElement.style.transition = 'opacity 0.5s';
+                                tradeElement.style.opacity = '0';
+                                setTimeout(() => {
+                                    if (tradeElement && tradeElement.parentElement) {
+                                        tradeElement.remove();
+                                    }
+                                    this.loadWalletBalance(); // Refresh balance
+                                    
+                                    // Show detailed notification with profit/loss
+                                    const profitLoss = result.profit_loss || 0;
+                                    const sign = profitLoss >= 0 ? '+' : '';
+                                    const notificationMessage = `Trade ${result.trade_result.toUpperCase()}! ${sign}$${profitLoss.toFixed(2)}`;
+                                    this.showTradeMessage(notificationMessage, 
+                                        result.trade_result === 'profit' || result.trade_result === 'won' ? 'success' : 'info');
+                                }, 500);
+                            } else {
+                                // Element already removed, just refresh balance
+                                this.loadWalletBalance();
+                            }
                         }, 2000);
                     }
                 } else {
