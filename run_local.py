@@ -15,6 +15,8 @@ load_dotenv()
 # Import Flask app and database
 from app import app, db
 from models import User, Wallet, AdminSettings
+# Import routes to register them
+import routes  # noqa: F401
 
 def create_default_users():
     """Create default admin and test users"""
