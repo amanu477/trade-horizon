@@ -38,7 +38,7 @@
                         </ul>
                     </div>
 
-                    <form method="POST">
+                    <form method="POST" enctype="multipart/form-data">
                         {{ form.hidden_tag() }}
                         
                         <!-- USDT TRC-20 Address -->
@@ -80,6 +80,55 @@
                             {% endfor %}
                             <div class="form-text text-muted">
                                 <strong>Ethereum</strong> - Standard ETH address (starts with 0x)
+                            </div>
+                        </div>
+
+                        <!-- QR Code Upload Section -->
+                        <div class="mt-5 mb-4">
+                            <h6 class="text-warning mb-3">
+                                <i class="fas fa-qrcode me-2"></i>QR Code Images
+                            </h6>
+                            
+                            <!-- USDT QR Code -->
+                            <div class="mb-3">
+                                <label class="form-label text-light">
+                                    <i class="fas fa-coins me-2 text-success"></i>{{ form.usdt_qr_code.label }}
+                                </label>
+                                {{ form.usdt_qr_code(class="form-control bg-secondary border-success text-light") }}
+                                {% if usdt_qr %}
+                                <div class="mt-2">
+                                    <small class="text-success">Current QR Code:</small>
+                                    <img src="{{ url_for('static', filename=usdt_qr.replace('static/', '')) }}" alt="USDT QR Code" class="d-block mt-1" style="max-width: 150px; height: auto;">
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Bitcoin QR Code -->
+                            <div class="mb-3">
+                                <label class="form-label text-light">
+                                    <i class="fab fa-bitcoin me-2 text-warning"></i>{{ form.btc_qr_code.label }}
+                                </label>
+                                {{ form.btc_qr_code(class="form-control bg-secondary border-warning text-light") }}
+                                {% if btc_qr %}
+                                <div class="mt-2">
+                                    <small class="text-warning">Current QR Code:</small>
+                                    <img src="{{ url_for('static', filename=btc_qr.replace('static/', '')) }}" alt="Bitcoin QR Code" class="d-block mt-1" style="max-width: 150px; height: auto;">
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Ethereum QR Code -->
+                            <div class="mb-4">
+                                <label class="form-label text-light">
+                                    <i class="fab fa-ethereum me-2 text-info"></i>{{ form.eth_qr_code.label }}
+                                </label>
+                                {{ form.eth_qr_code(class="form-control bg-secondary border-info text-light") }}
+                                {% if eth_qr %}
+                                <div class="mt-2">
+                                    <small class="text-info">Current QR Code:</small>
+                                    <img src="{{ url_for('static', filename=eth_qr.replace('static/', '')) }}" alt="Ethereum QR Code" class="d-block mt-1" style="max-width: 150px; height: auto;">
+                                </div>
+                                {% endif %}
                             </div>
                         </div>
 

@@ -1,10 +1,13 @@
 from flask import render_template, redirect, url_for, flash, request, jsonify, session
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
 from decimal import Decimal
 import random
 import json
+import os
+import time
 from functools import wraps
 
 from app import app, db
@@ -450,30 +453,37 @@ def crypto_deposit():
     
     # Get admin-set wallet addresses
     addresses = {}
+    qr_codes = {}
+    
     usdt_setting = AdminSettings.query.filter_by(setting_key='usdt_address').first()
     btc_setting = AdminSettings.query.filter_by(setting_key='btc_address').first()
     eth_setting = AdminSettings.query.filter_by(setting_key='eth_address').first()
     
+    # Get QR code settings
+    usdt_qr_setting = AdminSettings.query.filter_by(setting_key='usdt_qr_code').first()
+    btc_qr_setting = AdminSettings.query.filter_by(setting_key='btc_qr_code').first()
+    eth_qr_setting = AdminSettings.query.filter_by(setting_key='eth_qr_code').first()
+    
     if usdt_setting:
         addresses['USDT'] = usdt_setting.setting_value
+        qr_codes['USDT'] = usdt_qr_setting.setting_value if usdt_qr_setting else None
     if btc_setting:
         addresses['BTC'] = btc_setting.setting_value
+        qr_codes['BTC'] = btc_qr_setting.setting_value if btc_qr_setting else None
     if eth_setting:
         addresses['ETH'] = eth_setting.setting_value
+        qr_codes['ETH'] = eth_qr_setting.setting_value if eth_qr_setting else None
     
     # Check if admin has set the address for this currency
     if currency not in addresses:
         flash(f'Deposit address for {currency} not configured. Please contact support.', 'error')
         return redirect(url_for('wallet'))
     
-    # Generate QR code for the deposit address
-    qr_code = generate_crypto_qr_code(addresses[currency], float(amount))
-    
     return render_template('deposit/crypto.html', 
                          amount=amount, 
                          currency=currency,
                          address=addresses[currency],
-                         qr_code=qr_code)
+                         qr_code=qr_codes[currency])
 
 @app.route('/deposit/submit', methods=['POST'])
 @login_required
@@ -1549,14 +1559,51 @@ def admin_settings():
                 )
                 db.session.add(setting)
         
+        # Handle QR code image uploads
+        qr_files = [
+            ('usdt_qr', form.usdt_qr_code.data),
+            ('btc_qr', form.btc_qr_code.data),
+            ('eth_qr', form.eth_qr_code.data)
+        ]
+        
+        for key, file in qr_files:
+            if file and file.filename != '':
+                # Save the uploaded file
+                filename = secure_filename(f"{key}_{int(time.time())}.{file.filename.split('.')[-1]}")
+                file_path = os.path.join('static', 'qr_codes', filename)
+                file.save(file_path)
+                
+                # Update the database with the file path
+                setting = AdminSettings.query.filter_by(setting_key=f'{key}_code').first()
+                if setting:
+                    # Remove old file if it exists
+                    if setting.setting_value and os.path.exists(setting.setting_value):
+                        os.remove(setting.setting_value)
+                    setting.setting_value = file_path
+                    setting.updated_by = current_user.id
+                    setting.updated_at = datetime.utcnow()
+                else:
+                    setting = AdminSettings(
+                        setting_key=f'{key}_code',
+                        setting_value=file_path,
+                        description=f'{key.replace("_", " ").title()} QR code image',
+                        updated_by=current_user.id
+                    )
+                    db.session.add(setting)
+        
         db.session.commit()
-        flash('Cryptocurrency addresses updated successfully', 'success')
+        flash('Cryptocurrency addresses and QR codes updated successfully', 'success')
         return redirect(url_for('admin_settings'))
     
     # Load current settings
     usdt_setting = AdminSettings.query.filter_by(setting_key='usdt_address').first()
     btc_setting = AdminSettings.query.filter_by(setting_key='btc_address').first()
     eth_setting = AdminSettings.query.filter_by(setting_key='eth_address').first()
+    
+    # Load QR code settings
+    usdt_qr_setting = AdminSettings.query.filter_by(setting_key='usdt_qr_code').first()
+    btc_qr_setting = AdminSettings.query.filter_by(setting_key='btc_qr_code').first()
+    eth_qr_setting = AdminSettings.query.filter_by(setting_key='eth_qr_code').first()
     
     if usdt_setting:
         form.usdt_address.data = usdt_setting.setting_value
@@ -1565,7 +1612,11 @@ def admin_settings():
     if eth_setting:
         form.eth_address.data = eth_setting.setting_value
     
-    return render_template('admin/settings.html', form=form)
+    return render_template('admin/settings.html', 
+                         form=form,
+                         usdt_qr=usdt_qr_setting.setting_value if usdt_qr_setting else None,
+                         btc_qr=btc_qr_setting.setting_value if btc_qr_setting else None,
+                         eth_qr=eth_qr_setting.setting_value if eth_qr_setting else None)
 
 @app.route('/admin/kyc')
 @login_required

@@ -65,11 +65,18 @@
 
                             <!-- QR Code -->
                             <div class="text-center mt-4">
+                                {% if qr_code %}
                                 <div class="border border-warning rounded p-3" style="display: inline-block; background-color: white;">
-                                    <img src="{{ qr_code }}" alt="QR Code for {{ currency }} Address" class="mb-2" style="max-width: 200px;">
+                                    <img src="{{ url_for('static', filename=qr_code.replace('static/', '')) }}" alt="QR Code for {{ currency }} Address" class="mb-2" style="max-width: 200px;">
                                     <br>
                                     <small class="text-dark">Scan to copy address</small>
                                 </div>
+                                {% else %}
+                                <div class="alert alert-warning text-center">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    QR Code not available. Please copy the address above manually.
+                                </div>
+                                {% endif %}
                                 <div class="mt-2">
                                     <small class="text-muted">Amount: ${{ amount }} {{ currency }}</small>
                                 </div>

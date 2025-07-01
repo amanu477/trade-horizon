@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from flask_wtf.file import FileField, FileRequired
+from flask_wtf.file import FileField, FileRequired, FileAllowed
 from wtforms import StringField, PasswordField, EmailField, DecimalField, SelectField, IntegerField, BooleanField, TextAreaField, SubmitField
 from wtforms.fields import DateField
 from wtforms.validators import DataRequired, Email, Length, EqualTo, NumberRange, ValidationError
@@ -161,6 +161,16 @@ class AdminSettingsForm(FlaskForm):
         DataRequired(),
         Length(min=40, max=45, message="Invalid Ethereum address")
     ])
+    usdt_qr_code = FileField('USDT QR Code Image', validators=[
+        FileAllowed(['jpg', 'jpeg', 'png'], 'Images only!')
+    ])
+    btc_qr_code = FileField('Bitcoin QR Code Image', validators=[
+        FileAllowed(['jpg', 'jpeg', 'png'], 'Images only!')
+    ])
+    eth_qr_code = FileField('Ethereum QR Code Image', validators=[
+        FileAllowed(['jpg', 'jpeg', 'png'], 'Images only!')
+    ])
+    submit = SubmitField('Save Settings')
 
 class TradeManipulationForm(FlaskForm):
     force_result = SelectField('Force Result', choices=[
