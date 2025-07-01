@@ -237,6 +237,46 @@
         </div>
     </div>
 
+    <!-- Trade Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-line fa-2x mb-2"></i>
+                    <h3 class="card-title">{{ total_trades }}</h3>
+                    <p class="card-text">Total Trades</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-trophy fa-2x mb-2"></i>
+                    <h3 class="card-title">{{ won_trades }}</h3>
+                    <p class="card-text">Winning Trades</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-percentage fa-2x mb-2"></i>
+                    <h3 class="card-title">{{ "{:.1f}%".format(win_rate) }}</h3>
+                    <p class="card-text">Win Rate</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card {% if total_profit_loss >= 0 %}bg-success{% else %}bg-danger{% endif %} text-white h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-dollar-sign fa-2x mb-2"></i>
+                    <h3 class="card-title">${{ "{:.2f}".format(total_profit_loss) }}</h3>
+                    <p class="card-text">Total P&L</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row mb-4">
         <!-- Active Trades -->
         <div class="col-md-6 mb-4">
@@ -528,17 +568,31 @@ function createDistributionChart() {
     const wins = Math.round(totalTrades * winRate / 100);
     const losses = totalTrades - wins;
     
+    // Don't create chart if no trades
+    if (totalTrades === 0) {
+        ctx.getContext('2d').fillStyle = '#6c757d';
+        ctx.getContext('2d').font = '16px Arial';
+        ctx.getContext('2d').textAlign = 'center';
+        ctx.getContext('2d').fillText('No trades yet', ctx.width / 2, ctx.height / 2);
+        return;
+    }
+    
     new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: ['Wins', 'Losses'],
+            labels: ['Profitable Trades', 'Losing Trades'],
             datasets: [{
                 data: [wins, losses],
                 backgroundColor: [
                     '#28a745',
                     '#dc3545'
                 ],
-                borderWidth: 0
+                borderColor: '#1a1a1a',
+                borderWidth: 2,
+                hoverBackgroundColor: [
+                    '#32cd32',
+                    '#ff6b6b'
+                ]
             }]
         },
         options: {
@@ -549,8 +603,27 @@ function createDistributionChart() {
                     position: 'bottom',
                     labels: {
                         color: '#ffffff',
-                        padding: 20
+                        padding: 20,
+                        font: {
+                            size: 12
+                        }
                     }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label;
+                            const value = context.raw;
+                            const percentage = ((value / totalTrades) * 100).toFixed(1);
+                            return `${label}: ${value} (${percentage}%)`;
+                        }
+                    }
+                }
+            },
+            cutout: '60%',
+            elements: {
+                arc: {
+                    borderWidth: 2
                 }
             }
         }

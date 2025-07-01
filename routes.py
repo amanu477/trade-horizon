@@ -155,9 +155,17 @@ def dashboard():
     total_staking_rewards = sum(pos.calculate_rewards() for pos in active_staking)
     
     # Trading statistics
-    total_trades = Trade.query.filter_by(user_id=current_user.id).count()
-    won_trades = Trade.query.filter_by(user_id=current_user.id, status='won').count()
+    completed_trades = Trade.query.filter_by(user_id=current_user.id).filter(Trade.status.in_(['profit', 'lose'])).all()
+    total_trades = len(completed_trades)
+    won_trades = len([t for t in completed_trades if t.status == 'profit'])
+    lost_trades = total_trades - won_trades
     win_rate = (won_trades / total_trades * 100) if total_trades > 0 else 0
+    
+    # Calculate total profit/loss
+    total_profit_loss = sum(float(t.profit_loss) for t in completed_trades)
+    
+    # Calculate average trade size
+    avg_trade_size = sum(float(t.amount) for t in completed_trades) / total_trades if total_trades > 0 else 0
     
     # Get active trades
     active_trades = Trade.query.filter_by(user_id=current_user.id, status='active').all()
@@ -172,7 +180,11 @@ def dashboard():
                          active_staking=active_staking,
                          total_staking_rewards=total_staking_rewards,
                          total_trades=total_trades,
+                         won_trades=won_trades,
+                         lost_trades=lost_trades,
                          win_rate=win_rate,
+                         total_profit_loss=total_profit_loss,
+                         avg_trade_size=avg_trade_size,
                          kyc_request=kyc_request)
 
 @app.route('/trading/demo')
