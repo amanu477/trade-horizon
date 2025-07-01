@@ -63,11 +63,15 @@
                                 <div class="form-text text-muted">Click the copy button to copy the address</div>
                             </div>
 
-                            <!-- QR Code placeholder -->
+                            <!-- QR Code -->
                             <div class="text-center mt-4">
-                                <div class="border border-warning rounded p-3" style="display: inline-block;">
-                                    <div id="qrcode" class="mb-2"></div>
-                                    <small class="text-muted">QR Code for {{ currency }} Address</small>
+                                <div class="border border-warning rounded p-3" style="display: inline-block; background-color: white;">
+                                    <img src="{{ qr_code }}" alt="QR Code for {{ currency }} Address" class="mb-2" style="max-width: 200px;">
+                                    <br>
+                                    <small class="text-dark">Scan to copy address</small>
+                                </div>
+                                <div class="mt-2">
+                                    <small class="text-muted">Amount: ${{ amount }} {{ currency }}</small>
                                 </div>
                             </div>
                         </div>

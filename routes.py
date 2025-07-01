@@ -462,10 +462,14 @@ def crypto_deposit():
         flash(f'Deposit address for {currency} not configured. Please contact support.', 'error')
         return redirect(url_for('wallet'))
     
+    # Generate QR code for the deposit address
+    qr_code = generate_crypto_qr_code(addresses[currency], float(amount))
+    
     return render_template('deposit/crypto.html', 
                          amount=amount, 
                          currency=currency,
-                         address=addresses[currency])
+                         address=addresses[currency],
+                         qr_code=qr_code)
 
 @app.route('/deposit/submit', methods=['POST'])
 @login_required
