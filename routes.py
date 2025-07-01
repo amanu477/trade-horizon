@@ -412,7 +412,7 @@ def place_trade_old():
     flash('Invalid trade parameters', 'error')
     return redirect(request.referrer)
 
-@app.route('/wallet')
+@app.route('/wallet', methods=['GET', 'POST'])
 @login_required
 def wallet():
     wallet = current_user.wallet
@@ -441,7 +441,7 @@ def deposit():
     
     return redirect(url_for('wallet'))
 
-@app.route('/deposit/crypto')
+@app.route('/deposit/crypto', methods=['GET', 'POST'])
 @login_required
 def crypto_deposit():
     amount = request.args.get('amount', type=float)
@@ -538,7 +538,7 @@ def submit_deposit():
         flash('Error submitting deposit request. Please try again.', 'error')
         return redirect(url_for('wallet'))
 
-@app.route('/deposit/status')
+@app.route('/deposit/status', methods=['GET', 'POST'])
 @login_required
 def deposit_status():
     deposits = DepositRequest.query.filter_by(user_id=current_user.id).order_by(DepositRequest.created_at.desc()).all()
@@ -642,7 +642,7 @@ def kyc_verification():
     
     return render_template('kyc/submit.html', form=form)
 
-@app.route('/staking')
+@app.route('/staking', methods=['GET', 'POST'])
 @login_required
 def staking():
     form = StakingForm()
@@ -700,7 +700,7 @@ def stake():
     
     return redirect(url_for('staking'))
 
-@app.route('/profile')
+@app.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():
     return render_template('profile.html')
