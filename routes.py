@@ -159,6 +159,9 @@ def dashboard():
     # Get active trades
     active_trades = Trade.query.filter_by(user_id=current_user.id, status='active').all()
     
+    # Get latest KYC request status
+    kyc_request = KYCRequest.query.filter_by(user_id=current_user.id).order_by(KYCRequest.created_at.desc()).first()
+    
     return render_template('dashboard.html', 
                          wallet=wallet, 
                          recent_trades=recent_trades,
@@ -166,7 +169,8 @@ def dashboard():
                          active_staking=active_staking,
                          total_staking_rewards=total_staking_rewards,
                          total_trades=total_trades,
-                         win_rate=win_rate)
+                         win_rate=win_rate,
+                         kyc_request=kyc_request)
 
 @app.route('/trading/demo')
 @login_required
