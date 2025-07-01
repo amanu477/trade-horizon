@@ -1846,3 +1846,45 @@ def admin_support_reply(ticket_id):
         flash('Reply sent successfully!', 'success')
     
     return redirect(url_for('admin_support_ticket', ticket_id=ticket_id))
+
+# Simple Chat Message Route for Dashboard Widget
+@app.route('/send_chat_message', methods=['POST'])
+@login_required
+def send_chat_message():
+    """Handle simple chat messages from dashboard widget"""
+    data = request.get_json()
+    message = data.get('message', '').strip()
+    
+    if not message:
+        return jsonify({'success': False, 'error': 'Message cannot be empty'})
+    
+    try:
+        # Create or get existing support ticket for this user
+        ticket = SupportTicket.query.filter_by(user_id=current_user.id, status='open').first()
+        
+        if not ticket:
+            # Create new ticket
+            ticket = SupportTicket()
+            ticket.user_id = current_user.id
+            ticket.subject = 'Chat Support'
+            ticket.priority = 'normal'
+            ticket.status = 'open'
+            db.session.add(ticket)
+            db.session.flush()
+        
+        # Add message
+        support_message = SupportMessage()
+        support_message.ticket_id = ticket.id
+        support_message.user_id = current_user.id
+        support_message.message = message
+        support_message.is_from_user = True
+        db.session.add(support_message)
+        
+        ticket.updated_at = datetime.utcnow()
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Message sent successfully'})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': 'Failed to send message'})
