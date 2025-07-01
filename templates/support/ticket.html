@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Support Ticket #{{ ticket.id }} - TradePro{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <!-- Ticket Header -->
+            <div class="card bg-dark border-primary mb-4">
+                <div class="card-header bg-primary text-white">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h4 class="mb-0">
+                                <i class="fas fa-ticket-alt me-2"></i>Ticket #{{ ticket.id }}: {{ ticket.subject }}
+                            </h4>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            {% if ticket.status == 'open' %}
+                                <span class="badge bg-success fs-6">Open</span>
+                            {% elif ticket.status == 'in_progress' %}
+                                <span class="badge bg-warning fs-6">In Progress</span>
+                            {% else %}
+                                <span class="badge bg-secondary fs-6">Closed</span>
+                            {% endif %}
+                            
+                            {% if ticket.priority == 'urgent' %}
+                                <span class="badge bg-danger fs-6 ms-2">Urgent</span>
+                            {% elif ticket.priority == 'high' %}
+                                <span class="badge bg-warning fs-6 ms-2">High</span>
+                            {% elif ticket.priority == 'normal' %}
+                                <span class="badge bg-info fs-6 ms-2">Normal</span>
+                            {% else %}
+                                <span class="badge bg-secondary fs-6 ms-2">Low</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <small class="text-muted">Created: {{ ticket.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</small>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <small class="text-muted">Last Updated: {{ ticket.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Messages -->
+            <div class="card bg-dark border-secondary">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-comments me-2"></i>Conversation
+                    </h5>
+                </div>
+                <div class="card-body" style="max-height: 500px; overflow-y: auto;" id="chat-container">
+                    {% if messages %}
+                        {% for message in messages %}
+                        <div class="mb-3 {% if message.is_from_user %}text-end{% endif %}">
+                            <div class="d-inline-block p-3 rounded {% if message.is_from_user %}bg-primary text-white ms-5{% else %}bg-secondary text-white me-5{% endif %}" style="max-width: 70%;">
+                                <div class="message-content">
+                                    {{ message.message|safe }}
+                                </div>
+                                <div class="mt-2">
+                                    <small class="{% if message.is_from_user %}text-light{% else %}text-light{% endif %}">
+                                        {% if message.is_from_user %}
+                                            <i class="fas fa-user me-1"></i>You
+                                        {% else %}
+                                            <i class="fas fa-headset me-1"></i>Support Team
+                                        {% endif %}
+                                        - {{ message.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-comments fa-2x mb-2"></i>
+                            <p>No messages yet. Start the conversation!</p>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                {% if ticket.status != 'closed' %}
+                <div class="card-footer">
+                    <form method="POST" action="{{ url_for('send_support_message', ticket_id=ticket.id) }}">
+                        {{ form.hidden_tag() }}
+                        <div class="input-group">
+                            {{ form.message(class="form-control", placeholder="Type your message here...", rows="2") }}
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane me-1"></i>Send
+                            </button>
+                        </div>
+                        {% for error in form.message.errors %}
+                            <div class="text-danger mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </form>
+                </div>
+                {% else %}
+                <div class="card-footer bg-dark">
+                    <div class="alert alert-secondary mb-0">
+                        <i class="fas fa-lock me-2"></i>This ticket has been closed. If you need further assistance, please create a new ticket.
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Actions -->
+            <div class="text-center mt-4">
+                <a href="{{ url_for('support') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Support
+                </a>
+                {% if ticket.status != 'closed' %}
+                <a href="{{ url_for('create_support_ticket') }}" class="btn btn-outline-primary ms-2">
+                    <i class="fas fa-plus me-2"></i>New Ticket
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-scroll to bottom of chat
+document.addEventListener('DOMContentLoaded', function() {
+    var chatContainer = document.getElementById('chat-container');
+    if (chatContainer) {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+});
+
+// Auto-refresh chat every 30 seconds
+setInterval(function() {
+    if (document.hidden || {{ 'true' if ticket.status == 'closed' else 'false' }}) {
+        return; // Don't refresh if tab is hidden or ticket is closed
+    }
+    
+    // Simple auto-refresh (you can make this more sophisticated with AJAX)
+    window.location.reload();
+}, 30000);
+</script>
+{% endblock %}

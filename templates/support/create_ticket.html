@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Create Support Ticket - TradePro{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card bg-dark border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-headset me-2"></i>Create Support Ticket
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Chat Bot Welcome -->
+                    <div class="alert alert-info mb-4">
+                        <div class="row align-items-center">
+                            <div class="col-md-2 text-center">
+                                <i class="fas fa-robot fa-3x text-primary"></i>
+                            </div>
+                            <div class="col-md-10">
+                                <h5 class="alert-heading mb-2">Welcome to TradePro Support!</h5>
+                                <p class="mb-0">Our customer service team is here to help you 24/7. Please describe your issue below and we'll respond as quickly as possible.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form method="POST" action="{{ url_for('create_support_ticket') }}">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                {{ form.subject.label(class="form-label fw-bold text-light") }}
+                                {{ form.subject(class="form-control form-control-lg", placeholder="Brief description of your issue") }}
+                                {% for error in form.subject.errors %}
+                                    <div class="text-danger mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                {{ form.priority.label(class="form-label fw-bold text-light") }}
+                                {{ form.priority(class="form-select form-select-lg") }}
+                                {% for error in form.priority.errors %}
+                                    <div class="text-danger mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.message.label(class="form-label fw-bold text-light") }}
+                            {{ form.message(class="form-control", rows="8", placeholder="Please provide as much detail as possible about your issue. Include any error messages, steps you took, and what you expected to happen.") }}
+                            <div class="form-text">Minimum 10 characters, maximum 2000 characters</div>
+                            {% for error in form.message.errors %}
+                                <div class="text-danger mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Support Categories -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="text-light mb-3">Common Support Categories:</h6>
+                                <div class="row">
+                                    <div class="col-md-3 mb-2">
+                                        <div class="card bg-success text-white h-100">
+                                            <div class="card-body text-center py-2">
+                                                <i class="fas fa-coins fa-lg mb-1"></i>
+                                                <small class="d-block">Trading Issues</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 mb-2">
+                                        <div class="card bg-info text-white h-100">
+                                            <div class="card-body text-center py-2">
+                                                <i class="fas fa-wallet fa-lg mb-1"></i>
+                                                <small class="d-block">Deposits & Withdrawals</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 mb-2">
+                                        <div class="card bg-warning text-white h-100">
+                                            <div class="card-body text-center py-2">
+                                                <i class="fas fa-user-check fa-lg mb-1"></i>
+                                                <small class="d-block">KYC Verification</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 mb-2">
+                                        <div class="card bg-danger text-white h-100">
+                                            <div class="card-body text-center py-2">
+                                                <i class="fas fa-exclamation-triangle fa-lg mb-1"></i>
+                                                <small class="d-block">Technical Problems</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            {{ form.submit(class="btn btn-primary btn-lg") }}
+                            <a href="{{ url_for('support') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Support
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

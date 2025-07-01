@@ -245,3 +245,39 @@ class AdminSettings(db.Model):
     
     def __repr__(self):
         return f'<AdminSettings {self.setting_key}: {self.setting_value}>'
+
+class SupportTicket(db.Model):
+    __tablename__ = 'support_tickets'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    subject = db.Column(db.String(200), nullable=False)
+    status = db.Column(db.String(20), default='open')  # open, in_progress, closed
+    priority = db.Column(db.String(20), default='normal')  # low, normal, high, urgent
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    user = db.relationship('User', backref='support_tickets')
+    messages = db.relationship('SupportMessage', backref='ticket', lazy='dynamic', cascade='all, delete-orphan')
+    
+    def get_last_message(self):
+        return self.messages.order_by(SupportMessage.created_at.desc()).first()
+    
+    def get_unread_count_for_admin(self):
+        return self.messages.filter_by(is_from_user=True, read_by_admin=False).count()
+
+class SupportMessage(db.Model):
+    __tablename__ = 'support_messages'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    ticket_id = db.Column(db.Integer, db.ForeignKey('support_tickets.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    message = db.Column(db.Text, nullable=False)
+    is_from_user = db.Column(db.Boolean, default=True)
+    read_by_admin = db.Column(db.Boolean, default=False)
+    read_by_user = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    user = db.relationship('User', backref='support_messages')

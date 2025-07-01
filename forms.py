@@ -231,3 +231,39 @@ class AdminKYCForm(FlaskForm):
         Length(max=500, message="Notes cannot exceed 500 characters")
     ])
     submit = SubmitField('Process KYC Request')
+
+class SupportTicketForm(FlaskForm):
+    subject = StringField('Subject', validators=[
+        DataRequired(),
+        Length(min=5, max=200, message="Subject must be between 5 and 200 characters")
+    ])
+    message = TextAreaField('Message', validators=[
+        DataRequired(),
+        Length(min=10, max=2000, message="Message must be between 10 and 2000 characters")
+    ])
+    priority = SelectField('Priority', choices=[
+        ('low', 'Low'),
+        ('normal', 'Normal'),
+        ('high', 'High'),
+        ('urgent', 'Urgent')
+    ], default='normal')
+    submit = SubmitField('Send Message')
+
+class SupportMessageForm(FlaskForm):
+    message = TextAreaField('Message', validators=[
+        DataRequired(),
+        Length(min=1, max=2000, message="Message cannot exceed 2000 characters")
+    ])
+    submit = SubmitField('Send Message')
+
+class AdminSupportReplyForm(FlaskForm):
+    message = TextAreaField('Reply', validators=[
+        DataRequired(),
+        Length(min=1, max=2000, message="Reply cannot exceed 2000 characters")
+    ])
+    status = SelectField('Ticket Status', choices=[
+        ('open', 'Open'),
+        ('in_progress', 'In Progress'),
+        ('closed', 'Closed')
+    ])
+    submit = SubmitField('Send Reply')

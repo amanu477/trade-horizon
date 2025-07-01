@@ -11,10 +11,11 @@ import time
 from functools import wraps
 
 from app import app, db
-from models import User, Wallet, Trade, StakingPosition, Transaction, MarketData, DepositRequest, WithdrawalRequest, AdminSettings, KYCRequest
+from models import User, Wallet, Trade, StakingPosition, Transaction, MarketData, DepositRequest, WithdrawalRequest, AdminSettings, KYCRequest, SupportTicket, SupportMessage
 from forms import (LoginForm, RegisterForm, TradeForm, StakingForm, WithdrawForm, 
                   DepositForm, AdminUserForm, CryptoDepositForm, AdminDepositForm, 
-                  AdminSettingsForm, TradeManipulationForm, KYCForm, AdminKYCForm)
+                  AdminSettingsForm, TradeManipulationForm, KYCForm, AdminKYCForm,
+                  SupportTicketForm, SupportMessageForm, AdminSupportReplyForm)
 from utils import generate_market_price, get_asset_price
 from market_data import market_data
 from payout_manager import payout_manager
@@ -35,15 +36,24 @@ def inject_admin_counts():
         pending_deposits = DepositRequest.query.filter_by(status='pending').count()
         pending_withdrawals = WithdrawalRequest.query.filter_by(status='pending').count()
         pending_kyc = KYCRequest.query.filter_by(status='pending').count()
+        pending_support = SupportTicket.query.filter(SupportTicket.status.in_(['open', 'in_progress'])).count()
+        unread_support = db.session.query(SupportMessage).join(SupportTicket).filter(
+            SupportMessage.is_from_user == True,
+            SupportMessage.read_by_admin == False
+        ).count()
         return dict(
             pending_deposits=pending_deposits,
             pending_withdrawals=pending_withdrawals,
-            pending_kyc=pending_kyc
+            pending_kyc=pending_kyc,
+            pending_support=pending_support,
+            unread_support=unread_support
         )
     return dict(
         pending_deposits=0,
         pending_withdrawals=0,
-        pending_kyc=0
+        pending_kyc=0,
+        pending_support=0,
+        unread_support=0
     )
 
 @app.route('/')
@@ -1681,3 +1691,158 @@ def admin_process_kyc(kyc_id):
         return redirect(url_for('admin_kyc'))
     
     return render_template('admin/process_kyc.html', kyc_request=kyc_request, form=form)
+
+# Support System Routes
+@app.route('/support')
+@login_required
+def support():
+    """Customer support ticket system"""
+    user_tickets = SupportTicket.query.filter_by(user_id=current_user.id).order_by(SupportTicket.updated_at.desc()).all()
+    return render_template('support/support.html', tickets=user_tickets)
+
+@app.route('/support/new', methods=['GET', 'POST'])
+@login_required
+def create_support_ticket():
+    """Create new support ticket"""
+    form = SupportTicketForm()
+    
+    if form.validate_on_submit():
+        # Create ticket
+        ticket = SupportTicket()
+        ticket.user_id = current_user.id
+        ticket.subject = form.subject.data
+        ticket.priority = form.priority.data
+        db.session.add(ticket)
+        db.session.flush()  # Get ticket ID
+        
+        # Create first message
+        message = SupportMessage()
+        message.ticket_id = ticket.id
+        message.user_id = current_user.id
+        message.message = form.message.data
+        message.is_from_user = True
+        db.session.add(message)
+        
+        db.session.commit()
+        flash('Support ticket created successfully. Our team will respond soon!', 'success')
+        return redirect(url_for('support_ticket', ticket_id=ticket.id))
+    
+    return render_template('support/create_ticket.html', form=form)
+
+@app.route('/support/ticket/<int:ticket_id>')
+@login_required
+def support_ticket(ticket_id):
+    """View specific support ticket"""
+    ticket = SupportTicket.query.filter_by(id=ticket_id, user_id=current_user.id).first()
+    if not ticket:
+        flash('Ticket not found.', 'error')
+        return redirect(url_for('support'))
+    
+    # Mark all admin messages as read
+    SupportMessage.query.filter_by(ticket_id=ticket_id, is_from_user=False, read_by_user=False).update({'read_by_user': True})
+    db.session.commit()
+    
+    messages = ticket.messages.order_by(SupportMessage.created_at.asc()).all()
+    form = SupportMessageForm()
+    
+    return render_template('support/ticket.html', ticket=ticket, messages=messages, form=form)
+
+@app.route('/support/ticket/<int:ticket_id>/message', methods=['POST'])
+@login_required
+def send_support_message(ticket_id):
+    """Send message to support ticket"""
+    ticket = SupportTicket.query.filter_by(id=ticket_id, user_id=current_user.id).first()
+    if not ticket:
+        flash('Ticket not found.', 'error')
+        return redirect(url_for('support'))
+    
+    form = SupportMessageForm()
+    if form.validate_on_submit():
+        message = SupportMessage()
+        message.ticket_id = ticket_id
+        message.user_id = current_user.id
+        message.message = form.message.data
+        message.is_from_user = True
+        db.session.add(message)
+        
+        # Update ticket status
+        ticket.status = 'open'
+        ticket.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        flash('Message sent successfully!', 'success')
+    
+    return redirect(url_for('support_ticket', ticket_id=ticket_id))
+
+# Admin Support Routes
+@app.route('/admin/support')
+@login_required
+@admin_required
+def admin_support():
+    """Admin support dashboard"""
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+    status = request.args.get('status', 'all')
+    
+    query = SupportTicket.query
+    if status != 'all':
+        query = query.filter_by(status=status)
+    
+    tickets = query.order_by(SupportTicket.updated_at.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+    
+    # Get counts
+    open_count = SupportTicket.query.filter_by(status='open').count()
+    in_progress_count = SupportTicket.query.filter_by(status='in_progress').count()
+    closed_count = SupportTicket.query.filter_by(status='closed').count()
+    
+    return render_template('admin/support.html', 
+                         tickets=tickets,
+                         open_count=open_count,
+                         in_progress_count=in_progress_count,
+                         closed_count=closed_count,
+                         current_status=status)
+
+@app.route('/admin/support/ticket/<int:ticket_id>')
+@login_required
+@admin_required
+def admin_support_ticket(ticket_id):
+    """Admin view of support ticket"""
+    ticket = SupportTicket.query.get_or_404(ticket_id)
+    
+    # Mark all user messages as read by admin
+    SupportMessage.query.filter_by(ticket_id=ticket_id, is_from_user=True, read_by_admin=False).update({'read_by_admin': True})
+    db.session.commit()
+    
+    messages = ticket.messages.order_by(SupportMessage.created_at.asc()).all()
+    form = AdminSupportReplyForm()
+    form.status.data = ticket.status
+    
+    return render_template('admin/support_ticket.html', ticket=ticket, messages=messages, form=form)
+
+@app.route('/admin/support/ticket/<int:ticket_id>/reply', methods=['POST'])
+@login_required
+@admin_required
+def admin_support_reply(ticket_id):
+    """Admin reply to support ticket"""
+    ticket = SupportTicket.query.get_or_404(ticket_id)
+    form = AdminSupportReplyForm()
+    
+    if form.validate_on_submit():
+        # Create reply message
+        message = SupportMessage()
+        message.ticket_id = ticket_id
+        message.user_id = current_user.id
+        message.message = form.message.data
+        message.is_from_user = False
+        db.session.add(message)
+        
+        # Update ticket status
+        ticket.status = form.status.data
+        ticket.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        flash('Reply sent successfully!', 'success')
+    
+    return redirect(url_for('admin_support_ticket', ticket_id=ticket_id))

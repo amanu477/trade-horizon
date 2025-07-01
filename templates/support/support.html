@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}Customer Support - TradePro{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="text-white">
+                    <i class="fas fa-headset me-2 text-info"></i>Customer Support
+                </h2>
+                <a href="{{ url_for('create_support_ticket') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>New Ticket
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Support Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-ticket-alt fa-2x mb-2"></i>
+                    <h3>{{ tickets|length }}</h3>
+                    <p class="mb-0">Total Tickets</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-warning text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-clock fa-2x mb-2"></i>
+                    <h3>{{ tickets|selectattr('status', 'in', ['open', 'in_progress'])|list|length }}</h3>
+                    <p class="mb-0">Active Tickets</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-check-circle fa-2x mb-2"></i>
+                    <h3>{{ tickets|selectattr('status', 'equalto', 'closed')|list|length }}</h3>
+                    <p class="mb-0">Resolved Tickets</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Support Chat Bot Widget -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-dark border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-robot me-2"></i>TradePro Support Bot
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h6 class="text-light mb-3">Need immediate help? Start a conversation with our support team!</h6>
+                            <p class="text-muted">Our support team is available 24/7 to help you with:</p>
+                            <ul class="text-muted">
+                                <li>Account and trading questions</li>
+                                <li>Deposit and withdrawal assistance</li>
+                                <li>Technical issues</li>
+                                <li>KYC verification support</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <a href="{{ url_for('create_support_ticket') }}" class="btn btn-primary btn-lg">
+                                <i class="fas fa-comments me-2"></i>Start Chat
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Support Tickets -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-dark border-secondary">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list me-2"></i>Your Support Tickets
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if tickets %}
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Ticket #</th>
+                                        <th>Subject</th>
+                                        <th>Status</th>
+                                        <th>Priority</th>
+                                        <th>Created</th>
+                                        <th>Last Updated</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for ticket in tickets %}
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-primary">#{{ ticket.id }}</span>
+                                        </td>
+                                        <td>{{ ticket.subject }}</td>
+                                        <td>
+                                            {% if ticket.status == 'open' %}
+                                                <span class="badge bg-success">Open</span>
+                                            {% elif ticket.status == 'in_progress' %}
+                                                <span class="badge bg-warning">In Progress</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Closed</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if ticket.priority == 'urgent' %}
+                                                <span class="badge bg-danger">Urgent</span>
+                                            {% elif ticket.priority == 'high' %}
+                                                <span class="badge bg-warning">High</span>
+                                            {% elif ticket.priority == 'normal' %}
+                                                <span class="badge bg-info">Normal</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Low</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ ticket.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                        <td>{{ ticket.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                        <td>
+                                            <a href="{{ url_for('support_ticket', ticket_id=ticket.id) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye me-1"></i>View
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center text-muted py-5">
+                            <i class="fas fa-comments fa-3x mb-3"></i>
+                            <h5>No support tickets yet</h5>
+                            <p>Need help? Create your first support ticket and our team will assist you!</p>
+                            <a href="{{ url_for('create_support_ticket') }}" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Create First Ticket
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
