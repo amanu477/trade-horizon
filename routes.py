@@ -427,19 +427,21 @@ def wallet():
                          deposit_form=deposit_form,
                          withdraw_form=withdraw_form)
 
-@app.route('/deposit', methods=['POST'])
+@app.route('/deposit', methods=['GET', 'POST'])
 @login_required
 def deposit():
     form = DepositForm()
-    if form.validate_on_submit():
+    if request.method == 'POST' and form.validate_on_submit():
         # Redirect to deposit page with amount and currency
         return redirect(url_for('crypto_deposit', 
                               amount=form.amount.data, 
                               currency=form.currency.data))
-    else:
+    elif request.method == 'POST':
         flash('Please check your deposit details', 'error')
+        return redirect(url_for('wallet'))
     
-    return redirect(url_for('wallet'))
+    # GET request - show deposit form
+    return render_template('deposit/deposit.html', form=form)
 
 @app.route('/deposit/crypto', methods=['GET', 'POST'])
 @login_required

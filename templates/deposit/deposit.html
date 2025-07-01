@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Deposit Funds - TradePro{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Deposit Funds</h3>
+                </div>
+                <div class="card-body p-4">
+                    <div class="alert alert-info">
+                        <h5><i class="fas fa-info-circle me-2"></i>Cryptocurrency Deposit Only</h5>
+                        <p class="mb-0">We currently accept deposits in USDT (TRC-20), Bitcoin, and Ethereum. All deposits are manually verified by our team.</p>
+                    </div>
+                    
+                    <form method="POST" action="{{ url_for('deposit') }}">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.amount.label(class="form-label fw-bold") }}
+                                {{ form.amount(class="form-control form-control-lg", placeholder="100.00") }}
+                                <div class="form-text">Minimum deposit: $10 | Maximum: $100,000</div>
+                                {% for error in form.amount.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                {{ form.currency.label(class="form-label fw-bold") }}
+                                {{ form.currency(class="form-select form-select-lg") }}
+                                {% for error in form.currency.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-arrow-right me-2"></i>Continue to Deposit
+                            </button>
+                            <a href="{{ url_for('wallet') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Wallet
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="row mt-4">
+                <div class="col-md-4">
+                    <div class="card text-center bg-success text-white">
+                        <div class="card-body">
+                            <i class="fab fa-bitcoin fa-2x mb-2"></i>
+                            <h5>Bitcoin</h5>
+                            <p class="mb-0">Secure & Fast</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center bg-info text-white">
+                        <div class="card-body">
+                            <i class="fab fa-ethereum fa-2x mb-2"></i>
+                            <h5>Ethereum</h5>
+                            <p class="mb-0">Smart Contracts</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center bg-warning text-white">
+                        <div class="card-body">
+                            <i class="fas fa-coins fa-2x mb-2"></i>
+                            <h5>USDT TRC-20</h5>
+                            <p class="mb-0">Stable & Reliable</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
