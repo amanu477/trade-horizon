@@ -15,6 +15,7 @@ from forms import (LoginForm, RegisterForm, TradeForm, StakingForm, WithdrawForm
 from utils import generate_market_price, get_asset_price
 from market_data import market_data
 from payout_manager import payout_manager
+from qr_generator import generate_crypto_qr_code
 try:
     from twelve_data_integration import twelve_data_api
 except ImportError:
