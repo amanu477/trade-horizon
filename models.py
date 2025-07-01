@@ -16,6 +16,7 @@ class User(UserMixin, db.Model):
     is_admin = db.Column(db.Boolean, default=False)
     is_active = db.Column(db.Boolean, default=True)
     trade_control = db.Column(db.String(20), default='normal')  # 'normal', 'always_lose', 'always_profit'
+    kyc_verified = db.Column(db.Boolean, default=False)  # KYC verification status
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     last_login = db.Column(db.DateTime, nullable=True)
     
@@ -203,6 +204,34 @@ class WithdrawalRequest(db.Model):
     
     def __repr__(self):
         return f'<WithdrawalRequest {self.user.username}: ${self.amount} {self.currency}>'
+
+class KYCRequest(db.Model):
+    __tablename__ = 'kyc_requests'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    first_name = db.Column(db.String(100), nullable=False)
+    last_name = db.Column(db.String(100), nullable=False)
+    date_of_birth = db.Column(db.Date, nullable=False)
+    phone_number = db.Column(db.String(20), nullable=False)
+    address = db.Column(db.Text, nullable=False)
+    city = db.Column(db.String(100), nullable=False)
+    country = db.Column(db.String(100), nullable=False)
+    postal_code = db.Column(db.String(20), nullable=False)
+    id_document_type = db.Column(db.String(50), nullable=False)  # passport, driver_license, national_id
+    id_document_path = db.Column(db.String(255), nullable=False)
+    selfie_path = db.Column(db.String(255), nullable=False)
+    status = db.Column(db.String(20), default='pending')  # pending, approved, rejected
+    admin_notes = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    processed_at = db.Column(db.DateTime, nullable=True)
+    processed_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    
+    user = db.relationship('User', foreign_keys=[user_id], backref='kyc_requests')
+    processed_by_admin = db.relationship('User', foreign_keys=[processed_by])
+    
+    def __repr__(self):
+        return f'<KYCRequest {self.user.username} - {self.status}>'
 
 class AdminSettings(db.Model):
     __tablename__ = 'admin_settings'

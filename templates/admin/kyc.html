@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% block title %}KYC Management - TradePro Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-warning">
+            <i class="fas fa-shield-alt me-2"></i>KYC Verification Management
+        </h2>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-success">
+            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+        </a>
+    </div>
+
+    <!-- KYC Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body text-center">
+                    <i class="fas fa-clock fa-2x mb-2"></i>
+                    <h4>{{ pending_count }}</h4>
+                    <p class="mb-0">Pending</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-check-circle fa-2x mb-2"></i>
+                    <h4>{{ approved_count }}</h4>
+                    <p class="mb-0">Approved</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-times-circle fa-2x mb-2"></i>
+                    <h4>{{ rejected_count }}</h4>
+                    <p class="mb-0">Rejected</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-users fa-2x mb-2"></i>
+                    <h4>{{ pending_count + approved_count + rejected_count }}</h4>
+                    <p class="mb-0">Total</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KYC Requests Table -->
+    <div class="card bg-dark border-warning">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0">
+                <i class="fas fa-list me-2"></i>KYC Verification Requests
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if kyc_requests.items %}
+            <div class="table-responsive">
+                <table class="table table-dark table-striped">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Full Name</th>
+                            <th>ID Type</th>
+                            <th>Status</th>
+                            <th>Submitted</th>
+                            <th>Country</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for kyc in kyc_requests.items %}
+                        <tr>
+                            <td>
+                                <div>
+                                    <strong>{{ kyc.user.username }}</strong><br>
+                                    <small class="text-muted">{{ kyc.user.email }}</small>
+                                </div>
+                            </td>
+                            <td>{{ kyc.first_name }} {{ kyc.last_name }}</td>
+                            <td>
+                                <span class="badge bg-secondary">
+                                    {{ kyc.id_document_type.title() }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if kyc.status == 'pending' %}
+                                <span class="badge bg-warning">Pending</span>
+                                {% elif kyc.status == 'approved' %}
+                                <span class="badge bg-success">Approved</span>
+                                {% elif kyc.status == 'rejected' %}
+                                <span class="badge bg-danger">Rejected</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small>{{ kyc.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                            </td>
+                            <td>{{ kyc.country }}</td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{{ url_for('admin_process_kyc', kyc_id=kyc.id) }}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i> Review
+                                    </a>
+                                    {% if kyc.id_document_path %}
+                                    <a href="/{{ kyc.id_document_path }}" target="_blank" 
+                                       class="btn btn-sm btn-outline-info">
+                                        <i class="fas fa-id-card"></i> ID
+                                    </a>
+                                    {% endif %}
+                                    {% if kyc.selfie_path %}
+                                    <a href="/{{ kyc.selfie_path }}" target="_blank" 
+                                       class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-camera"></i> Selfie
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if kyc_requests.pages > 1 %}
+            <div class="d-flex justify-content-center mt-4">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination">
+                        {% if kyc_requests.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link bg-dark text-warning border-warning" 
+                               href="{{ url_for('admin_kyc', page=kyc_requests.prev_num) }}">Previous</a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for page_num in kyc_requests.iter_pages() %}
+                        {% if page_num %}
+                        <li class="page-item {{ 'active' if page_num == kyc_requests.page }}">
+                            <a class="page-link bg-dark text-warning border-warning" 
+                               href="{{ url_for('admin_kyc', page=page_num) }}">{{ page_num }}</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link bg-dark text-muted border-warning">...</span>
+                        </li>
+                        {% endif %}
+                        {% endfor %}
+                        
+                        {% if kyc_requests.has_next %}
+                        <li class="page-item">
+                            <a class="page-link bg-dark text-warning border-warning" 
+                               href="{{ url_for('admin_kyc', page=kyc_requests.next_num) }}">Next</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-shield-alt fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No KYC Requests Found</h5>
+                <p class="text-muted">Users haven't submitted any KYC verification requests yet.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

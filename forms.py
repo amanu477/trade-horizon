@@ -1,6 +1,7 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired
 from wtforms import StringField, PasswordField, EmailField, DecimalField, SelectField, IntegerField, BooleanField, TextAreaField, SubmitField
+from wtforms.fields import DateField
 from wtforms.validators import DataRequired, Email, Length, EqualTo, NumberRange, ValidationError
 from models import User
 
@@ -170,3 +171,53 @@ class TradeManipulationForm(FlaskForm):
     admin_notes = StringField('Admin Notes', validators=[
         Length(max=255, message="Notes cannot exceed 255 characters")
     ])
+    submit = SubmitField('Update Trade')
+
+class KYCForm(FlaskForm):
+    first_name = StringField('First Name', validators=[
+        DataRequired(),
+        Length(min=2, max=100, message="First name must be between 2 and 100 characters")
+    ])
+    last_name = StringField('Last Name', validators=[
+        DataRequired(),
+        Length(min=2, max=100, message="Last name must be between 2 and 100 characters")
+    ])
+    date_of_birth = DateField('Date of Birth', validators=[DataRequired()], format='%Y-%m-%d')
+    phone_number = StringField('Phone Number', validators=[
+        DataRequired(),
+        Length(min=10, max=20, message="Please enter a valid phone number")
+    ])
+    address = TextAreaField('Address', validators=[
+        DataRequired(),
+        Length(max=500, message="Address cannot exceed 500 characters")
+    ])
+    city = StringField('City', validators=[
+        DataRequired(),
+        Length(max=100, message="City name cannot exceed 100 characters")
+    ])
+    country = StringField('Country', validators=[
+        DataRequired(),
+        Length(max=100, message="Country name cannot exceed 100 characters")
+    ])
+    postal_code = StringField('Postal Code', validators=[
+        DataRequired(),
+        Length(max=20, message="Postal code cannot exceed 20 characters")
+    ])
+    id_document_type = SelectField('ID Document Type', choices=[
+        ('passport', 'Passport'),
+        ('driver_license', 'Driver License'),
+        ('national_id', 'National ID Card')
+    ], validators=[DataRequired()])
+    id_document = FileField('ID Document', validators=[DataRequired()])
+    selfie = FileField('Selfie with ID Document', validators=[DataRequired()])
+    submit = SubmitField('Submit KYC Request')
+
+class AdminKYCForm(FlaskForm):
+    status = SelectField('Status', choices=[
+        ('approved', 'Approve'),
+        ('rejected', 'Reject')
+    ], validators=[DataRequired()])
+    admin_notes = TextAreaField('Admin Notes', validators=[
+        Length(max=500, message="Notes cannot exceed 500 characters")
+    ])
+    submit = SubmitField('Process KYC Request')

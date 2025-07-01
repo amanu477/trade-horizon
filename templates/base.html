@@ -63,6 +63,17 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link text-warning position-relative" href="{{ url_for('admin_kyc') }}">
+                            <i class="fas fa-shield-alt me-1"></i>KYC Verification
+                            {% if pending_kyc > 0 %}
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                {{ pending_kyc }}
+                                <span class="visually-hidden">pending KYC requests</span>
+                            </span>
+                            {% endif %}
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link text-warning" href="{{ url_for('admin_settings') }}">
                             <i class="fas fa-cog me-1"></i>Settings
                         </a>

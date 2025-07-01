@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}KYC Verification - TradePro{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card bg-dark border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0">
+                        <i class="fas fa-shield-alt me-2"></i>KYC Verification Required
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle me-2"></i>Why do we need KYC verification?</h6>
+                        <ul class="mb-0">
+                            <li>To comply with financial regulations and anti-money laundering laws</li>
+                            <li>To protect your account and ensure secure trading</li>
+                            <li>To enable live trading with real money</li>
+                            <li>To process deposits and withdrawals securely</li>
+                        </ul>
+                    </div>
+
+                    <form method="POST" enctype="multipart/form-data">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.first_name.id }}" class="form-label text-light">{{ form.first_name.label.text }}</label>
+                                {{ form.first_name(class="form-control bg-secondary text-light border-0") }}
+                                {% if form.first_name.errors %}
+                                    <div class="text-danger small">{{ form.first_name.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.last_name.id }}" class="form-label text-light">{{ form.last_name.label.text }}</label>
+                                {{ form.last_name(class="form-control bg-secondary text-light border-0") }}
+                                {% if form.last_name.errors %}
+                                    <div class="text-danger small">{{ form.last_name.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.date_of_birth.id }}" class="form-label text-light">{{ form.date_of_birth.label.text }}</label>
+                                {{ form.date_of_birth(class="form-control bg-secondary text-light border-0") }}
+                                {% if form.date_of_birth.errors %}
+                                    <div class="text-danger small">{{ form.date_of_birth.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.phone_number.id }}" class="form-label text-light">{{ form.phone_number.label.text }}</label>
+                                {{ form.phone_number(class="form-control bg-secondary text-light border-0", placeholder="+1234567890") }}
+                                {% if form.phone_number.errors %}
+                                    <div class="text-danger small">{{ form.phone_number.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.address.id }}" class="form-label text-light">{{ form.address.label.text }}</label>
+                            {{ form.address(class="form-control bg-secondary text-light border-0", rows="3") }}
+                            {% if form.address.errors %}
+                                <div class="text-danger small">{{ form.address.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.city.id }}" class="form-label text-light">{{ form.city.label.text }}</label>
+                                {{ form.city(class="form-control bg-secondary text-light border-0") }}
+                                {% if form.city.errors %}
+                                    <div class="text-danger small">{{ form.city.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.country.id }}" class="form-label text-light">{{ form.country.label.text }}</label>
+                                {{ form.country(class="form-control bg-secondary text-light border-0") }}
+                                {% if form.country.errors %}
+                                    <div class="text-danger small">{{ form.country.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.postal_code.id }}" class="form-label text-light">{{ form.postal_code.label.text }}</label>
+                                {{ form.postal_code(class="form-control bg-secondary text-light border-0") }}
+                                {% if form.postal_code.errors %}
+                                    <div class="text-danger small">{{ form.postal_code.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.id_document_type.id }}" class="form-label text-light">{{ form.id_document_type.label.text }}</label>
+                            {{ form.id_document_type(class="form-select bg-secondary text-light border-0") }}
+                            {% if form.id_document_type.errors %}
+                                <div class="text-danger small">{{ form.id_document_type.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.id_document.id }}" class="form-label text-light">
+                                    <i class="fas fa-id-card me-2"></i>{{ form.id_document.label.text }}
+                                </label>
+                                {{ form.id_document(class="form-control bg-secondary text-light border-0", accept=".jpg,.jpeg,.png,.pdf") }}
+                                <div class="form-text text-muted">
+                                    Upload clear photo of your ID document (JPG, PNG, PDF - Max 5MB)
+                                </div>
+                                {% if form.id_document.errors %}
+                                    <div class="text-danger small">{{ form.id_document.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.selfie.id }}" class="form-label text-light">
+                                    <i class="fas fa-camera me-2"></i>{{ form.selfie.label.text }}
+                                </label>
+                                {{ form.selfie(class="form-control bg-secondary text-light border-0", accept=".jpg,.jpeg,.png") }}
+                                <div class="form-text text-muted">
+                                    Upload a selfie holding your ID document (JPG, PNG - Max 5MB)
+                                </div>
+                                {% if form.selfie.errors %}
+                                    <div class="text-danger small">{{ form.selfie.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <h6><i class="fas fa-exclamation-triangle me-2"></i>Important Guidelines:</h6>
+                            <ul class="mb-0 small">
+                                <li>Ensure all information matches exactly with your ID document</li>
+                                <li>ID document photo should be clear and all text must be readable</li>
+                                <li>Selfie should clearly show your face and the ID document</li>
+                                <li>Files must be under 5MB each</li>
+                                <li>Processing typically takes 24-48 hours</li>
+                            </ul>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            {{ form.submit(class="btn btn-warning btn-lg") }}
+                            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

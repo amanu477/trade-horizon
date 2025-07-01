@@ -8,10 +8,10 @@ import json
 from functools import wraps
 
 from app import app, db
-from models import User, Wallet, Trade, StakingPosition, Transaction, MarketData, DepositRequest, WithdrawalRequest, AdminSettings
+from models import User, Wallet, Trade, StakingPosition, Transaction, MarketData, DepositRequest, WithdrawalRequest, AdminSettings, KYCRequest
 from forms import (LoginForm, RegisterForm, TradeForm, StakingForm, WithdrawForm, 
                   DepositForm, AdminUserForm, CryptoDepositForm, AdminDepositForm, 
-                  AdminSettingsForm, TradeManipulationForm)
+                  AdminSettingsForm, TradeManipulationForm, KYCForm, AdminKYCForm)
 from utils import generate_market_price, get_asset_price
 from market_data import market_data
 from payout_manager import payout_manager
@@ -23,6 +23,24 @@ import logging
 
 # Configure logging for debugging
 logging.basicConfig(level=logging.DEBUG)
+
+@app.context_processor
+def inject_admin_counts():
+    """Inject admin notification counts into all templates"""
+    if current_user.is_authenticated and current_user.is_admin:
+        pending_deposits = DepositRequest.query.filter_by(status='pending').count()
+        pending_withdrawals = WithdrawalRequest.query.filter_by(status='pending').count()
+        pending_kyc = KYCRequest.query.filter_by(status='pending').count()
+        return dict(
+            pending_deposits=pending_deposits,
+            pending_withdrawals=pending_withdrawals,
+            pending_kyc=pending_kyc
+        )
+    return dict(
+        pending_deposits=0,
+        pending_withdrawals=0,
+        pending_kyc=0
+    )
 
 @app.route('/')
 def index():
@@ -87,16 +105,16 @@ def register():
         db.session.add(user)
         db.session.flush()  # Get user ID
         
-        # Create wallet for new user
-        wallet = Wallet(user_id=user.id)
+        # Create wallet for new user with $50 welcome bonus
+        wallet = Wallet(user_id=user.id, balance=50.00)  # $50 live trading welcome bonus
         db.session.add(wallet)
         
         # Create welcome transaction
         transaction = Transaction(
             user_id=user.id,
             transaction_type='deposit',
-            amount=1000.00,
-            description='Welcome bonus'
+            amount=50.00,
+            description='$50 Welcome bonus - Live trading'
         )
         db.session.add(transaction)
         
@@ -158,9 +176,14 @@ def demo_trading():
 @app.route('/trading/live')
 @login_required
 def live_trading():
+    # Check if user is KYC verified for live trading
+    if not current_user.kyc_verified:
+        flash('You must complete KYC verification to access live trading. Please submit your verification documents.', 'warning')
+        return redirect(url_for('kyc_verification'))
+    
     wallet = current_user.wallet
     if not wallet or wallet.balance < 1:
-        flash('Insufficient balance for live trading. Please deposit funds.', 'error')
+        flash('Insufficient balance for live trading. Please deposit funds.', 'warning')
         return redirect(url_for('wallet'))
     
     form = TradeForm()
@@ -537,6 +560,68 @@ def user_withdrawals():
     """User's withdrawal requests page"""
     withdrawals = WithdrawalRequest.query.filter_by(user_id=current_user.id).order_by(WithdrawalRequest.created_at.desc()).all()
     return render_template('user_withdrawals.html', withdrawals=withdrawals)
+
+@app.route('/kyc-verification', methods=['GET', 'POST'])
+@login_required
+def kyc_verification():
+    """KYC verification page for users"""
+    # Check if user already has a pending or approved KYC request
+    existing_kyc = KYCRequest.query.filter_by(user_id=current_user.id).first()
+    
+    if existing_kyc:
+        if existing_kyc.status == 'approved':
+            flash('Your KYC verification has been approved. You can now access live trading.', 'success')
+            return redirect(url_for('live_trading'))
+        elif existing_kyc.status == 'pending':
+            flash('Your KYC verification is pending approval. Please wait for admin review.', 'info')
+            return render_template('kyc/status.html', kyc_request=existing_kyc)
+        elif existing_kyc.status == 'rejected':
+            flash('Your previous KYC request was rejected. Please submit a new request with correct documents.', 'warning')
+    
+    form = KYCForm()
+    
+    if form.validate_on_submit():
+        import os
+        from werkzeug.utils import secure_filename
+        
+        # Create uploads directory if it doesn't exist
+        upload_dir = os.path.join('static', 'uploads', 'kyc')
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        # Save uploaded files
+        id_doc_filename = secure_filename(f"id_{current_user.id}_{form.id_document.data.filename}")
+        selfie_filename = secure_filename(f"selfie_{current_user.id}_{form.selfie.data.filename}")
+        
+        id_doc_path = os.path.join(upload_dir, id_doc_filename)
+        selfie_path = os.path.join(upload_dir, selfie_filename)
+        
+        form.id_document.data.save(id_doc_path)
+        form.selfie.data.save(selfie_path)
+        
+        # Create KYC request
+        kyc_request = KYCRequest(
+            user_id=current_user.id,
+            first_name=form.first_name.data,
+            last_name=form.last_name.data,
+            date_of_birth=form.date_of_birth.data,
+            phone_number=form.phone_number.data,
+            address=form.address.data,
+            city=form.city.data,
+            country=form.country.data,
+            postal_code=form.postal_code.data,
+            id_document_type=form.id_document_type.data,
+            id_document_path=id_doc_path,
+            selfie_path=selfie_path,
+            status='pending'
+        )
+        
+        db.session.add(kyc_request)
+        db.session.commit()
+        
+        flash('KYC verification request submitted successfully! Admin will review your documents within 24-48 hours.', 'success')
+        return redirect(url_for('kyc_verification'))
+    
+    return render_template('kyc/submit.html', form=form)
 
 @app.route('/staking')
 @login_required
@@ -1472,3 +1557,53 @@ def admin_settings():
         form.eth_address.data = eth_setting.setting_value
     
     return render_template('admin/settings.html', form=form)
+
+@app.route('/admin/kyc')
+@login_required
+@admin_required
+def admin_kyc():
+    """Admin KYC management page"""
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+    
+    kyc_requests = KYCRequest.query.order_by(KYCRequest.created_at.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+    
+    # Get counts for dashboard
+    pending_count = KYCRequest.query.filter_by(status='pending').count()
+    approved_count = KYCRequest.query.filter_by(status='approved').count()
+    rejected_count = KYCRequest.query.filter_by(status='rejected').count()
+    
+    return render_template('admin/kyc.html', 
+                         kyc_requests=kyc_requests,
+                         pending_count=pending_count,
+                         approved_count=approved_count,
+                         rejected_count=rejected_count)
+
+@app.route('/admin/kyc/<int:kyc_id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def admin_process_kyc(kyc_id):
+    """Process individual KYC request"""
+    kyc_request = KYCRequest.query.get_or_404(kyc_id)
+    form = AdminKYCForm()
+    
+    if form.validate_on_submit():
+        kyc_request.status = form.status.data
+        kyc_request.admin_notes = form.admin_notes.data
+        kyc_request.processed_at = datetime.utcnow()
+        kyc_request.processed_by = current_user.id
+        
+        # Update user KYC verification status
+        if form.status.data == 'approved':
+            kyc_request.user.kyc_verified = True
+            flash(f'KYC request approved for {kyc_request.user.username}. User can now access live trading.', 'success')
+        else:
+            kyc_request.user.kyc_verified = False
+            flash(f'KYC request rejected for {kyc_request.user.username}.', 'info')
+        
+        db.session.commit()
+        return redirect(url_for('admin_kyc'))
+    
+    return render_template('admin/process_kyc.html', kyc_request=kyc_request, form=form)
