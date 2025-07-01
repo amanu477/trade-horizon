@@ -127,6 +127,9 @@ TradePro is a Flask-based binary options trading platform that provides both dem
 - Secure session management
 
 ## Changelog
+- July 1, 2025: **KYC Dashboard Status Enhancement** - Updated dashboard to show "Pending" status for all unverified users with KYC submissions (pending or rejected) until actually approved, providing clearer user experience
+- July 1, 2025: **Complete KYC Verification System** - Implemented comprehensive document verification with ID and selfie upload, admin approval workflow, QR code crypto deposits, and $50 welcome bonus for new registrations
+- July 1, 2025: **Enhanced User Experience** - Added dynamic KYC status alerts on dashboard (pending/required), account navigation with verification badges, and live trading access restriction until KYC approval
 - June 28, 2025: **Local Installation Support** - Fixed database setup issues in run_local.py and added complete dependency list to local_requirements.txt for clean local PC installation without Replit references
 - June 28, 2025: **User Withdrawal Tracking Page** - Added comprehensive withdrawal requests page where users can view all their withdrawal requests, status updates, admin notes, and processing history with navigation menu integration
 - June 28, 2025: **Automatic Withdrawal Redirect** - Users now automatically redirect to withdrawal requests page after submitting withdrawal requests to immediately see their request status
