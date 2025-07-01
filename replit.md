@@ -127,6 +127,7 @@ TradePro is a Flask-based binary options trading platform that provides both dem
 - Secure session management
 
 ## Changelog
+- July 1, 2025: **Professional KYC Interface Design** - Toned down colorful KYC management interface by replacing bright warning/success/info colors with subtle grey/secondary styling for a more professional administrative appearance
 - July 1, 2025: **Admin QR Code Upload System** - Replaced automatic QR code generation with admin file upload system where admins can upload custom QR code images for USDT/BTC/ETH deposits, providing complete control over payment QR codes displayed to users
 - July 1, 2025: **KYC Dashboard Status Enhancement** - Updated dashboard to show "Pending" status for all unverified users with KYC submissions (pending or rejected) until actually approved, providing clearer user experience
 - July 1, 2025: **Complete KYC Verification System** - Implemented comprehensive document verification with ID and selfie upload, admin approval workflow, QR code crypto deposits, and $50 welcome bonus for new registrations
