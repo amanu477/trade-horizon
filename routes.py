@@ -213,11 +213,7 @@ def demo_trading():
 @app.route('/trading/live')
 @login_required
 def live_trading():
-    # Check if user is KYC verified for live trading
-    if not current_user.kyc_verified:
-        flash('You must complete KYC verification to access live trading. Please submit your verification documents.', 'warning')
-        return redirect(url_for('kyc_verification'))
-    
+    # Users can now trade live with their $50 welcome deposit
     wallet = current_user.wallet
     if not wallet or wallet.balance < 1:
         flash('Insufficient balance for live trading. Please deposit funds.', 'warning')
