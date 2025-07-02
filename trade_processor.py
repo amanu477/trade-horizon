@@ -33,17 +33,17 @@ def process_expired_trades():
                 
                 # Apply admin trade control overrides
                 if trade_control == 'always_lose':
-                    # Force trade to lose regardless of market price
+                    # Force trade to lose - ignore market data
                     print(f"FORCING TRADE {trade.id} TO LOSE (admin control)")
                     trade.status = 'lose'
-                    trade.exit_price = current_price
-                    trade.profit_loss = -trade.amount
+                    trade.exit_price = trade.entry_price  # Use entry price since we ignore market
+                    trade.profit_loss = -trade.amount  # Lose exactly the invested amount
                 elif trade_control == 'always_profit':
-                    # Force trade to win regardless of market price
+                    # Force trade to win - ignore market data
                     print(f"FORCING TRADE {trade.id} TO WIN (admin control)")
                     trade.status = 'profit'
-                    trade.exit_price = current_price
-                    trade.profit_loss = trade.amount * (trade.payout_percentage / 100)
+                    trade.exit_price = trade.entry_price  # Use entry price since we ignore market
+                    trade.profit_loss = trade.amount  # Profit exactly the invested amount
                 else:
                     # Normal trading - calculate result based on market price
                     print(f"Processing trade {trade.id} normally")

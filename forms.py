@@ -57,14 +57,27 @@ class TradeForm(FlaskForm):
         NumberRange(min=1, max=10000, message="Amount must be between $1 and $10,000")
     ])
     
-    expiry_minutes = SelectField('Expiry Time', choices=[
-        ('1', '1 Minute'),
-        ('5', '5 Minutes'),
-        ('15', '15 Minutes'),
-        ('30', '30 Minutes'),
-        ('60', '1 Hour'),
-        ('240', '4 Hours'),
-        ('1440', '1 Day')
+    expiry_seconds = SelectField('Duration', choices=[
+        ('30', '30 Seconds'),
+        ('60', '60 Seconds'),
+        ('90', '90 Seconds'),
+        ('120', '2 Minutes'),
+        ('150', '2.5 Minutes'),
+        ('180', '3 Minutes'),
+        ('210', '3.5 Minutes'),
+        ('240', '4 Minutes'),
+        ('270', '4.5 Minutes'),
+        ('300', '5 Minutes'),
+        ('330', '5.5 Minutes'),
+        ('360', '6 Minutes'),
+        ('390', '6.5 Minutes'),
+        ('420', '7 Minutes'),
+        ('450', '7.5 Minutes'),
+        ('480', '8 Minutes'),
+        ('510', '8.5 Minutes'),
+        ('540', '9 Minutes'),
+        ('570', '9.5 Minutes'),
+        ('600', '10 Minutes')
     ], validators=[DataRequired()])
 
 class StakingForm(FlaskForm):

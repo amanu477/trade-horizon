@@ -286,19 +286,34 @@ def place_trade():
             logging.error(error_msg)
             return jsonify({'success': False, 'message': 'Invalid trade parameters'}), 400
         
-        # Check balance
+        # Check balance and duration requirements
         wallet = current_user.wallet
         if not wallet:
             logging.error(f"No wallet found for user {current_user.id}")
             return jsonify({'success': False, 'message': 'Wallet not found'}), 400
             
         available_balance = wallet.demo_balance if is_demo else wallet.balance
-        logging.info(f"User balance check: available={available_balance}, required={amount}, demo={is_demo}")
         
-        if available_balance < amount:
+        # Duration-based balance requirements
+        required_balance = amount
+        if expiry_seconds == 30:
+            required_balance = max(amount, 49)  # Need at least $49 for 30 sec trades
+        elif expiry_seconds in [60, 90]:
+            required_balance = max(amount, 89)  # Need at least $89 for 60s and 90s trades
+        elif expiry_seconds in [120, 150]:
+            required_balance = max(amount, 150)  # Need at least $150 for 120s and 150s trades
+        else:
+            required_balance = max(amount, 50)  # Need at least $50 for other durations
+            
+        logging.info(f"Balance check: available={available_balance}, trade_amount={amount}, required_balance={required_balance}, duration={expiry_seconds}s, demo={is_demo}")
+        
+        if available_balance < required_balance:
             balance_type = "demo" if is_demo else "live"
-            message = f'Not enough balance. You have ${available_balance:.2f} in your {balance_type} account but need ${amount:.2f} for this trade.'
-            logging.info(f"Insufficient balance: available={available_balance}, required={amount}, demo={is_demo}")
+            if required_balance > amount:
+                message = f'Insufficient balance for {expiry_seconds}s trades. You need at least ${required_balance:.2f} but have ${available_balance:.2f} in your {balance_type} account.'
+            else:
+                message = f'Not enough balance. You have ${available_balance:.2f} in your {balance_type} account but need ${amount:.2f} for this trade.'
+            logging.info(f"Insufficient balance: available={available_balance}, required={required_balance}, demo={is_demo}")
             return jsonify({'success': False, 'message': message})
         
         # Get current market price
@@ -400,11 +415,11 @@ def place_trade_old():
         current_price = market_data.get_real_price(form.asset.data)
         
         # Create trade
-        expiry_minutes = int(form.expiry_minutes.data)
-        expiry_time = datetime.utcnow() + timedelta(minutes=expiry_minutes)
+        expiry_seconds = int(form.expiry_seconds.data)
+        expiry_time = datetime.utcnow() + timedelta(seconds=expiry_seconds)
         
         # Get real-time payout percentage
-        payout_percentage = payout_manager.get_current_payout(form.asset.data, expiry_minutes)
+        payout_percentage = payout_manager.get_current_payout(form.asset.data, int(expiry_seconds / 60))
         
         trade = Trade(
             user_id=current_user.id,

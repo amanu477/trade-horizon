@@ -604,17 +604,40 @@ class TradingViewChart {
         const durationSeconds = parseInt(document.getElementById('duration-input').value);
         
         if (!amount || amount < 1) {
-            alert('Please enter a valid investment amount');
+            this.showTradeMessage('Please enter a valid investment amount', 'error');
             return;
         }
         
         if (!this.selectedDirection) {
-            alert('Please select trade direction (Buy or Sell)');
+            this.showTradeMessage('Please select trade direction (Buy or Sell)', 'error');
             return;
         }
         
-        if (!durationSeconds || durationSeconds < 1) {
-            alert('Please enter a valid trade duration');
+        if (!durationSeconds || durationSeconds < 30) {
+            this.showTradeMessage('Please select a valid trade duration (minimum 30 seconds)', 'error');
+            return;
+        }
+        
+        // Check balance requirements based on duration
+        const currentBalance = this.getCurrentBalance();
+        let requiredBalance = amount;
+        
+        if (durationSeconds === 30) {
+            requiredBalance = Math.max(amount, 49);
+        } else if (durationSeconds === 60 || durationSeconds === 90) {
+            requiredBalance = Math.max(amount, 89);
+        } else if (durationSeconds === 120 || durationSeconds === 150) {
+            requiredBalance = Math.max(amount, 150);
+        } else {
+            requiredBalance = Math.max(amount, 50);
+        }
+        
+        if (currentBalance < requiredBalance) {
+            if (requiredBalance > amount) {
+                this.showTradeMessage(`Insufficient balance for ${durationSeconds}s trades. You need at least $${requiredBalance} but have $${currentBalance.toFixed(2)}.`, 'warning');
+            } else {
+                this.showTradeMessage(`Insufficient balance. You have $${currentBalance.toFixed(2)} but need $${amount} for this trade.`, 'warning');
+            }
             return;
         }
         
@@ -776,6 +799,17 @@ class TradingViewChart {
         }, 4000);
     }
     
+    getCurrentBalance() {
+        // Get current balance from wallet display
+        const balanceElement = document.querySelector('.balance-display, #wallet-balance, .balance');
+        if (balanceElement) {
+            const balanceText = balanceElement.textContent || balanceElement.innerText || '';
+            const balance = parseFloat(balanceText.replace(/[$,]/g, ''));
+            return isNaN(balance) ? 0 : balance;
+        }
+        return 0;
+    }
+    
     showTradeMessage(message, type) {
         // Create and show a temporary message overlay
         const messageDiv = document.createElement('div');
@@ -788,19 +822,19 @@ class TradingViewChart {
             color: white;
             font-weight: bold;
             z-index: 10000;
-            background: ${type === 'success' ? '#26a69a' : '#ef5350'};
+            background: ${type === 'success' ? '#26a69a' : type === 'warning' ? '#f39c12' : '#ef5350'};
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         `;
         messageDiv.textContent = message;
         
         document.body.appendChild(messageDiv);
         
-        // Auto-remove after 3 seconds
+        // Auto-remove after 4 seconds for warning messages, 3 for others
         setTimeout(() => {
             if (messageDiv.parentNode) {
                 messageDiv.parentNode.removeChild(messageDiv);
             }
-        }, 3000);
+        }, type === 'warning' ? 4000 : 3000);
     }
     
     loadActiveTrades() {
