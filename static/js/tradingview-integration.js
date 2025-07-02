@@ -858,18 +858,24 @@ class TradingViewChart {
     }
     
     loadWalletBalance() {
+        console.log('Loading wallet balance for mode (second function):', this.mode);
         // Fetch current balance and update display
         fetch('/api/wallet_balance')
-            .then(response => response.json())
+            .then(response => {
+                console.log('Balance API response status (second function):', response.status);
+                return response.json();
+            })
             .then(data => {
+                console.log('Balance API data (second function):', data);
                 if (data.success) {
                     // Check if we're on demo or live page
                     const isDemo = this.mode === 'demo';
                     const balance = isDemo ? data.demo_balance : data.balance;
+                    console.log('Selected balance for mode', this.mode + ' (second function):', balance);
                     this.updateBalanceDisplay(balance);
                 }
             })
-            .catch(error => console.error('Error loading wallet balance:', error));
+            .catch(error => console.error('Error loading wallet balance (second function):', error));
     }
     
     showNotification(message, type) {
@@ -1108,15 +1114,22 @@ class TradingViewChart {
     }
     
     loadWalletBalance() {
+        console.log('Loading wallet balance (third function)');
         // Refresh wallet balance after trade completion
         fetch('/api/wallet_balance')
-            .then(response => response.json())
+            .then(response => {
+                console.log('Balance API response status (third function):', response.status);
+                return response.json();
+            })
             .then(data => {
+                console.log('Balance API data (third function):', data);
                 if (data.success) {
+                    // This function incorrectly always uses data.balance instead of checking demo/live mode
+                    console.log('Using data.balance (third function):', data.balance);
                     this.updateBalanceDisplay(data.balance);
                 }
             })
-            .catch(error => console.error('Error loading wallet balance:', error));
+            .catch(error => console.error('Error loading wallet balance (third function):', error));
     }
     
     async processExpiredTrade(tradeId) {
