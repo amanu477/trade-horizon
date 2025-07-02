@@ -733,13 +733,13 @@ class TradingViewChart {
         if (currentBalance < requiredBalance) {
             let message;
             if (durationSeconds === 30) {
-                message = `Insufficient balance. You have $${currentBalance.toFixed(2)} in order to trade this duration you need $49.00`;
+                message = `Insufficient balance. You have $${currentBalance.toFixed(2)}, to trade this duration you need $49.00`;
             } else if (durationSeconds === 60 || durationSeconds === 90) {
-                message = `Insufficient balance. You have $${currentBalance.toFixed(2)} in order to trade this duration you need $60.00`;
+                message = `Insufficient balance. You have $${currentBalance.toFixed(2)}, to trade this duration you need $60.00`;
             } else if (durationSeconds === 120 || durationSeconds === 150) {
-                message = `Insufficient balance. You have $${currentBalance.toFixed(2)} in order to trade this duration you need $100.00`;
+                message = `Insufficient balance. You have $${currentBalance.toFixed(2)}, to trade this duration you need $100.00`;
             } else {
-                message = `Insufficient balance. You have $${currentBalance.toFixed(2)} in order to trade this duration you need $200.00`;
+                message = `Insufficient balance. You have $${currentBalance.toFixed(2)}, to trade this duration you need $200.00`;
             }
             this.showTradeMessage(message, 'warning');
             return;
