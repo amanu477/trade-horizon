@@ -127,30 +127,37 @@ class TradingViewChart {
                             </div>
                             
                             <!-- Trade Duration -->
-                            <div style="margin-bottom: 16px;">
+                            <div style="margin-bottom: 16px; position: relative;">
                                 <label style="color: #868993; font-size: 12px; display: block; margin-bottom: 4px;">Trade Duration</label>
-                                <select id="duration-input" style="width: 100%; background: #2a2e39; color: #d1d4dc; border: 1px solid #434651; padding: 8px 12px; border-radius: 4px; font-size: 14px;">
-                                    <option value="30">30 Seconds</option>
-                                    <option value="60">60 Seconds</option>
-                                    <option value="90">90 Seconds</option>
-                                    <option value="120">2 Minutes</option>
-                                    <option value="150">2.5 Minutes</option>
-                                    <option value="180">3 Minutes</option>
-                                    <option value="210">3.5 Minutes</option>
-                                    <option value="240">4 Minutes</option>
-                                    <option value="270">4.5 Minutes</option>
-                                    <option value="300">5 Minutes</option>
-                                    <option value="330">5.5 Minutes</option>
-                                    <option value="360">6 Minutes</option>
-                                    <option value="390">6.5 Minutes</option>
-                                    <option value="420">7 Minutes</option>
-                                    <option value="450">7.5 Minutes</option>
-                                    <option value="480">8 Minutes</option>
-                                    <option value="510">8.5 Minutes</option>
-                                    <option value="540">9 Minutes</option>
-                                    <option value="570">9.5 Minutes</option>
-                                    <option value="600">10 Minutes</option>
-                                </select>
+                                <div class="duration-dropdown" style="position: relative;">
+                                    <div id="duration-display" style="width: 100%; background: #2a2e39; color: #d1d4dc; border: 1px solid #434651; padding: 8px 12px; border-radius: 4px; font-size: 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                                        <span>30 Seconds</span>
+                                        <span style="color: #868993;">▼</span>
+                                    </div>
+                                    <div id="duration-options" style="position: absolute; top: 100%; left: 0; right: 0; background: #2a2e39; border: 1px solid #434651; border-top: none; border-radius: 0 0 4px 4px; max-height: 180px; overflow-y: auto; z-index: 1000; display: none;">
+                                        <div class="duration-option" data-value="30" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #434651; color: #d1d4dc; font-size: 14px;">30 Seconds</div>
+                                        <div class="duration-option" data-value="60" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #434651; color: #d1d4dc; font-size: 14px;">60 Seconds</div>
+                                        <div class="duration-option" data-value="90" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #434651; color: #d1d4dc; font-size: 14px;">90 Seconds</div>
+                                        <div class="duration-option" data-value="120" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #434651; color: #d1d4dc; font-size: 14px;">2 Minutes</div>
+                                        <div class="duration-option" data-value="150" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #434651; color: #d1d4dc; font-size: 14px;">2.5 Minutes</div>
+                                        <div class="duration-option" data-value="180" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #434651; color: #d1d4dc; font-size: 14px;">3 Minutes</div>
+                                        <div class="duration-option" data-value="210" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #434651; color: #d1d4dc; font-size: 14px;">3.5 Minutes</div>
+                                        <div class="duration-option" data-value="240" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #434651; color: #d1d4dc; font-size: 14px;">4 Minutes</div>
+                                        <div class="duration-option" data-value="270" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #434651; color: #d1d4dc; font-size: 14px;">4.5 Minutes</div>
+                                        <div class="duration-option" data-value="300" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #434651; color: #d1d4dc; font-size: 14px;">5 Minutes</div>
+                                        <div class="duration-option" data-value="330" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #434651; color: #d1d4dc; font-size: 14px;">5.5 Minutes</div>
+                                        <div class="duration-option" data-value="360" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #434651; color: #d1d4dc; font-size: 14px;">6 Minutes</div>
+                                        <div class="duration-option" data-value="390" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #434651; color: #d1d4dc; font-size: 14px;">6.5 Minutes</div>
+                                        <div class="duration-option" data-value="420" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #434651; color: #d1d4dc; font-size: 14px;">7 Minutes</div>
+                                        <div class="duration-option" data-value="450" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #434651; color: #d1d4dc; font-size: 14px;">7.5 Minutes</div>
+                                        <div class="duration-option" data-value="480" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #434651; color: #d1d4dc; font-size: 14px;">8 Minutes</div>
+                                        <div class="duration-option" data-value="510" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #434651; color: #d1d4dc; font-size: 14px;">8.5 Minutes</div>
+                                        <div class="duration-option" data-value="540" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #434651; color: #d1d4dc; font-size: 14px;">9 Minutes</div>
+                                        <div class="duration-option" data-value="570" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #434651; color: #d1d4dc; font-size: 14px;">9.5 Minutes</div>
+                                        <div class="duration-option" data-value="600" style="padding: 8px 12px; cursor: pointer; border-bottom: none; color: #d1d4dc; font-size: 14px;">10 Minutes</div>
+                                    </div>
+                                    <input type="hidden" id="duration-input" value="30">
+                                </div>
                             </div>
                             
                             <!-- Potential Profit -->
@@ -269,6 +276,61 @@ class TradingViewChart {
         document.getElementById('sell-btn').addEventListener('click', () => {
             this.selectedDirection = 'put';
             this.placeTrade();
+        });
+        
+        // Custom duration dropdown functionality
+        const durationDisplay = document.getElementById('duration-display');
+        const durationOptions = document.getElementById('duration-options');
+        const durationInput = document.getElementById('duration-input');
+        
+        // Toggle dropdown when clicking on display
+        durationDisplay.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isVisible = durationOptions.style.display === 'block';
+            durationOptions.style.display = isVisible ? 'none' : 'block';
+            durationDisplay.querySelector('span:last-child').textContent = isVisible ? '▼' : '▲';
+        });
+        
+        // Handle option selection
+        durationOptions.addEventListener('click', (e) => {
+            if (e.target.classList.contains('duration-option')) {
+                const value = e.target.getAttribute('data-value');
+                const text = e.target.textContent;
+                
+                // Update hidden input
+                durationInput.value = value;
+                
+                // Update display
+                durationDisplay.querySelector('span:first-child').textContent = text;
+                
+                // Close dropdown
+                durationOptions.style.display = 'none';
+                durationDisplay.querySelector('span:last-child').textContent = '▼';
+                
+                // Update potential profit calculation
+                this.updatePotentialProfit();
+                
+                e.stopPropagation();
+            }
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', () => {
+            durationOptions.style.display = 'none';
+            durationDisplay.querySelector('span:last-child').textContent = '▼';
+        });
+        
+        // Add hover effects for duration options
+        durationOptions.addEventListener('mouseover', (e) => {
+            if (e.target.classList.contains('duration-option')) {
+                e.target.style.backgroundColor = '#434651';
+            }
+        });
+        
+        durationOptions.addEventListener('mouseout', (e) => {
+            if (e.target.classList.contains('duration-option')) {
+                e.target.style.backgroundColor = 'transparent';
+            }
         });
         
         // Amount input
@@ -1281,8 +1343,23 @@ function setAmount(amount) {
 
 // Global function for quick duration selection
 function setDuration(seconds) {
-    document.getElementById('duration-input').value = seconds;
-    if (window.tradingChart) {
-        window.tradingChart.updatePotentialProfit();
+    const durationInput = document.getElementById('duration-input');
+    const durationDisplay = document.getElementById('duration-display');
+    
+    if (durationInput && durationDisplay) {
+        durationInput.value = seconds;
+        
+        // Find the correct display text for the value
+        const durationOptions = document.getElementById('duration-options');
+        if (durationOptions) {
+            const option = durationOptions.querySelector(`[data-value="${seconds}"]`);
+            if (option) {
+                durationDisplay.querySelector('span:first-child').textContent = option.textContent;
+            }
+        }
+        
+        if (window.tradingChart) {
+            window.tradingChart.updatePotentialProfit();
+        }
     }
 }
