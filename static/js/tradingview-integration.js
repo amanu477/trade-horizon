@@ -835,13 +835,17 @@ class TradingViewChart {
     }
     
     updateBalanceDisplay(newBalance) {
+        console.log('updateBalanceDisplay called with:', newBalance);
         // Update balance in the balance-display element
         const balanceElement = document.getElementById('balance-display');
+        console.log('Found balance element:', balanceElement);
         if (balanceElement) {
             const oldBalance = parseFloat(balanceElement.textContent.replace(/[$,]/g, '')) || 0;
             const newBalanceValue = parseFloat(newBalance);
+            console.log('Updating balance from', oldBalance, 'to', newBalanceValue);
             
             balanceElement.textContent = `$${newBalanceValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            console.log('Updated balance element text to:', balanceElement.textContent);
             
             // Add visual effect when balance changes
             if (oldBalance !== newBalanceValue) {
@@ -854,6 +858,8 @@ class TradingViewChart {
                     balanceElement.style.transform = 'scale(1)';
                 }, 600);
             }
+        } else {
+            console.error('Balance element with id "balance-display" not found!');
         }
     }
     

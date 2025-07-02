@@ -297,7 +297,7 @@ def place_trade():
         # Duration-based balance requirements
         required_balance = amount
         if expiry_seconds == 30:
-            required_balance = max(amount, 49)  # Need at least $49 for 30 sec trades
+            required_balance = amount  # 30s trades just need the trade amount
         elif expiry_seconds in [60, 90]:
             required_balance = max(amount, 60)  # Need at least $60 for 60s and 90s trades
         elif expiry_seconds in [120, 150]:
@@ -422,7 +422,7 @@ def place_trade_old():
         # Duration-based balance requirements
         required_balance = amount
         if expiry_seconds == 30:
-            required_balance = max(amount, 49)  # Need at least $49 for 30 sec trades
+            required_balance = amount  # 30s trades just need the trade amount
         elif expiry_seconds in [60, 90]:
             required_balance = max(amount, 60)  # Need at least $60 for 60s and 90s trades
         elif expiry_seconds in [120, 150]:
