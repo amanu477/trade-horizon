@@ -40,49 +40,43 @@
                             <i class="fas fa-users me-1"></i>Manage Users
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-warning position-relative" href="{{ url_for('admin_deposits') }}">
-                            <i class="fas fa-coins me-1"></i>Deposits
-                            {% if pending_deposits > 0 %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle text-warning position-relative" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-cog me-1"></i>Account Management
+                            {% set total_pending = pending_deposits + pending_withdrawals + pending_kyc + pending_users %}
+                            {% if total_pending > 0 %}
                             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                {{ pending_deposits }}
-                                <span class="visually-hidden">pending deposits</span>
+                                {{ total_pending }}
+                                <span class="visually-hidden">pending items</span>
                             </span>
                             {% endif %}
                         </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-warning position-relative" href="{{ url_for('admin_withdrawals') }}">
-                            <i class="fas fa-money-bill-wave me-1"></i>Withdrawals
-                            {% if pending_withdrawals > 0 %}
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                {{ pending_withdrawals }}
-                                <span class="visually-hidden">pending withdrawals</span>
-                            </span>
-                            {% endif %}
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-warning position-relative" href="{{ url_for('admin_kyc') }}">
-                            <i class="fas fa-shield-alt me-1"></i>KYC Verification
-                            {% if pending_kyc > 0 %}
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                {{ pending_kyc }}
-                                <span class="visually-hidden">pending KYC requests</span>
-                            </span>
-                            {% endif %}
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-warning position-relative" href="{{ url_for('admin_user_approvals') }}">
-                            <i class="fas fa-user-check me-1"></i>User Approvals
-                            {% if pending_users > 0 %}
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                {{ pending_users }}
-                                <span class="visually-hidden">pending user approvals</span>
-                            </span>
-                            {% endif %}
-                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item position-relative" href="{{ url_for('admin_deposits') }}">
+                                <i class="fas fa-coins me-1"></i>Deposits
+                                {% if pending_deposits > 0 %}
+                                <span class="badge bg-danger ms-2">{{ pending_deposits }}</span>
+                                {% endif %}
+                            </a></li>
+                            <li><a class="dropdown-item position-relative" href="{{ url_for('admin_withdrawals') }}">
+                                <i class="fas fa-money-bill-wave me-1"></i>Withdrawals
+                                {% if pending_withdrawals > 0 %}
+                                <span class="badge bg-danger ms-2">{{ pending_withdrawals }}</span>
+                                {% endif %}
+                            </a></li>
+                            <li><a class="dropdown-item position-relative" href="{{ url_for('admin_kyc') }}">
+                                <i class="fas fa-shield-alt me-1"></i>KYC Verification
+                                {% if pending_kyc > 0 %}
+                                <span class="badge bg-danger ms-2">{{ pending_kyc }}</span>
+                                {% endif %}
+                            </a></li>
+                            <li><a class="dropdown-item position-relative" href="{{ url_for('admin_user_approvals') }}">
+                                <i class="fas fa-user-check me-1"></i>User Approvals
+                                {% if pending_users > 0 %}
+                                <span class="badge bg-danger ms-2">{{ pending_users }}</span>
+                                {% endif %}
+                            </a></li>
+                        </ul>
                     </li>
 
                     <li class="nav-item">
