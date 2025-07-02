@@ -128,18 +128,29 @@ class TradingViewChart {
                             
                             <!-- Trade Duration -->
                             <div style="margin-bottom: 16px;">
-                                <label style="color: #868993; font-size: 12px; display: block; margin-bottom: 4px;">Trade Duration (seconds)</label>
-                                <input id="duration-input" type="number" value="5" min="1" max="86400"
-                                       style="width: 100%; background: #2a2e39; color: #d1d4dc; border: 1px solid #434651; padding: 8px 12px; border-radius: 4px; font-size: 14px;"
-                                       placeholder="Enter duration in seconds">
-                                
-                                <!-- Quick Duration Buttons -->
-                                <div style="display: flex; gap: 4px; margin-top: 8px;">
-                                    <button onclick="setDuration(5)" style="flex: 1; background: #2a2e39; color: #d1d4dc; border: 1px solid #434651; padding: 4px; border-radius: 3px; font-size: 12px; cursor: pointer;">5s</button>
-                                    <button onclick="setDuration(30)" style="flex: 1; background: #2a2e39; color: #d1d4dc; border: 1px solid #434651; padding: 4px; border-radius: 3px; font-size: 12px; cursor: pointer;">30s</button>
-                                    <button onclick="setDuration(60)" style="flex: 1; background: #2a2e39; color: #d1d4dc; border: 1px solid #434651; padding: 4px; border-radius: 3px; font-size: 12px; cursor: pointer;">1m</button>
-                                    <button onclick="setDuration(300)" style="flex: 1; background: #2a2e39; color: #d1d4dc; border: 1px solid #434651; padding: 4px; border-radius: 3px; font-size: 12px; cursor: pointer;">5m</button>
-                                </div>
+                                <label style="color: #868993; font-size: 12px; display: block; margin-bottom: 4px;">Trade Duration</label>
+                                <select id="duration-input" style="width: 100%; background: #2a2e39; color: #d1d4dc; border: 1px solid #434651; padding: 8px 12px; border-radius: 4px; font-size: 14px;">
+                                    <option value="30">30 Seconds</option>
+                                    <option value="60">60 Seconds</option>
+                                    <option value="90">90 Seconds</option>
+                                    <option value="120">2 Minutes</option>
+                                    <option value="150">2.5 Minutes</option>
+                                    <option value="180">3 Minutes</option>
+                                    <option value="210">3.5 Minutes</option>
+                                    <option value="240">4 Minutes</option>
+                                    <option value="270">4.5 Minutes</option>
+                                    <option value="300">5 Minutes</option>
+                                    <option value="330">5.5 Minutes</option>
+                                    <option value="360">6 Minutes</option>
+                                    <option value="390">6.5 Minutes</option>
+                                    <option value="420">7 Minutes</option>
+                                    <option value="450">7.5 Minutes</option>
+                                    <option value="480">8 Minutes</option>
+                                    <option value="510">8.5 Minutes</option>
+                                    <option value="540">9 Minutes</option>
+                                    <option value="570">9.5 Minutes</option>
+                                    <option value="600">10 Minutes</option>
+                                </select>
                             </div>
                             
                             <!-- Potential Profit -->
@@ -1163,8 +1174,9 @@ class TradingViewChart {
     
     addManualSyncButton() {
         // Add a sync button to the trading panel for manual synchronization
-        const tradingPanel = document.querySelector('#place-trade-btn').parentElement;
-        if (tradingPanel && !document.getElementById('sync-symbol-btn')) {
+        const placeTradeBtn = document.querySelector('#place-trade-btn');
+        if (placeTradeBtn && placeTradeBtn.parentElement && !document.getElementById('sync-symbol-btn')) {
+            const tradingPanel = placeTradeBtn.parentElement;
             const syncButton = document.createElement('button');
             syncButton.id = 'sync-symbol-btn';
             syncButton.innerHTML = '🔄 Sync Symbol';
