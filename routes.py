@@ -213,7 +213,11 @@ def demo_trading():
 @app.route('/trading/live')
 @login_required
 def live_trading():
-    # Users can now trade live with their $50 welcome deposit
+    # Check if user is KYC verified for live trading
+    if not current_user.kyc_verified:
+        flash('You must complete KYC verification to access live trading. Please submit your verification documents.', 'warning')
+        return redirect(url_for('kyc_verification'))
+    
     wallet = current_user.wallet
     if not wallet or wallet.balance < 1:
         flash('Insufficient balance for live trading. Please deposit funds.', 'warning')
@@ -295,11 +299,11 @@ def place_trade():
         if expiry_seconds == 30:
             required_balance = max(amount, 49)  # Need at least $49 for 30 sec trades
         elif expiry_seconds in [60, 90]:
-            required_balance = max(amount, 89)  # Need at least $89 for 60s and 90s trades
+            required_balance = max(amount, 60)  # Need at least $60 for 60s and 90s trades
         elif expiry_seconds in [120, 150]:
-            required_balance = max(amount, 150)  # Need at least $150 for 120s and 150s trades
+            required_balance = max(amount, 100)  # Need at least $100 for 120s and 150s trades
         else:
-            required_balance = max(amount, 50)  # Need at least $50 for other durations
+            required_balance = max(amount, 200)  # Need at least $200 for other durations
             
         logging.info(f"Balance check: available={available_balance}, trade_amount={amount}, required_balance={required_balance}, duration={expiry_seconds}s, demo={is_demo}")
         
@@ -311,11 +315,11 @@ def place_trade():
             if expiry_seconds == 30:
                 message = f'Insufficient balance. You have ${available_balance:.2f} in order to trade this duration you need $49.00'
             elif expiry_seconds in [60, 90]:
-                message = f'Insufficient balance. You have ${available_balance:.2f} in order to trade this duration you need $89.00'
+                message = f'Insufficient balance. You have ${available_balance:.2f} in order to trade this duration you need $60.00'
             elif expiry_seconds in [120, 150]:
-                message = f'Insufficient balance. You have ${available_balance:.2f} in order to trade this duration you need $150.00'
+                message = f'Insufficient balance. You have ${available_balance:.2f} in order to trade this duration you need $100.00'
             else:
-                message = f'Insufficient balance. You have ${available_balance:.2f} in order to trade this duration you need $50.00'
+                message = f'Insufficient balance. You have ${available_balance:.2f} in order to trade this duration you need $200.00'
             logging.info(f"Insufficient balance: available={available_balance}, required={required_balance}, demo={is_demo}")
             return jsonify({'success': False, 'message': message})
         
@@ -418,11 +422,11 @@ def place_trade_old():
         if expiry_seconds == 30:
             required_balance = max(amount, 49)  # Need at least $49 for 30 sec trades
         elif expiry_seconds in [60, 90]:
-            required_balance = max(amount, 89)  # Need at least $89 for 60s and 90s trades
+            required_balance = max(amount, 60)  # Need at least $60 for 60s and 90s trades
         elif expiry_seconds in [120, 150]:
-            required_balance = max(amount, 150)  # Need at least $150 for 120s and 150s trades
+            required_balance = max(amount, 100)  # Need at least $100 for 120s and 150s trades
         else:
-            required_balance = max(amount, 50)  # Need at least $50 for other durations
+            required_balance = max(amount, 200)  # Need at least $200 for other durations
             
         if available_balance < required_balance:
             balance_type = "demo" if is_demo else "live"
@@ -432,11 +436,11 @@ def place_trade_old():
             if expiry_seconds == 30:
                 message = f'Insufficient balance. You have ${available_balance:.2f} in order to trade this duration you need $49.00'
             elif expiry_seconds in [60, 90]:
-                message = f'Insufficient balance. You have ${available_balance:.2f} in order to trade this duration you need $89.00'
+                message = f'Insufficient balance. You have ${available_balance:.2f} in order to trade this duration you need $60.00'
             elif expiry_seconds in [120, 150]:
-                message = f'Insufficient balance. You have ${available_balance:.2f} in order to trade this duration you need $150.00'
+                message = f'Insufficient balance. You have ${available_balance:.2f} in order to trade this duration you need $100.00'
             else:
-                message = f'Insufficient balance. You have ${available_balance:.2f} in order to trade this duration you need $50.00'
+                message = f'Insufficient balance. You have ${available_balance:.2f} in order to trade this duration you need $200.00'
                 
             flash(message, 'warning')
             return redirect(request.referrer)
