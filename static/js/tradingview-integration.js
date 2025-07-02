@@ -253,6 +253,14 @@ class TradingViewChart {
                 // Start price updates after chart is ready
                 this.startPriceUpdates();
                 
+                // Load wallet balance immediately
+                this.loadWalletBalance();
+                
+                // Set up periodic balance refresh every 10 seconds
+                setInterval(() => {
+                    this.loadWalletBalance();
+                }, 10000);
+                
                 // Start monitoring for symbol changes
                 this.monitorTradingViewSymbol();
             });
@@ -261,6 +269,12 @@ class TradingViewChart {
             setTimeout(() => {
                 console.log('TradingView chart initialized (fallback)');
                 this.startPriceUpdates();
+                this.loadWalletBalance();
+                
+                // Set up periodic balance refresh every 10 seconds
+                setInterval(() => {
+                    this.loadWalletBalance();
+                }, 10000);
             }, 3000);
         }
     }
@@ -659,11 +673,22 @@ class TradingViewChart {
             const response = await fetch('/api/wallet_balance');
             if (response.ok) {
                 const data = await response.json();
-                const balance = this.mode === 'demo' ? data.demo_balance : data.balance;
-                document.getElementById('balance-display').textContent = `$${parseFloat(balance).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                if (data.success) {
+                    const balance = this.mode === 'demo' ? data.demo_balance : data.balance;
+                    this.updateBalanceDisplay(balance);
+                } else {
+                    console.error('Failed to load balance:', data.error);
+                }
+            } else {
+                console.error('Balance API request failed with status:', response.status);
             }
         } catch (error) {
             console.error('Error loading wallet balance:', error);
+            // Set a fallback display to prevent "Loading..." from staying forever
+            const balanceElement = document.getElementById('balance-display');
+            if (balanceElement && balanceElement.textContent === 'Loading...') {
+                balanceElement.textContent = '$0.00';
+            }
         }
     }
 
@@ -798,26 +823,26 @@ class TradingViewChart {
     }
     
     updateBalanceDisplay(newBalance) {
-        // Update balance in the wallet display if it exists
-        const balanceElements = document.querySelectorAll('.balance-display, #wallet-balance');
-        balanceElements.forEach(element => {
-            const oldBalance = parseFloat(element.textContent.replace('$', '')) || 0;
+        // Update balance in the balance-display element
+        const balanceElement = document.getElementById('balance-display');
+        if (balanceElement) {
+            const oldBalance = parseFloat(balanceElement.textContent.replace(/[$,]/g, '')) || 0;
             const newBalanceValue = parseFloat(newBalance);
             
-            element.textContent = `$${newBalanceValue.toFixed(2)}`;
+            balanceElement.textContent = `$${newBalanceValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
             
             // Add visual effect when balance changes
             if (oldBalance !== newBalanceValue) {
-                element.style.transition = 'color 0.3s ease, transform 0.3s ease';
-                element.style.color = newBalanceValue > oldBalance ? '#26a69a' : '#ef5350';
-                element.style.transform = 'scale(1.1)';
+                balanceElement.style.transition = 'color 0.3s ease, transform 0.3s ease';
+                balanceElement.style.color = newBalanceValue > oldBalance ? '#26a69a' : '#ef5350';
+                balanceElement.style.transform = 'scale(1.1)';
                 
                 setTimeout(() => {
-                    element.style.color = '';
-                    element.style.transform = 'scale(1)';
+                    balanceElement.style.color = '#d1d4dc';
+                    balanceElement.style.transform = 'scale(1)';
                 }, 600);
             }
-        });
+        }
     }
     
     loadWalletBalance() {
@@ -1124,9 +1149,10 @@ class TradingViewChart {
                     this.updateBalanceDisplay(result.new_balance);
                     
                     // Show result notification
-                    const profitLoss = result.profit_loss || 0;
+                    const profitLoss = result.trade?.profit_loss || 0;
+                    const tradeStatus = result.trade?.status;
                     let notificationMessage;
-                    if (result.trade_result === 'profit' || result.trade_result === 'won') {
+                    if (tradeStatus === 'profit') {
                         notificationMessage = `Trade PROFIT! +$${profitLoss.toFixed(2)}`;
                     } else {
                         const lossAmount = Math.abs(profitLoss);

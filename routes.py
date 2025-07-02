@@ -895,10 +895,15 @@ def api_wallet_balance():
     wallet = Wallet.query.filter_by(user_id=current_user.id).first()
     if wallet:
         return jsonify({
+            'success': True,
             'balance': float(wallet.balance),
             'demo_balance': float(wallet.demo_balance)
         })
-    return jsonify({'balance': 0.00, 'demo_balance': 10000.00})
+    return jsonify({
+        'success': True,
+        'balance': 0.00, 
+        'demo_balance': 10000.00
+    })
 
 @app.route('/api/active_trades')
 @login_required
