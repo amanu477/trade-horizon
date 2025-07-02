@@ -127,7 +127,7 @@ TradePro is a Flask-based binary options trading platform that provides both dem
 - Secure session management
 
 ## Changelog
-- July 2, 2025: **Enhanced Insufficient Balance Messages** - Improved balance validation error messages to show specific duration requirements and exact amount needed: 30s trades need $49+, 60s/90s need $89+, 120s/150s need $150+, others need $50+, with clear indication of shortage amount
+- July 2, 2025: **Enhanced Insufficient Balance Messages** - Simplified balance validation error messages to exact format: "Insufficient balance. You have [current balance] in order to trade this duration you need [required amount]" showing 30s needs $49, 60s/90s need $89, 120s/150s need $150, others need $50
 - July 2, 2025: **Admin User Trade History Display** - Enhanced admin user management page to show recent closed trades for each user including trade results (WIN/LOSE), assets, and amounts, providing quick overview of user trading activity without clicking into individual profiles
 - July 2, 2025: **1:1 Profit Ratio Implementation** - Updated payout system to 100% return rate where potential profit equals investment amount (e.g., $20 investment = $20 potential profit), modified both frontend display and backend calculations including payout manager override for consistent 1:1 ratio across all trades
 - July 2, 2025: **Advanced Admin Trade Control System** - Implemented precise trade outcome control where admin settings override market data completely: "always lose" deducts exact investment amount, "always profit" adds exact investment amount, ignoring real market prices for complete admin control over user experience
