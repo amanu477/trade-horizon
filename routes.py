@@ -1324,7 +1324,17 @@ def admin_users():
     users = User.query.paginate(
         page=page, per_page=20, error_out=False
     )
-    return render_template('admin/users.html', users=users)
+    
+    # Get recent trades for each user
+    user_trades = {}
+    for user in users.items:
+        recent_trades = Trade.query.filter(
+            Trade.user_id == user.id,
+            Trade.status.in_(['won', 'lost'])
+        ).order_by(Trade.closed_at.desc()).limit(5).all()
+        user_trades[user.id] = recent_trades
+    
+    return render_template('admin/users.html', users=users, user_trades=user_trades)
 
 @app.route('/admin/user/<int:user_id>', methods=['GET', 'POST'])
 @login_required
