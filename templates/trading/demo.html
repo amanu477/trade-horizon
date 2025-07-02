@@ -17,7 +17,7 @@
 </div>
 
 <!-- Load TradingView Integration -->
-<script src="{{ url_for('static', filename='js/tradingview-integration.js') }}"></script>
+<script src="{{ url_for('static', filename='js/tradingview-integration.js') }}?v={{ range(1000, 9999) | random }}"></script>
 
 <script>
 // Initialize TradingView trading interface
