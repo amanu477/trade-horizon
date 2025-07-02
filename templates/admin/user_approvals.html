@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block title %}User Approvals - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="text-warning">
+                    <i class="fas fa-user-check me-2"></i>User Registration Approvals
+                </h2>
+            </div>
+            
+            <!-- Statistics Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-warning text-dark">
+                        <div class="card-body text-center">
+                            <h3 class="card-title">{{ pending_count }}</h3>
+                            <p class="card-text">Pending Approval</p>
+                            <i class="fas fa-clock fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body text-center">
+                            <h3 class="card-title">{{ approved_count }}</h3>
+                            <p class="card-text">Approved Users</p>
+                            <i class="fas fa-check-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body text-center">
+                            <h3 class="card-title">{{ total_count }}</h3>
+                            <p class="card-text">Total Users</p>
+                            <i class="fas fa-users fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body text-center">
+                            <h3 class="card-title">{{ ((approved_count / total_count * 100) | round(1)) if total_count > 0 else 0 }}%</h3>
+                            <p class="card-text">Approval Rate</p>
+                            <i class="fas fa-percentage fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Filter Buttons -->
+            <div class="row mb-3">
+                <div class="col-12">
+                    <div class="btn-group" role="group">
+                        <a href="{{ url_for('admin_user_approvals', status='pending') }}" 
+                           class="btn {% if current_status == 'pending' %}btn-warning{% else %}btn-outline-warning{% endif %}">
+                            <i class="fas fa-clock me-1"></i>Pending ({{ pending_count }})
+                        </a>
+                        <a href="{{ url_for('admin_user_approvals', status='approved') }}" 
+                           class="btn {% if current_status == 'approved' %}btn-success{% else %}btn-outline-success{% endif %}">
+                            <i class="fas fa-check-circle me-1"></i>Approved ({{ approved_count }})
+                        </a>
+                        <a href="{{ url_for('admin_user_approvals', status='all') }}" 
+                           class="btn {% if current_status == 'all' %}btn-info{% else %}btn-outline-info{% endif %}">
+                            <i class="fas fa-users me-1"></i>All Users ({{ total_count }})
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users Table -->
+            <div class="card bg-dark border-secondary">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list me-2"></i>
+                        {% if current_status == 'pending' %}Pending User Registrations{% endif %}
+                        {% if current_status == 'approved' %}Approved Users{% endif %}
+                        {% if current_status == 'all' %}All Users{% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if users.items %}
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Username</th>
+                                        <th>Email</th>
+                                        <th>Name</th>
+                                        <th>Registration Date</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user in users.items %}
+                                    <tr>
+                                        <td>{{ user.id }}</td>
+                                        <td>
+                                            <strong>{{ user.username }}</strong>
+                                        </td>
+                                        <td>{{ user.email }}</td>
+                                        <td>
+                                            {% if user.first_name or user.last_name %}
+                                                {{ user.first_name or '' }} {{ user.last_name or '' }}
+                                            {% else %}
+                                                <span class="text-muted">Not provided</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                        <td>
+                                            {% if user.is_approved %}
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-check-circle me-1"></i>Approved
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-warning">
+                                                    <i class="fas fa-clock me-1"></i>Pending
+                                                </span>
+                                            {% endif %}
+                                            
+                                            {% if not user.is_active %}
+                                                <span class="badge bg-danger ms-1">
+                                                    <i class="fas fa-ban me-1"></i>Inactive
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if not user.is_approved and user.is_active %}
+                                                <form method="POST" action="{{ url_for('approve_user', user_id=user.id) }}" class="d-inline">
+                                                    {{ csrf_token() }}
+                                                    <button type="submit" class="btn btn-success btn-sm" 
+                                                            onclick="return confirm('Approve user {{ user.username }}?')">
+                                                        <i class="fas fa-check me-1"></i>Approve
+                                                    </button>
+                                                </form>
+                                                <form method="POST" action="{{ url_for('reject_user', user_id=user.id) }}" class="d-inline ms-1">
+                                                    {{ csrf_token() }}
+                                                    <button type="submit" class="btn btn-danger btn-sm" 
+                                                            onclick="return confirm('Reject and deactivate user {{ user.username }}?')">
+                                                        <i class="fas fa-times me-1"></i>Reject
+                                                    </button>
+                                                </form>
+                                            {% elif user.is_approved %}
+                                                <span class="text-success">
+                                                    <i class="fas fa-check-circle me-1"></i>Already Approved
+                                                </span>
+                                            {% else %}
+                                                <span class="text-danger">
+                                                    <i class="fas fa-ban me-1"></i>Rejected
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        {% if users.pages > 1 %}
+                        <nav aria-label="User pagination">
+                            <ul class="pagination justify-content-center">
+                                {% if users.has_prev %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('admin_user_approvals', page=users.prev_num, status=current_status) }}">Previous</a>
+                                    </li>
+                                {% endif %}
+                                
+                                {% for page_num in users.iter_pages() %}
+                                    {% if page_num %}
+                                        {% if page_num != users.page %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ url_for('admin_user_approvals', page=page_num, status=current_status) }}">{{ page_num }}</a>
+                                            </li>
+                                        {% else %}
+                                            <li class="page-item active">
+                                                <span class="page-link">{{ page_num }}</span>
+                                            </li>
+                                        {% endif %}
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link">...</span>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if users.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('admin_user_approvals', page=users.next_num, status=current_status) }}">Next</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        {% endif %}
+                        
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No users found</h5>
+                            <p class="text-muted">
+                                {% if current_status == 'pending' %}
+                                    No pending user registrations at this time.
+                                {% elif current_status == 'approved' %}
+                                    No approved users found.
+                                {% else %}
+                                    No users in the system yet.
+                                {% endif %}
+                            </p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

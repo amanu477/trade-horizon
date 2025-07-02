@@ -36,6 +36,7 @@ def inject_admin_counts():
         pending_deposits = DepositRequest.query.filter_by(status='pending').count()
         pending_withdrawals = WithdrawalRequest.query.filter_by(status='pending').count()
         pending_kyc = KYCRequest.query.filter_by(status='pending').count()
+        pending_users = User.query.filter_by(is_approved=False, is_admin=False).count()
         pending_support = SupportTicket.query.filter(SupportTicket.status.in_(['open', 'in_progress'])).count()
         unread_support = db.session.query(SupportMessage).join(SupportTicket).filter(
             SupportMessage.is_from_user == True,
@@ -45,6 +46,7 @@ def inject_admin_counts():
             pending_deposits=pending_deposits,
             pending_withdrawals=pending_withdrawals,
             pending_kyc=pending_kyc,
+            pending_users=pending_users,
             pending_support=pending_support,
             unread_support=unread_support
         )
@@ -84,6 +86,10 @@ def login():
                     flash('Your account has been deactivated. Please contact support.', 'error')
                     return render_template('login.html', form=form)
                 
+                if not user.is_approved:
+                    flash('Your account is pending admin approval. Please wait for approval to access the platform.', 'warning')
+                    return render_template('login.html', form=form)
+                
                 login_user(user)
                 user.last_login = datetime.utcnow()
                 db.session.commit()
@@ -114,7 +120,8 @@ def register():
             email=form.email.data,
             first_name=form.first_name.data,
             last_name=form.last_name.data,
-            password_hash=generate_password_hash(form.password.data)
+            password_hash=generate_password_hash(form.password.data),
+            is_approved=False  # New users need admin approval
         )
         db.session.add(user)
         db.session.flush()  # Get user ID
@@ -134,7 +141,7 @@ def register():
         
         db.session.commit()
         
-        flash('Registration successful! You can now log in.', 'success')
+        flash('Registration successful! Your account is pending admin approval. You will be able to log in once approved.', 'info')
         return redirect(url_for('login'))
     
     return render_template('register.html', form=form)
@@ -1888,3 +1895,72 @@ def send_chat_message():
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': 'Failed to send message'})
+
+# Admin User Approval Routes
+@app.route('/admin/user-approvals')
+@login_required
+@admin_required
+def admin_user_approvals():
+    """Admin interface for approving user registrations"""
+    page = request.args.get('page', 1, type=int)
+    per_page = 20
+    status = request.args.get('status', 'pending')
+    
+    # Filter users based on status
+    if status == 'pending':
+        users = User.query.filter_by(is_approved=False, is_admin=False)
+    elif status == 'approved':
+        users = User.query.filter_by(is_approved=True, is_admin=False)
+    else:  # all
+        users = User.query.filter_by(is_admin=False)
+    
+    users = users.order_by(User.created_at.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+    
+    # Get counts
+    pending_count = User.query.filter_by(is_approved=False, is_admin=False).count()
+    approved_count = User.query.filter_by(is_approved=True, is_admin=False).count()
+    total_count = User.query.filter_by(is_admin=False).count()
+    
+    return render_template('admin/user_approvals.html',
+                         users=users,
+                         pending_count=pending_count,
+                         approved_count=approved_count,
+                         total_count=total_count,
+                         current_status=status)
+
+@app.route('/admin/user-approvals/<int:user_id>/approve', methods=['POST'])
+@login_required
+@admin_required
+def approve_user(user_id):
+    """Approve a user registration"""
+    user = User.query.get_or_404(user_id)
+    
+    if user.is_admin:
+        flash('Cannot modify admin users.', 'error')
+        return redirect(url_for('admin_user_approvals'))
+    
+    user.is_approved = True
+    db.session.commit()
+    
+    flash(f'User {user.username} has been approved successfully.', 'success')
+    return redirect(url_for('admin_user_approvals'))
+
+@app.route('/admin/user-approvals/<int:user_id>/reject', methods=['POST'])
+@login_required
+@admin_required
+def reject_user(user_id):
+    """Reject a user registration (deactivate account)"""
+    user = User.query.get_or_404(user_id)
+    
+    if user.is_admin:
+        flash('Cannot modify admin users.', 'error')
+        return redirect(url_for('admin_user_approvals'))
+    
+    user.is_active = False
+    user.is_approved = False
+    db.session.commit()
+    
+    flash(f'User {user.username} has been rejected and deactivated.', 'warning')
+    return redirect(url_for('admin_user_approvals'))

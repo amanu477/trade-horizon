@@ -127,6 +127,7 @@ TradePro is a Flask-based binary options trading platform that provides both dem
 - Secure session management
 
 ## Changelog
+- July 2, 2025: **Admin User Approval System** - Implemented mandatory admin approval for new user registrations where users must wait for admin approval before accessing the platform, includes comprehensive admin interface with approval statistics and batch processing capabilities
 - July 1, 2025: **Dashboard Chat Bot Widget** - Created simple floating chat widget on user dashboard for instant customer support communication, messages are stored as support tickets for admin review without complex navigation pages
 - July 1, 2025: **Real Trade Distribution Analytics** - Enhanced dashboard with authentic trade statistics using real database data showing actual wins/losses, implemented colorful statistics cards displaying total trades, winning trades, win rate, and total profit/loss with dynamic color coding based on performance
 - July 1, 2025: **Attractive Dashboard with Charts** - Completely redesigned user dashboard with gradient hero section, custom SVG icons, interactive Chart.js performance graphs, trade distribution charts, enhanced quick action buttons, and modern visual elements for superior user experience

@@ -73,6 +73,17 @@
                             {% endif %}
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-warning position-relative" href="{{ url_for('admin_user_approvals') }}">
+                            <i class="fas fa-user-check me-1"></i>User Approvals
+                            {% if pending_users > 0 %}
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                {{ pending_users }}
+                                <span class="visually-hidden">pending user approvals</span>
+                            </span>
+                            {% endif %}
+                        </a>
+                    </li>
 
                     <li class="nav-item">
                         <a class="nav-link text-warning" href="{{ url_for('admin_settings') }}">
