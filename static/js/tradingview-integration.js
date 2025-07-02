@@ -723,19 +723,25 @@ class TradingViewChart {
         if (durationSeconds === 30) {
             requiredBalance = Math.max(amount, 49);
         } else if (durationSeconds === 60 || durationSeconds === 90) {
-            requiredBalance = Math.max(amount, 89);
+            requiredBalance = Math.max(amount, 60);
         } else if (durationSeconds === 120 || durationSeconds === 150) {
-            requiredBalance = Math.max(amount, 150);
+            requiredBalance = Math.max(amount, 100);
         } else {
-            requiredBalance = Math.max(amount, 50);
+            requiredBalance = Math.max(amount, 200);
         }
         
         if (currentBalance < requiredBalance) {
-            if (requiredBalance > amount) {
-                this.showTradeMessage(`Insufficient balance for ${durationSeconds}s trades. You need at least $${requiredBalance} but have $${currentBalance.toFixed(2)}.`, 'warning');
+            let message;
+            if (durationSeconds === 30) {
+                message = `Insufficient balance. You have $${currentBalance.toFixed(2)} in order to trade this duration you need $49.00`;
+            } else if (durationSeconds === 60 || durationSeconds === 90) {
+                message = `Insufficient balance. You have $${currentBalance.toFixed(2)} in order to trade this duration you need $60.00`;
+            } else if (durationSeconds === 120 || durationSeconds === 150) {
+                message = `Insufficient balance. You have $${currentBalance.toFixed(2)} in order to trade this duration you need $100.00`;
             } else {
-                this.showTradeMessage(`Insufficient balance. You have $${currentBalance.toFixed(2)} but need $${amount} for this trade.`, 'warning');
+                message = `Insufficient balance. You have $${currentBalance.toFixed(2)} in order to trade this duration you need $200.00`;
             }
+            this.showTradeMessage(message, 'warning');
             return;
         }
         
@@ -809,7 +815,7 @@ class TradingViewChart {
                 // Show success message
                 this.showTradeMessage('Trade placed successfully!', 'success');
             } else {
-                this.showTradeMessage(data.error || 'Failed to place trade', 'error');
+                this.showTradeMessage(data.message || data.error || 'Failed to place trade', 'error');
             }
         })
         .catch(error => {
