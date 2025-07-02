@@ -934,12 +934,17 @@ def process_expired_trades():
 def api_wallet_balance():
     """Get user's current wallet balance"""
     wallet = Wallet.query.filter_by(user_id=current_user.id).first()
+    logging.info(f"Balance API called for user {current_user.id}")
     if wallet:
-        return jsonify({
+        balance_data = {
             'success': True,
             'balance': float(wallet.balance),
             'demo_balance': float(wallet.demo_balance)
-        })
+        }
+        logging.info(f"Returning balance data: {balance_data}")
+        return jsonify(balance_data)
+    
+    logging.warning(f"No wallet found for user {current_user.id}")
     return jsonify({
         'success': True,
         'balance': 0.00, 

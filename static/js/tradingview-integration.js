@@ -669,12 +669,16 @@ class TradingViewChart {
     }
     
     async loadWalletBalance() {
+        console.log('Loading wallet balance for mode:', this.mode);
         try {
             const response = await fetch('/api/wallet_balance');
+            console.log('Balance API response status:', response.status);
             if (response.ok) {
                 const data = await response.json();
+                console.log('Balance API data:', data);
                 if (data.success) {
                     const balance = this.mode === 'demo' ? data.demo_balance : data.balance;
+                    console.log('Selected balance for mode', this.mode + ':', balance);
                     this.updateBalanceDisplay(balance);
                 } else {
                     console.error('Failed to load balance:', data.error);
