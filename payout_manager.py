@@ -73,11 +73,11 @@ class PayoutManager:
         # Market hours adjustment (forex markets have different sessions)
         market_hours_adj = self.get_market_hours_adjustment(asset)
         
-        # Calculate final payout
-        final_payout = base_payout + volatility_adj + time_adj + market_hours_adj
+        # Calculate final payout - Override to 100% for 1:1 profit ratio
+        # final_payout = base_payout + volatility_adj + time_adj + market_hours_adj
         
-        # Ensure payout is within reasonable bounds (65% - 95%)
-        final_payout = max(65.0, min(95.0, final_payout))
+        # Fixed 100% payout for equal profit/loss amounts (1:1 ratio)
+        final_payout = 100.0
         
         return round(final_payout, 1)
     

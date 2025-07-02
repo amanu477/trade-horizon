@@ -640,7 +640,7 @@ class TradingViewChart {
     
     updatePotentialProfit() {
         const amount = parseFloat(document.getElementById('amount-input').value) || 0;
-        const payout = 0.95; // 95% payout - fixed as requested
+        const payout = 1.0; // 100% payout - potential profit equals investment amount
         const profit = (amount * payout).toFixed(2);
         document.getElementById('potential-profit').textContent = `$${profit}`;
     }

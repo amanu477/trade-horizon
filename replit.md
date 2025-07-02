@@ -127,6 +127,7 @@ TradePro is a Flask-based binary options trading platform that provides both dem
 - Secure session management
 
 ## Changelog
+- July 2, 2025: **1:1 Profit Ratio Implementation** - Updated payout system to 100% return rate where potential profit equals investment amount (e.g., $20 investment = $20 potential profit), modified both frontend display and backend calculations including payout manager override for consistent 1:1 ratio across all trades
 - July 2, 2025: **Advanced Admin Trade Control System** - Implemented precise trade outcome control where admin settings override market data completely: "always lose" deducts exact investment amount, "always profit" adds exact investment amount, ignoring real market prices for complete admin control over user experience
 - July 2, 2025: **Duration-Based Balance Requirements** - Updated trading system with 30-second interval durations (30s, 60s, 90s, 120s, etc.) and balance requirements: 30s trades need $49+, 60s/90s need $89+, 120s/150s need $150+, others need $50+ minimum balance
 - July 2, 2025: **CSRF Token Display Fix** - Fixed admin interface showing CSRF tokens in action buttons, now properly displays "Approve" and "Reject" buttons using hidden form fields for security tokens

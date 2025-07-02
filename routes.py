@@ -329,12 +329,12 @@ def place_trade():
         # Calculate expiry time
         expiry_time = datetime.utcnow() + timedelta(seconds=expiry_seconds)
         
-        # Get payout percentage
+        # Get payout percentage - 100% return (1:1 ratio)
         try:
             expiry_minutes_for_payout = int(expiry_seconds / 60)  # Convert to minutes for payout calculation
             payout_percentage = payout_manager.get_current_payout(asset, expiry_minutes_for_payout)
         except:
-            payout_percentage = 85.0
+            payout_percentage = 100.0  # 100% payout for 1:1 profit ratio
         
         # Create trade
         trade = Trade(
@@ -418,8 +418,11 @@ def place_trade_old():
         expiry_seconds = int(form.expiry_seconds.data)
         expiry_time = datetime.utcnow() + timedelta(seconds=expiry_seconds)
         
-        # Get real-time payout percentage
-        payout_percentage = payout_manager.get_current_payout(form.asset.data, int(expiry_seconds / 60))
+        # Get real-time payout percentage - 100% return (1:1 ratio)
+        try:
+            payout_percentage = payout_manager.get_current_payout(form.asset.data, int(expiry_seconds / 60))
+        except:
+            payout_percentage = 100.0  # 100% payout for 1:1 profit ratio
         
         trade = Trade(
             user_id=current_user.id,
