@@ -309,10 +309,17 @@ def place_trade():
         
         if available_balance < required_balance:
             balance_type = "demo" if is_demo else "live"
-            if required_balance > amount:
-                message = f'Insufficient balance for {expiry_seconds}s trades. You need at least ${required_balance:.2f} but have ${available_balance:.2f} in your {balance_type} account.'
+            shortage = required_balance - available_balance
+            
+            # Create specific message based on duration requirements
+            if expiry_seconds == 30:
+                message = f'Insufficient balance for 30-second trades. You need at least $49.00 total balance but have ${available_balance:.2f} in your {balance_type} account. You need ${shortage:.2f} more.'
+            elif expiry_seconds in [60, 90]:
+                message = f'Insufficient balance for {expiry_seconds}-second trades. You need at least $89.00 total balance but have ${available_balance:.2f} in your {balance_type} account. You need ${shortage:.2f} more.'
+            elif expiry_seconds in [120, 150]:
+                message = f'Insufficient balance for {expiry_seconds}-second trades. You need at least $150.00 total balance but have ${available_balance:.2f} in your {balance_type} account. You need ${shortage:.2f} more.'
             else:
-                message = f'Not enough balance. You have ${available_balance:.2f} in your {balance_type} account but need ${amount:.2f} for this trade.'
+                message = f'Insufficient balance for {expiry_seconds}-second trades. You need at least $50.00 total balance but have ${available_balance:.2f} in your {balance_type} account. You need ${shortage:.2f} more.'
             logging.info(f"Insufficient balance: available={available_balance}, required={required_balance}, demo={is_demo}")
             return jsonify({'success': False, 'message': message})
         
@@ -405,10 +412,37 @@ def place_trade_old():
         is_demo = request.form.get('is_demo') == 'true'
         wallet = current_user.wallet
         
-        # Check balance
-        balance_to_check = wallet.demo_balance if is_demo else wallet.balance
-        if balance_to_check < form.amount.data:
-            flash('Insufficient balance', 'error')
+        # Check balance with duration-specific requirements
+        expiry_seconds = int(form.expiry_seconds.data)
+        amount = float(form.amount.data)
+        available_balance = wallet.demo_balance if is_demo else wallet.balance
+        
+        # Duration-based balance requirements
+        required_balance = amount
+        if expiry_seconds == 30:
+            required_balance = max(amount, 49)  # Need at least $49 for 30 sec trades
+        elif expiry_seconds in [60, 90]:
+            required_balance = max(amount, 89)  # Need at least $89 for 60s and 90s trades
+        elif expiry_seconds in [120, 150]:
+            required_balance = max(amount, 150)  # Need at least $150 for 120s and 150s trades
+        else:
+            required_balance = max(amount, 50)  # Need at least $50 for other durations
+            
+        if available_balance < required_balance:
+            balance_type = "demo" if is_demo else "live"
+            shortage = required_balance - available_balance
+            
+            # Create specific message based on duration requirements
+            if expiry_seconds == 30:
+                message = f'Insufficient balance for 30-second trades. You need at least $49.00 total balance but have ${available_balance:.2f} in your {balance_type} account. You need ${shortage:.2f} more.'
+            elif expiry_seconds in [60, 90]:
+                message = f'Insufficient balance for {expiry_seconds}-second trades. You need at least $89.00 total balance but have ${available_balance:.2f} in your {balance_type} account. You need ${shortage:.2f} more.'
+            elif expiry_seconds in [120, 150]:
+                message = f'Insufficient balance for {expiry_seconds}-second trades. You need at least $150.00 total balance but have ${available_balance:.2f} in your {balance_type} account. You need ${shortage:.2f} more.'
+            else:
+                message = f'Insufficient balance for {expiry_seconds}-second trades. You need at least $50.00 total balance but have ${available_balance:.2f} in your {balance_type} account. You need ${shortage:.2f} more.'
+                
+            flash(message, 'warning')
             return redirect(request.referrer)
         
         # Get real current market price
