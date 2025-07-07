@@ -127,6 +127,8 @@ TradePro is a Flask-based binary options trading platform that provides both dem
 - Secure session management
 
 ## Changelog
+- July 7, 2025: **Fortune X Style Dynamic Capital Ranges** - Implemented dynamic capital range display that changes based on trade duration, showing capital ranges (500-5000 USDT for 30s up to 1M-10M USDT for 10+ minutes) and variable return rates (12%-40%) similar to Fortune X platform interface
+- July 7, 2025: **Successful Replit Agent Migration** - Migrated TradePro from Replit Agent to standard Replit environment with PostgreSQL database setup, environment variable configuration, and complete functionality preservation
 - July 2, 2025: **Updated Balance Requirements and KYC Flow** - Restored KYC requirement for live trading with $50 welcome bonus after approval, updated balance requirements: 30s needs $49, 60s/90s need $60+, 120s/150s need $100+, other durations need $200+
 - July 2, 2025: **Enhanced Insufficient Balance Messages** - Simplified balance validation error messages to exact format: "Insufficient balance. You have [current balance] in order to trade this duration you need [required amount]" showing correct amounts for each duration
 - July 2, 2025: **Admin User Trade History Display** - Enhanced admin user management page to show recent closed trades for each user including trade results (WIN/LOSE), assets, and amounts, providing quick overview of user trading activity without clicking into individual profiles

@@ -160,11 +160,21 @@ class TradingViewChart {
                                 </div>
                             </div>
                             
-                            <!-- Potential Profit -->
+                            <!-- Capital Range Display -->
+                            <div style="background: #2a2e39; padding: 12px; border-radius: 4px; margin-bottom: 12px;">
+                                <div style="color: #868993; font-size: 12px; margin-bottom: 4px;">Capital Range:</div>
+                                <div id="capital-range" style="color: #d1d4dc; font-size: 14px; font-weight: bold;">500 - 5000 USDT</div>
+                            </div>
+                            
+                            <!-- Return Rate Display -->
                             <div style="background: #2a2e39; padding: 12px; border-radius: 4px; margin-bottom: 16px;">
                                 <div style="display: flex; justify-content: space-between; color: #d1d4dc; font-size: 14px;">
+                                    <span>Return Rate:</span>
+                                    <span id="return-rate" style="color: #4caf50; font-weight: bold;">100%</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; color: #d1d4dc; font-size: 14px; margin-top: 4px;">
                                     <span>Potential Profit:</span>
-                                    <span id="potential-profit" style="color: #4caf50; font-weight: bold;">$8.50</span>
+                                    <span id="potential-profit" style="color: #4caf50; font-weight: bold;">$10.00</span>
                                 </div>
                             </div>
                             
@@ -185,6 +195,9 @@ class TradingViewChart {
         
         this.setupEventListeners();
         this.loadWalletBalance();
+        
+        // Initialize capital range for default 30 seconds duration
+        this.updateCapitalRange(30);
     }
     
     loadTradingView() {
@@ -321,7 +334,8 @@ class TradingViewChart {
                 durationOptions.style.display = 'none';
                 durationDisplay.querySelector('span:last-child').textContent = '▼';
                 
-                // Update potential profit calculation
+                // Update capital range and potential profit calculation
+                this.updateCapitalRange(parseInt(value));
                 this.updatePotentialProfit();
                 
                 e.stopPropagation();
@@ -638,6 +652,50 @@ class TradingViewChart {
     
     // Function removed - Buy/Sell buttons execute trades directly
     
+    updateCapitalRange(durationSeconds) {
+        // Capital ranges based on duration (similar to Fortune X)
+        let capitalRange = '';
+        let returnRate = '';
+        
+        if (durationSeconds === 30) {
+            capitalRange = '500 - 5000 USDT';
+            returnRate = '12%';
+        } else if (durationSeconds === 60) {
+            capitalRange = '3000 - 10000 USDT';
+            returnRate = '15%';
+        } else if (durationSeconds === 90) {
+            capitalRange = '20000 - 50000 USDT';
+            returnRate = '18%';
+        } else if (durationSeconds === 120) {
+            capitalRange = '50000 - 80000 USDT';
+            returnRate = '22%';
+        } else if (durationSeconds === 150) {
+            capitalRange = '80000 - 150000 USDT';
+            returnRate = '26%';
+        } else if (durationSeconds === 180) {
+            capitalRange = '150000 - 500000 USDT';
+            returnRate = '30%';
+        } else if (durationSeconds >= 210 && durationSeconds <= 300) {
+            capitalRange = '500000 - 1000000 USDT';
+            returnRate = '35%';
+        } else if (durationSeconds > 300) {
+            capitalRange = '1000000 - 10000000 USDT';
+            returnRate = '40%';
+        }
+        
+        // Update the displays
+        const capitalRangeElement = document.getElementById('capital-range');
+        const returnRateElement = document.getElementById('return-rate');
+        
+        if (capitalRangeElement) {
+            capitalRangeElement.textContent = capitalRange;
+        }
+        
+        if (returnRateElement) {
+            returnRateElement.textContent = returnRate;
+        }
+    }
+
     updatePotentialProfit() {
         const amount = parseFloat(document.getElementById('amount-input').value) || 0;
         const payout = 1.0; // 100% payout - potential profit equals investment amount
