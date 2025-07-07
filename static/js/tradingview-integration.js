@@ -765,51 +765,54 @@ class TradingViewChart {
     async placeTrade() {
         const amount = parseFloat(document.getElementById('amount-input').value);
         const durationSeconds = parseInt(document.getElementById('duration-input').value);
-        
-        if (!amount || amount < 1) {
-            this.showTradeMessage('Please enter a valid investment amount', 'error');
-            return;
-        }
-        
-        if (!this.selectedDirection) {
-            this.showTradeMessage('Please select trade direction (Buy or Sell)', 'error');
-            return;
-        }
-        
-        if (!durationSeconds || durationSeconds < 30) {
-            this.showTradeMessage('Please select a valid trade duration (minimum 30 seconds)', 'error');
-            return;
-        }
-        
-        // Basic validation - let backend handle Fortune X style capital range validation
         const currentBalance = this.getCurrentBalance();
         
-        if (currentBalance < amount) {
-            this.showTradeMessage(`Insufficient balance. You have $${currentBalance.toFixed(2)} but need $${amount.toFixed(2)} for this trade.`, 'warning');
+        // Fortune X capital range validation without messages
+        let capitalRangeMin = 500;
+        let capitalRangeMax = 5000;
+        
+        if (durationSeconds === 30 || durationSeconds === 60) {
+            capitalRangeMin = 500;
+            capitalRangeMax = 5000;
+        } else if (durationSeconds === 90) {
+            capitalRangeMin = 20000;
+            capitalRangeMax = 50000;
+        } else if (durationSeconds === 120) {
+            capitalRangeMin = 10000;
+            capitalRangeMax = 50000;
+        } else if (durationSeconds === 150) {
+            capitalRangeMin = 50000;
+            capitalRangeMax = 200000;
+        } else if (durationSeconds === 180) {
+            capitalRangeMin = 200000;
+            capitalRangeMax = 500000;
+        } else if (durationSeconds === 210) {
+            capitalRangeMin = 500000;
+            capitalRangeMax = 1000000;
+        } else if (durationSeconds >= 240) {
+            capitalRangeMin = 1000000;
+            capitalRangeMax = 10000000;
+        }
+        
+        // Silent validation - exit without messages if validation fails
+        if (!amount || amount < 1 || !this.selectedDirection || !durationSeconds || durationSeconds < 30) {
             return;
         }
         
-        // Ensure we have a valid asset
+        if (currentBalance < capitalRangeMin || amount < capitalRangeMin || amount > capitalRangeMax) {
+            return;
+        }
+        
+        // Silent trade execution
         const asset = this.currentAsset || 'EURUSD';
+        const csrfToken = document.querySelector('meta[name="csrf-token"]');
         
-        // Use AJAX to place trade without page refresh
-        console.log('Placing trade:', {
-            asset: asset,
-            trade_type: this.selectedDirection,
-            amount: amount,
-            expiry_seconds: durationSeconds
-        });
-        
-        // Disable button to prevent double submission
+        // Disable buttons temporarily
         const buyButton = document.getElementById('buy-button');
         const sellButton = document.getElementById('sell-button');
         if (buyButton) buyButton.disabled = true;
         if (sellButton) sellButton.disabled = true;
         
-        // Get CSRF token
-        const csrfToken = document.querySelector('meta[name="csrf-token"]');
-        
-        // Prepare form data
         const formData = new FormData();
         formData.append('asset', asset);
         formData.append('trade_type', this.selectedDirection);
@@ -820,55 +823,39 @@ class TradingViewChart {
             formData.append('csrf_token', csrfToken.getAttribute('content'));
         }
         
-        // Send AJAX request with better error handling
+        // Execute trade silently
         fetch('/place_trade', {
             method: 'POST',
             body: formData,
-            credentials: 'same-origin',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
+            credentials: 'same-origin'
         })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-            return response.text().then(text => {
-                try {
-                    return JSON.parse(text);
-                } catch (e) {
-                    console.error('Invalid JSON response:', text);
-                    throw new Error('Invalid server response');
-                }
-            });
-        })
+        .then(response => response.json())
         .then(data => {
             // Re-enable buttons
             if (buyButton) buyButton.disabled = false;
             if (sellButton) sellButton.disabled = false;
             
             if (data.success) {
-                // Update balance display
-                this.updateBalanceDisplay(data.new_balance);
-                
-                // Refresh active trades list with delay to ensure backend processing
+                // Silent success - update balance and active trades
+                this.loadWalletBalance();
                 setTimeout(() => {
-                    this.loadActiveTrades();
-                }, 1000);
+                    if (typeof this.loadActiveTrades === 'function') {
+                        this.loadActiveTrades();
+                    }
+                }, 500);
                 
-                // Show success message
-                this.showTradeMessage('Trade placed successfully!', 'success');
-            } else {
-                this.showTradeMessage(data.message || data.error || 'Failed to place trade', 'error');
+                // Reset selection
+                this.selectedDirection = null;
+                const buyBtn = document.getElementById('buy-button');
+                const sellBtn = document.getElementById('sell-button');
+                if (buyBtn) buyBtn.style.opacity = '0.7';
+                if (sellBtn) sellBtn.style.opacity = '0.7';
             }
         })
-        .catch(error => {
-            // Re-enable buttons on error
+        .catch(() => {
+            // Silent error handling - just re-enable buttons
             if (buyButton) buyButton.disabled = false;
             if (sellButton) sellButton.disabled = false;
-            
-            console.error('Error placing trade:', error);
-            this.showTradeMessage(`Trade placement failed: ${error.message}`, 'error');
         });
     }
     
