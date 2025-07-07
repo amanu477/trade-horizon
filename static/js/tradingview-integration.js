@@ -767,13 +767,8 @@ class TradingViewChart {
         const durationSeconds = parseInt(document.getElementById('duration-input').value);
         const currentBalance = this.getCurrentBalance();
         
-        // Simple validation - exit without messages if validation fails
+        // Basic validation only - let backend handle Fortune X capital range validation
         if (!amount || amount < 1 || !this.selectedDirection || !durationSeconds || durationSeconds < 30) {
-            return;
-        }
-        
-        // Check if user has enough balance for the trade amount
-        if (amount > currentBalance) {
             return;
         }
         
@@ -824,6 +819,11 @@ class TradingViewChart {
                 const sellBtn = document.getElementById('sell-button');
                 if (buyBtn) buyBtn.style.opacity = '0.7';
                 if (sellBtn) sellBtn.style.opacity = '0.7';
+            } else {
+                // Show insufficient balance message if provided
+                if (data.message) {
+                    this.showTradeMessage(data.message, 'warning');
+                }
             }
         })
         .catch(() => {

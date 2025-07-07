@@ -294,15 +294,48 @@ def place_trade():
             
         available_balance = wallet.demo_balance if is_demo else wallet.balance
         
-        # Simplified capital range validation - based on user balance and amount only
-        if amount > available_balance:
-            logging.info(f"Trade validation failed: amount=${amount:.2f} exceeds balance=${available_balance:.2f}")
-            return jsonify({'success': False})
+        # Fortune X capital range requirements based on duration
+        capital_range_min = 500
+        capital_range_max = 5000
+        
+        if expiry_seconds == 30 or expiry_seconds == 60:
+            capital_range_min = 500
+            capital_range_max = 5000
+        elif expiry_seconds == 90:
+            capital_range_min = 20000
+            capital_range_max = 50000
+        elif expiry_seconds == 120:
+            capital_range_min = 10000
+            capital_range_max = 50000
+        elif expiry_seconds == 150:
+            capital_range_min = 50000
+            capital_range_max = 200000
+        elif expiry_seconds == 180:
+            capital_range_min = 200000
+            capital_range_max = 500000
+        elif expiry_seconds == 210:
+            capital_range_min = 500000
+            capital_range_max = 1000000
+        elif expiry_seconds >= 240:
+            capital_range_min = 1000000
+            capital_range_max = 10000000
             
-        # Minimum trade amount validation
-        if amount < 1:
-            logging.info(f"Trade validation failed: amount=${amount:.2f} below minimum $1")
-            return jsonify({'success': False})
+        # Check if user has sufficient balance for this duration
+        if available_balance < capital_range_min:
+            message = f'Insufficient balance. In order to trade this duration you must have ${capital_range_min:,.2f}'
+            logging.info(f"Insufficient balance for duration: balance=${available_balance:.2f}, required=${capital_range_min}")
+            return jsonify({'success': False, 'message': message})
+            
+        # Check if trade amount is within range
+        if amount < capital_range_min:
+            message = f'Trade amount too low. Minimum for this duration is ${capital_range_min:,.2f}'
+            logging.info(f"Trade amount below minimum: amount=${amount:.2f}, required=${capital_range_min}")
+            return jsonify({'success': False, 'message': message})
+            
+        if amount > capital_range_max:
+            message = f'Trade amount too high. Maximum for this duration is ${capital_range_max:,.2f}'
+            logging.info(f"Trade amount above maximum: amount=${amount:.2f}, max=${capital_range_max}")
+            return jsonify({'success': False, 'message': message})
         
         # Use simulated market price (no real data dependency)
         entry_price = generate_market_price(asset)
