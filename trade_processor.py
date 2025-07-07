@@ -28,8 +28,9 @@ def process_expired_trades():
                 print(f"Processing trade {trade.id} for user {user.username if user else 'Unknown'}")
                 print(f"User trade control setting: {trade_control}")
                 
-                # Get current market price
-                current_price = market_data.get_real_price(trade.asset)
+                # Use simulated market price instead of real data
+                from utils import generate_market_price
+                current_price = generate_market_price(trade.asset, trade.entry_price)
                 
                 # Apply admin trade control overrides
                 if trade_control == 'always_lose':

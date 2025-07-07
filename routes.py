@@ -325,15 +325,8 @@ def place_trade():
             logging.info(f"Insufficient balance: available={available_balance}, required={required_balance}, demo={is_demo}")
             return jsonify({'success': False, 'message': message})
         
-        # Get current market price
-        try:
-            market_info = market_data.get_real_price(asset)
-            if isinstance(market_info, dict) and 'price' in market_info:
-                entry_price = market_info['price']
-            else:
-                entry_price = market_info
-        except:
-            entry_price = get_asset_price(asset)
+        # Use simulated market price (no real data dependency)
+        entry_price = generate_market_price(asset)
         
         # Calculate expiry time
         expiry_time = datetime.utcnow() + timedelta(seconds=expiry_seconds)
@@ -854,30 +847,59 @@ def api_twelve_data_status():
 
 @app.route('/api/market-data-new/<symbol>')
 def api_market_data_new(symbol):
-    """Get real market data for symbol"""
-    try:
-        market_info = market_data.get_market_info(symbol)
-        return jsonify(market_info)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    """Get simulated market data for symbol"""
+    # Return simulated market data instead of real data
+    from utils import generate_market_price
+    price = generate_market_price(symbol)
+    change = random.uniform(-0.005, 0.005) * price
+    
+    return jsonify({
+        'symbol': symbol,
+        'price': price,
+        'change': change,
+        'change_percent': (change / price * 100),
+        'volume': random.randint(10000, 100000),
+        'high_24h': price * 1.01,
+        'low_24h': price * 0.99,
+        'timestamp': datetime.utcnow().isoformat()
+    })
 
 @app.route('/api/chart-data-new/<symbol>')
 def api_chart_data_new(symbol):
-    """Get real chart data for trading interface"""
-    try:
-        period = request.args.get('period', '1d')
-        interval = request.args.get('interval', '5m')
+    """Get simulated chart data for trading interface"""
+    period = request.args.get('period', '1d')
+    interval = request.args.get('interval', '5m')
+    
+    # Generate simulated chart data
+    from utils import generate_market_price
+    base_price = generate_market_price(symbol)
+    data = []
+    
+    current_time = datetime.utcnow()
+    current_price = base_price
+    
+    for i in range(50):
+        timestamp = current_time - timedelta(minutes=50-i)
         
-        chart_data = market_data.get_historical_data(symbol, period, interval)
+        # Simulate price movement
+        change = (random.random() - 0.5) * base_price * 0.005
+        current_price += change
         
-        return jsonify({
-            'symbol': symbol,
-            'data': chart_data,
-            'period': period,
-            'interval': interval
+        data.append({
+            'timestamp': timestamp.isoformat(),
+            'open': current_price,
+            'high': current_price * (1 + random.random() * 0.002),
+            'low': current_price * (1 - random.random() * 0.002),
+            'close': current_price,
+            'volume': random.randint(1000, 10000)
         })
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    
+    return jsonify({
+        'symbol': symbol,
+        'data': data,
+        'period': period,
+        'interval': interval
+    })
 
 @app.context_processor
 def inject_global_vars():
@@ -1166,16 +1188,9 @@ def api_process_expired_trade(trade_id):
                 'error': 'Trade has not expired yet'
             })
         
-        # Get current market price
-        from market_data import RealMarketData
-        market_data = RealMarketData()
-        current_price_data = market_data.get_real_price(trade.asset)
-        
-        # Handle price data properly
-        if isinstance(current_price_data, dict) and 'price' in current_price_data:
-            current_price = float(current_price_data['price'])
-        else:
-            current_price = float(current_price_data) if current_price_data else trade.entry_price
+        # Use simulated market price instead of real data
+        from utils import generate_market_price
+        current_price = generate_market_price(trade.asset, trade.entry_price)
         
         # Calculate trade result
         trade.exit_price = current_price
