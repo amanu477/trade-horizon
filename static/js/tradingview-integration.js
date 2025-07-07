@@ -781,34 +781,11 @@ class TradingViewChart {
             return;
         }
         
-        // Check balance requirements based on duration
+        // Basic validation - let backend handle Fortune X style capital range validation
         const currentBalance = this.getCurrentBalance();
-        let requiredBalance = amount;
         
-        if (durationSeconds === 30) {
-            requiredBalance = Math.max(amount, 49);
-        } else if (durationSeconds === 60 || durationSeconds === 90) {
-            requiredBalance = Math.max(amount, 60);
-        } else if (durationSeconds === 120 || durationSeconds === 150) {
-            requiredBalance = Math.max(amount, 100);
-        } else {
-            requiredBalance = Math.max(amount, 200);
-        }
-        
-        if (currentBalance < requiredBalance) {
-            let requiredAmount;
-            if (durationSeconds === 30) {
-                requiredAmount = 49.00;
-            } else if (durationSeconds === 60 || durationSeconds === 90) {
-                requiredAmount = 60.00;
-            } else if (durationSeconds === 120 || durationSeconds === 150) {
-                requiredAmount = 100.00;
-            } else {
-                requiredAmount = 200.00;
-            }
-            
-            const message = `Insufficient balance. You have $${currentBalance.toFixed(2)} in order to trade this duration you need $${requiredAmount.toFixed(2)}`;
-            this.showTradeMessage(message, 'warning');
+        if (currentBalance < amount) {
+            this.showTradeMessage(`Insufficient balance. You have $${currentBalance.toFixed(2)} but need $${amount.toFixed(2)} for this trade.`, 'warning');
             return;
         }
         
