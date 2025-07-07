@@ -653,34 +653,37 @@ class TradingViewChart {
     // Function removed - Buy/Sell buttons execute trades directly
     
     updateCapitalRange(durationSeconds) {
-        // Capital ranges based on duration (similar to Fortune X)
+        // Fortune X style capital ranges matching backend validation
         let capitalRange = '';
         let returnRate = '';
         
         if (durationSeconds === 30) {
-            capitalRange = '500 - 5000 USDT';
+            capitalRange = '500 - 5,000 USDT';
             returnRate = '12%';
         } else if (durationSeconds === 60) {
-            capitalRange = '3000 - 10000 USDT';
+            capitalRange = '500 - 5,000 USDT';
             returnRate = '15%';
         } else if (durationSeconds === 90) {
-            capitalRange = '20000 - 50000 USDT';
+            capitalRange = '20,000 - 50,000 USDT';
             returnRate = '18%';
         } else if (durationSeconds === 120) {
-            capitalRange = '50000 - 80000 USDT';
+            capitalRange = '10,000 - 50,000 USDT';
             returnRate = '22%';
         } else if (durationSeconds === 150) {
-            capitalRange = '80000 - 150000 USDT';
+            capitalRange = '50,000 - 200,000 USDT';
             returnRate = '26%';
         } else if (durationSeconds === 180) {
-            capitalRange = '150000 - 500000 USDT';
+            capitalRange = '200,000 - 500,000 USDT';
             returnRate = '30%';
-        } else if (durationSeconds >= 210 && durationSeconds <= 300) {
-            capitalRange = '500000 - 1000000 USDT';
+        } else if (durationSeconds === 210) {
+            capitalRange = '500,000 - 1,000,000 USDT';
             returnRate = '35%';
-        } else if (durationSeconds > 300) {
-            capitalRange = '1000000 - 10000000 USDT';
+        } else if (durationSeconds >= 240) {
+            capitalRange = '1,000,000 - 10,000,000 USDT';
             returnRate = '40%';
+        } else {
+            capitalRange = '500 - 5,000 USDT';
+            returnRate = '12%';
         }
         
         // Update the displays

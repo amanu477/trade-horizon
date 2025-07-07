@@ -294,35 +294,56 @@ def place_trade():
             
         available_balance = wallet.demo_balance if is_demo else wallet.balance
         
-        # Duration-based balance requirements
-        required_balance = amount
-        if expiry_seconds == 30:
-            required_balance = amount  # 30s trades just need the trade amount
-        elif expiry_seconds in [60, 90]:
-            required_balance = max(amount, 60)  # Need at least $60 for 60s and 90s trades
-        elif expiry_seconds in [120, 150]:
-            required_balance = max(amount, 100)  # Need at least $100 for 120s and 150s trades
-        else:
-            required_balance = max(amount, 200)  # Need at least $200 for other durations
-            
-        logging.info(f"Balance check: available={available_balance}, trade_amount={amount}, required_balance={required_balance}, duration={expiry_seconds}s, demo={is_demo}")
+        # Fortune X style capital range requirements based on duration
+        capital_range_min = 0
+        capital_range_max = 0
         
-        if available_balance < required_balance:
-            balance_type = "demo" if is_demo else "live"
-            shortage = required_balance - available_balance
+        if expiry_seconds == 30:
+            capital_range_min = 500
+            capital_range_max = 5000
+        elif expiry_seconds == 60:
+            capital_range_min = 500
+            capital_range_max = 5000
+        elif expiry_seconds == 90:
+            capital_range_min = 20000
+            capital_range_max = 50000
+        elif expiry_seconds == 120:  # 2 minutes
+            capital_range_min = 10000
+            capital_range_max = 50000
+        elif expiry_seconds == 150:  # 2.5 minutes  
+            capital_range_min = 50000
+            capital_range_max = 200000
+        elif expiry_seconds == 180:  # 3 minutes
+            capital_range_min = 200000
+            capital_range_max = 500000
+        elif expiry_seconds == 210:  # 3.5 minutes
+            capital_range_min = 500000
+            capital_range_max = 1000000
+        elif expiry_seconds >= 240:  # 4+ minutes
+            capital_range_min = 1000000
+            capital_range_max = 10000000
+        else:
+            capital_range_min = 500
+            capital_range_max = 5000
             
-            # Create specific message based on duration requirements
-            if expiry_seconds == 30:
-                required_amount = 49.00
-            elif expiry_seconds in [60, 90]:
-                required_amount = 60.00
-            elif expiry_seconds in [120, 150]:
-                required_amount = 100.00
-            else:
-                required_amount = 200.00
+        # Check if user has enough balance for the minimum capital range
+        required_balance = max(amount, capital_range_min)
+        
+        logging.info(f"Balance check: available=${available_balance:.2f}, trade_amount=${amount:.2f}, capital_range=${capital_range_min}-${capital_range_max}, duration={expiry_seconds}s, demo={is_demo}")
+        
+        if available_balance < capital_range_min:
+            message = f'Insufficient balance. You have ${available_balance:.2f} but this duration requires ${capital_range_min:.2f} - ${capital_range_max:.2f} USDT capital range'
+            logging.info(f"Insufficient balance: available=${available_balance:.2f}, required_range=${capital_range_min}-${capital_range_max}, demo={is_demo}")
+            return jsonify({'success': False, 'message': message})
+        
+        if amount < capital_range_min:
+            message = f'Trade amount too low. Minimum investment for this duration is ${capital_range_min:.2f} USDT (Range: ${capital_range_min:.2f} - ${capital_range_max:.2f})'
+            logging.info(f"Trade amount too low: amount=${amount:.2f}, required_range=${capital_range_min}-${capital_range_max}")
+            return jsonify({'success': False, 'message': message})
             
-            message = f'Insufficient balance. You have ${available_balance:.2f} in order to trade this duration you need ${required_amount:.2f}'
-            logging.info(f"Insufficient balance: available={available_balance}, required={required_balance}, demo={is_demo}")
+        if amount > capital_range_max:
+            message = f'Trade amount too high. Maximum investment for this duration is ${capital_range_max:.2f} USDT (Range: ${capital_range_min:.2f} - ${capital_range_max:.2f})'
+            logging.info(f"Trade amount too high: amount=${amount:.2f}, required_range=${capital_range_min}-${capital_range_max}")
             return jsonify({'success': False, 'message': message})
         
         # Use simulated market price (no real data dependency)
