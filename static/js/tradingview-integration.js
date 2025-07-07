@@ -767,39 +767,13 @@ class TradingViewChart {
         const durationSeconds = parseInt(document.getElementById('duration-input').value);
         const currentBalance = this.getCurrentBalance();
         
-        // Fortune X capital range validation without messages
-        let capitalRangeMin = 500;
-        let capitalRangeMax = 5000;
-        
-        if (durationSeconds === 30 || durationSeconds === 60) {
-            capitalRangeMin = 500;
-            capitalRangeMax = 5000;
-        } else if (durationSeconds === 90) {
-            capitalRangeMin = 20000;
-            capitalRangeMax = 50000;
-        } else if (durationSeconds === 120) {
-            capitalRangeMin = 10000;
-            capitalRangeMax = 50000;
-        } else if (durationSeconds === 150) {
-            capitalRangeMin = 50000;
-            capitalRangeMax = 200000;
-        } else if (durationSeconds === 180) {
-            capitalRangeMin = 200000;
-            capitalRangeMax = 500000;
-        } else if (durationSeconds === 210) {
-            capitalRangeMin = 500000;
-            capitalRangeMax = 1000000;
-        } else if (durationSeconds >= 240) {
-            capitalRangeMin = 1000000;
-            capitalRangeMax = 10000000;
-        }
-        
-        // Silent validation - exit without messages if validation fails
+        // Simple validation - exit without messages if validation fails
         if (!amount || amount < 1 || !this.selectedDirection || !durationSeconds || durationSeconds < 30) {
             return;
         }
         
-        if (currentBalance < capitalRangeMin || amount < capitalRangeMin || amount > capitalRangeMax) {
+        // Check if user has enough balance for the trade amount
+        if (amount > currentBalance) {
             return;
         }
         

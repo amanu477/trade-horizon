@@ -294,35 +294,14 @@ def place_trade():
             
         available_balance = wallet.demo_balance if is_demo else wallet.balance
         
-        # Fortune X capital range validation - Silent validation without messages
-        capital_range_min = 500
-        capital_range_max = 5000
-        
-        if expiry_seconds == 30 or expiry_seconds == 60:
-            capital_range_min = 500
-            capital_range_max = 5000
-        elif expiry_seconds == 90:
-            capital_range_min = 20000
-            capital_range_max = 50000
-        elif expiry_seconds == 120:
-            capital_range_min = 10000
-            capital_range_max = 50000
-        elif expiry_seconds == 150:
-            capital_range_min = 50000
-            capital_range_max = 200000
-        elif expiry_seconds == 180:
-            capital_range_min = 200000
-            capital_range_max = 500000
-        elif expiry_seconds == 210:
-            capital_range_min = 500000
-            capital_range_max = 1000000
-        elif expiry_seconds >= 240:
-            capital_range_min = 1000000
-            capital_range_max = 10000000
+        # Simplified capital range validation - based on user balance and amount only
+        if amount > available_balance:
+            logging.info(f"Trade validation failed: amount=${amount:.2f} exceeds balance=${available_balance:.2f}")
+            return jsonify({'success': False})
             
-        # Silent validation - fail if requirements not met
-        if available_balance < capital_range_min or amount < capital_range_min or amount > capital_range_max:
-            logging.info(f"Trade validation failed: balance=${available_balance:.2f}, amount=${amount:.2f}, range=${capital_range_min}-${capital_range_max}")
+        # Minimum trade amount validation
+        if amount < 1:
+            logging.info(f"Trade validation failed: amount=${amount:.2f} below minimum $1")
             return jsonify({'success': False})
         
         # Use simulated market price (no real data dependency)
